@@ -1,0 +1,61 @@
+# PSN2D example — 2-group BWR fuel bundle (paper Sec 4.3, Fig.8/10/12, Table 2)
+#
+# 6x6 cells of 1.5 cm; outer ring = moderator (water), central 4x4 = fuel.
+# Reflective on all four sides. Restricted PSN (TY 3-point polar set),
+# each cell subdivided N x N (N = subdivide).
+# OpenMC reference (Stepanek et al. 1982): kref = 1.18797 (no Gd),
+# kref = 0.86688 (Gd pin at bottom-left corner of the fuel block).
+problem: bwr_bundle
+description: >
+  Two-group BWR bundle benchmark (paper Table 2 cross sections).
+  6x6 grid of 1.5 cm cells, central 4x4 fuel, outer ring water,
+  all-reflective boundary.
+
+geometry:
+  grid:        # 0=fuel, 1=water; bottom row first
+    - [1, 1, 1, 1, 1, 1]
+    - [1, 0, 0, 0, 0, 1]
+    - [1, 0, 0, 0, 0, 1]
+    - [1, 0, 0, 0, 0, 1]
+    - [1, 0, 0, 0, 0, 1]
+    - [1, 1, 1, 1, 1, 1]
+  unit_size: 1.5
+  subdivide: 2
+
+boundaries:
+  left: reflect
+  bottom: reflect
+  right: reflect
+  top: reflect
+
+materials:
+  - name: fuel
+    total: [0.196647, 0.596159]
+    scatter:            # rows = source group, cols = dest group (paper Table 2)
+      - [0.178000, 0.010020]   # g1 -> g1, g2
+      - [0.001089, 0.525500]   # g2 -> g1, g2
+    nu_fission: [0.006203, 0.110100]
+  - name: water
+    total: [0.222064, 0.887874]
+    scatter:
+      - [0.199500, 0.021880]
+      - [0.001558, 0.878300]
+    nu_fission: [0.0, 0.0]
+
+fission_spectrum: [1.0, 0.0]    # all fission neutrons born in group 1
+
+angular:
+  model: ty3          # restricted 2D PSN (paper BWR runs)
+  M: 8
+
+solver:
+  keff_tol: 1e-10
+  max_outer: 4000
+
+cases:
+  - name: N2_M8
+    kref: 1.18797
+  - name: N4_M12
+    subdivide: 4
+    M: 12
+    kref: 1.18797

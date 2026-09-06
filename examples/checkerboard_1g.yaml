@@ -1,0 +1,52 @@
+# PSN2D example — checkerboard benchmark (paper Sec 4.1, Fig.3)
+#
+# 2x2 quarter-core (1 cm x 1 cm cells), fuel/absorber checkerboard,
+# reflective on all four sides. 1 energy group.
+# OpenMC reference: weak=1.12974, strong=0.51673 (paper pcm = ABSOLUTE
+# error (k-kref)*1e5).
+problem: checkerboard
+description: >
+  PSN Fig.3 checkerboard, 1 group, fuel (St=1.5, Sa=0.15, nuSf=0.24) /
+  absorber (St=1.0, Sa=weak 0.07 or strong 0.70), 2x2 base cells
+  subdivided S x S.
+
+geometry:
+  grid:        # bottom row first; columns left->right
+    - [0, 1]
+    - [1, 0]
+  unit_size: 1.0
+  subdivide: 4
+
+boundaries:
+  left: reflect
+  bottom: reflect
+  right: reflect
+  top: reflect
+
+materials:
+  - name: fuel
+    total: [1.5]
+    scatter: [[1.35]]
+    nu_fission: [0.24]
+  - name: absorber_weak
+    total: [1.0]
+    scatter: [[0.93]]
+    nu_fission: [0.0]
+
+fission_spectrum: [1.0]
+
+angular:
+  model: generic
+  I: 30
+  M: 12
+
+solver:
+  keff_tol: 1e-10
+  max_outer: 4000
+
+cases:
+  - name: weak_M12
+    kref: 1.12974
+  - name: weak_M24
+    M: 24
+    kref: 1.12974

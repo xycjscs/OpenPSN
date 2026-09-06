@@ -1,0 +1,53 @@
+# PSN2D — C5G7 single UO2 assembly (17x17, reflective, pin-homogenized) (7-group, OpenMOC c5g7-mgxs.h5 cross sections)
+#
+# 17x17 pin assemblies, pitch 1.26 cm, homogenized pin cells (fuel+water).
+# one 17x17 UO2 assembly; all-reflective boundary; pin = fuel(r=0.54) + water ring.
+#
+# Reference eigenvalues (7-group):
+#   MCNP5 (C5G7 benchmark, nTRACER, SPHINCS 2021 Table 1 (pin-cell XS with SPH factors)):  k = 1.33367
+#   PSN2D pin-homogenized infinite-medium k_inf = 1.32937 (+/-43 pcm data basis)
+problem: c5g7_uo2_assembly
+description: C5G7 single UO2 assembly (17x17, reflective, pin-homogenized), 7-group PSN2D.
+
+geometry:
+  grid:
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 4, 0, 0, 4, 0, 0, 5, 0, 0, 4, 0, 0, 4, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    - [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  unit_size: 1.26
+  subdivide: 1
+
+boundaries:
+  left: reflect
+  bottom: reflect
+  right: reflect
+  top: reflect
+
+materials_file: c5g7_materials.yaml
+
+angular:
+  model: ty3
+  M: 12
+
+solver:
+  keff_tol: 1e-10
+  max_outer: 6000
+
+cases:
+  - {"name": "M8_S2", "M": 8, "subdivide": 2, "kref": 1.33367}
+  - {"name": "M12_S4", "M": 12, "subdivide": 4, "kref": 1.33367}
+  - {"name": "M16_S4", "M": 16, "subdivide": 4, "kref": 1.33367}

@@ -1,0 +1,8 @@
+# C5G7 run logs (resumable computation logs, not source)
+c5g7_run.log
+examples/c5g7_run.log
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
