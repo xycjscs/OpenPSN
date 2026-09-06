@@ -1,12 +1,45 @@
 # OpenPSN
 
-Multi-group **Phase Space Nodal (PSN)** neutron transport solver for 2-D
-Cartesian cores — a faithful, modernized reproduction of the PSN nodal
-method (Chao et al., *Annals of Nuclear Energy* 240 (2027) 112707), rebuilt
-as a clean, YAML-driven Python package.
+**Transport accuracy, diffusion-code simplicity.**
+
+OpenPSN is a deterministic neutron transport solver built on the **Phase
+Space Nodal method (PSN)**: it solves the transport equation with the same
+machinery as a diffusion code, yet delivers transport-grade accuracy — with
+**no ray effects**, by construction. Multi-group (1 / 2 / 7 groups
+verified), 2-D Cartesian cores, a faithful, modernized reproduction of the
+PSN nodal method (Chao, Li & Chen, *Annals of Nuclear Energy* 240 (2027)
+112707), rebuilt as a clean, YAML-driven Python package **plus a pure-JS
+in-browser engine**.
+
+🌐 **Try it live:** <https://openpsn-ai.com> — the checkerboard benchmark
+runs entirely in your browser (no server, no dependencies), converging
+k<sub>eff</sub> to 10⁻¹⁰ in a few seconds, with the converged scalar-flux
+field rendered on screen.
 
 **Python 启动即可**：`python -m psn2d run <problem.yaml>`。任意群数（1 / 2 / 7
 群已验证），任意几何（材料网格 + 边界），角向/空间离散与收敛参数全部用户可配。
+
+---
+
+## 0. 在线演示（in-browser engine）
+
+`docs/` 目录下是一个自包含的静态站点（GitHub Pages，<https://openpsn-ai.com>）：
+
+- **psn.js** — PSN 通用模型的纯 JavaScript 移植（641 行，无依赖），与 Python
+  参考实现逐点咬合（24/24 点，max Δk<sub>eff</sub> = 4.8×10⁻¹⁰）。
+- 浏览器内实时求解 1 群棋盘基准：选吸收体强弱 / 空间细分 S / 方位角段 M /
+  收敛容差，点 Run，几秒收敛到 10⁻¹⁰，并渲染收敛曲线与收敛后的标量通量场。
+- 页面同时内嵌原论文（Chao et al. 2027）的图 1/3/6/7/8/10（角度收敛趋势、
+  误差热图、射线效应 MOC vs PSN 对比、BWR 几何）与 OpenPSN 的 C5G7 功率分布，
+  标注出处。
+- 本地预览：`cd docs && python3 -m http.server 8899` →
+  <http://127.0.0.1:8899/>（需 http，因 `fig3ref.json` 用 `fetch` 加载）。
+
+> **修过的 bug（2026-09）**：旧版 `tick()` 收敛分支引用了 Run 回调闭包里的
+> `t0`（顶层函数不可见），收敛瞬间抛 `ReferenceError`，导致 ① 通量热图不绘制、
+> ② `state.running` 永为 true → Run 按钮永久禁用、第二题无法运行。修复：
+> `t0` 提升到 `state.t0`，并把"解锁按钮/写结果"放在 `drawHeat` 之前，绘图包
+> try/catch —— 任何绘制错误都不再卡死求解器。
 
 ---
 
@@ -108,6 +141,11 @@ OpenPSN/
 │   ├── model.py      #   YAML 解析
 │   ├── solver.py     #   多群 PSN 节点求解器（稀疏+向量化）
 │   └── node.py       #   节点内插/消元
+├── docs/             # 在线演示站（GitHub Pages → openpsn-ai.com）
+│   ├── index.html    #   产品页 + 浏览器内求解器
+│   ├── psn.js        #   纯 JS PSN 引擎（无依赖）
+│   ├── fig3ref.json  #   论文 Fig.3 60 点复现数据（页面比对用）
+│   └── img/          #   内嵌插图（原论文 Fig.1/3/6/7/8/10 + C5G7 功率）
 ├── examples/         # 论文问题输入（1群/2群/7群）+ C5G7 数据与脚本
 ├── snapshot/         # 原始复现快照（core/ + drivers/ + 数据/图/日志）
 ├── requirements.txt
