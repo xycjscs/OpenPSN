@@ -41,8 +41,8 @@ validation on the C5G7 MOX benchmark}
 \begin{abstract}
 We present \textbf{OpenPSN}, a self-contained, multi-group implementation of
 the \emph{Phase Space Nodal} (PSN) method for two-dimensional Cartesian
-neutron transport, together with a rigorous validation against the OECD/NEA
-C5G7 MOX benchmark. PSN reformulates the transport problem as a coupled
+neutron transport, together with a rigorous validation against the OECD
+Nuclear Energy Agency (NEA) C5G7 MOX benchmark. PSN reformulates the transport problem as a coupled
 system of node-level diffusion-like equations with parabolic intra-nodal flux
 representations and angular-phase corrections, so that a nodal (coarse-mesh)
 code can reproduce transport physics at a fraction of the mesh cost of
@@ -51,7 +51,8 @@ discrete-ordinates or characteristics methods.
 We contribute two complementary results.
 \emph{First}, a faithful, fully-vectorised, sparse re-implementation that
 reproduces the published PSN paper to within a few pcm on 248 independent
-eigenvalue data points (checkerboard and BWR bundle problems), while
+eigenvalue data points (checkerboard and boiling-water-reactor (BWR)
+bundle problems), while
 eliminating the memory blow-up that made the original dense formulation
 infeasible: the smallest C5G7 case (2601 nodes, $M=12$) already needs a
 $63{,}036^{2}$ dense system matrix ($\sim$\SI{32}{\giga\byte} before any
@@ -163,8 +164,10 @@ The three optimisations that make the method practical are:
   before any factorisation workspace, and the
   $4\times$ refinement (10404 nodes, $250{,}920$ unknowns) would need
   $\sim$\SI{504}{\giga\byte} --- the root cause of the original
-  out-of-memory failures. We assemble in COO ($\sim$\SI{14}{\mega\byte} and
-  $\sim$\SI{54}{\mega\byte} respectively) and solve in CSC, so arbitrary node
+  out-of-memory failures. We assemble in coordinate (COO) format
+  ($\sim$\SI{14}{\mega\byte} and
+  $\sim$\SI{54}{\mega\byte} respectively) and solve in
+  compressed-sparse-column (CSC) format, so arbitrary node
   counts are memory-safe; the 10404-node case converges to $10^{-10}$ in
   $\sim$54~min on a single core.
 
@@ -227,15 +230,17 @@ Fig.~12 BWR bundle, with Gd (2g) & 60 & within plot reading \\
 All 248 data points are reproduced in single-process serial runs with peak
 memory $<\SI{2.5}{\giga\byte}$. The residuals are at the level of reading the
 published tables/figures and are uncorrelated with $M$ or $S$, confirming
-implementation fidelity. The full data and per-point logs are shipped in
-\texttt{snapshot/data/}.
+implementation fidelity. The full point-by-point comparison is tabulated in
+Appendix~A (Tables~\ref{tab:appA}--\ref{tab:appD}); the complete data and
+per-point logs are shipped in \texttt{snapshot/data/}.
 
 \section{C5G7 MOX benchmark}
 
 \subsection{Configuration}
 
-C5G7 is the OECD/NEA MOX benchmark~\cite{nea2003,smith2004}, the standard
-test for UOX/MOX inter-cell transport: 17$\times$17-pin fuel assemblies on a
+C5G7 is the OECD Nuclear Energy Agency (NEA) mixed-oxide (MOX)
+benchmark~\cite{nea2003,smith2004}, the standard test for uranium-oxide
+(UOX)/MOX inter-cell transport: 17$\times$17-pin fuel assemblies on a
 1.26~cm pin pitch (UO$_2$ plus three MOX enrichments), guide tubes and
 fission chambers, in a 7-group structure. (The C5G7 family was later extended
 to time-dependent calculations~\cite{c5g7td}; we solve the steady 2-D
@@ -362,7 +367,8 @@ low-order SN codes in the literature share (Section~4.5).
 
 To have a method contrast on identical data and geometry, we compiled and ran
 OpenMOC~\cite{openmoc} on the same C5G7-2D 1/4-core configuration
-(4 azimuthal $\times$ 6 polar angles, CMFD acceleration, tolerance
+(4 azimuthal $\times$ 6 polar angles, coarse-mesh finite-difference (CMFD)
+acceleration, tolerance
 $10^{-5}$), including a 51$\times$51 pin-averaged fission-rate mesh tally.
 OpenMOC is a MOC code with explicit pin (fuel-ring/water-ring) geometry, so
 it is the closest published method to a high-fidelity nodal solution and the
@@ -504,8 +510,9 @@ their respective current/transport approximations.
 
 We built \textbf{OpenPSN}, a clean, multi-group, sparse, vectorised
 implementation of the Phase Space Nodal method, and validated it on two
-levels. On the source paper's problems it reproduces 248 published
-eigenvalue data points to a few pcm while removing the dense-formulation
+levels. On the source paper's problems it reproduces all 248 published
+eigenvalue data points to a few pcm (full point-by-point comparison in
+Appendix~A) while removing the dense-formulation
 memory blow-up
 (exact to $10^{-15}$; the 10404-node C5G7 case assembles in
 $\sim$\SI{54}{\mega\byte} and converges in $\sim$54~min on one core, where
