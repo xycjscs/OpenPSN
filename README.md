@@ -1,6 +1,6 @@
 # OpenPSN
 
-Multi-group **Parabolic Sub-Node (PSN)** neutron transport solver for 2-D
+Multi-group **Phase Space Nodal (PSN)** neutron transport solver for 2-D
 Cartesian cores — a faithful, modernized reproduction of the PSN nodal
 method (Chao et al., *Annals of Nuclear Energy* 240 (2027) 112707), rebuilt
 as a clean, YAML-driven Python package.
@@ -114,7 +114,7 @@ OpenPSN/
 
 ## 8. 方法说明
 
-PSN（Parabolic Sub-Node）节点法在每个节点内以四次抛物线插值表示通量，
+PSN（Phase Space Nodal，相空间节点法）节点法在每个节点内以四次抛物线插值表示通量，
 通过节点内消元得到面流与节点源之间的显式关系，再在节点边界耦合。
 相比传统 SN 差分，PSN 用更少的空间网格达到同等精度；相比 MOC，PSN 不依赖
 追踪方向在网格上的投影，对复杂网格更稳健。细节见原文与 `psn2d/solver.py`

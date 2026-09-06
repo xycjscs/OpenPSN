@@ -1,0 +1,492 @@
+{
+  "source": "NEA/NSC/DOC(2003)16 'Benchmark on Deterministic Transport Calculations Without Spatial Homogenisation' (C5G7 MOX, 2D problem) — refs/c5g7_mox_original.pdf",
+  "reference": {
+    "code": "MCNP (multi-group, 300000 histories)",
+    "keff": 1.18655,
+    "stat_err_pct": 0.008
+  },
+  "reference_2D_multi-group_table3": {
+    "MCNP": {
+      "keff": 1.18655,
+      "pct": 0.0
+    },
+    "VIM": {
+      "keff": 1.187035,
+      "pct": -0.041
+    },
+    "MCNP-LANL": {
+      "keff": 1.18638,
+      "pct": -0.014
+    },
+    "KENO": {
+      "keff": 1.18652,
+      "pct": -0.003
+    }
+  },
+  "codes_2d_table17": [
+    {
+      "code": "APOLLO2",
+      "keff": 1.18618,
+      "pct": -0.031,
+      "method": "method of characteristics",
+      "angular": "MOC",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 0.36,
+      "power_RMS_pct": 0.78
+    },
+    {
+      "code": "CRONOS2",
+      "keff": 1.18323,
+      "pct": -0.28,
+      "method": "DIFFUSION",
+      "angular": "P1",
+      "spatial": "finite element",
+      "power_MRE_pct": 1.21,
+      "power_RMS_pct": 1.73
+    },
+    {
+      "code": "CRONOS2-SN",
+      "keff": 1.18338,
+      "pct": -0.267,
+      "method": "discrete ordinates",
+      "angular": "SN-FEM",
+      "spatial": "finite element",
+      "power_MRE_pct": 0.6,
+      "power_RMS_pct": 1.0
+    },
+    {
+      "code": "DORT-GRS",
+      "keff": 1.184818,
+      "pct": -0.146,
+      "method": "discrete ordinates",
+      "angular": "SN-FDM",
+      "spatial": "cartesian FDM, linear",
+      "power_MRE_pct": 0.34,
+      "power_RMS_pct": 0.41
+    },
+    {
+      "code": "COHINT",
+      "keff": 1.1753,
+      "pct": -0.948,
+      "method": "P2 interface current",
+      "angular": "P2",
+      "spatial": "cartesian, flat",
+      "power_MRE_pct": 2.34,
+      "power_RMS_pct": 3.58
+    },
+    {
+      "code": "CHAPLET",
+      "keff": 1.18656,
+      "pct": 0.001,
+      "method": "method of characteristics",
+      "angular": "MOC",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 0.15,
+      "power_RMS_pct": 0.24
+    },
+    {
+      "code": "TWODANT",
+      "keff": 1.186677,
+      "pct": 0.011,
+      "method": "discrete ordinates",
+      "angular": "SN-FDM",
+      "spatial": "cartesian FDM, linear",
+      "power_MRE_pct": 0.9,
+      "power_RMS_pct": 1.04
+    },
+    {
+      "code": "DeCART",
+      "keff": 1.1866,
+      "pct": 0.004,
+      "method": "method of characteristics",
+      "angular": "MOC",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 0.24,
+      "power_RMS_pct": 0.46
+    },
+    {
+      "code": "CRX",
+      "keff": 1.18813,
+      "pct": 0.133,
+      "method": "method of characteristics",
+      "angular": "MOC",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 0.19,
+      "power_RMS_pct": 0.3
+    },
+    {
+      "code": "MCCG3D",
+      "keff": 1.18657,
+      "pct": 0.002,
+      "method": "method of characteristics",
+      "angular": "MOC",
+      "spatial": "QSD-linear, arbitrary mesh",
+      "power_MRE_pct": 0.11,
+      "power_RMS_pct": 0.17
+    },
+    {
+      "code": "WIMS-SH",
+      "keff": 1.186284,
+      "pct": -0.022,
+      "method": "surface harmonics",
+      "angular": "G3/P2",
+      "spatial": "cartesian, 1pt/cell",
+      "power_MRE_pct": 1.04,
+      "power_RMS_pct": 1.57
+    },
+    {
+      "code": "SUAHM-2D",
+      "keff": 1.186284,
+      "pct": -0.022,
+      "method": "surface harmonics",
+      "angular": "G3/P2",
+      "spatial": "cartesian, 1pt/cell",
+      "power_MRE_pct": 1.04,
+      "power_RMS_pct": 1.57
+    },
+    {
+      "code": "UNGKRO",
+      "keff": 1.18523,
+      "pct": -0.111,
+      "method": "MOC stochastic rays",
+      "angular": "MOC-stoch",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 0.91,
+      "power_RMS_pct": 1.28
+    },
+    {
+      "code": "STRUCTURE",
+      "keff": 1.185228,
+      "pct": -0.111,
+      "method": "collision probability+SN syn.",
+      "angular": "CP+SN",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 0.62,
+      "power_RMS_pct": 1.24
+    },
+    {
+      "code": "GEFCOP",
+      "keff": 1.1863,
+      "pct": -0.021,
+      "method": "first collision probability",
+      "angular": "FCP",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 1.5,
+      "power_RMS_pct": 2.54
+    },
+    {
+      "code": "VARIANT-ISE",
+      "keff": 1.187454,
+      "pct": 0.076,
+      "method": "nodal spherical harmonics + integral transport",
+      "angular": "Pn-nodal",
+      "spatial": "finite element",
+      "power_MRE_pct": 0.11,
+      "power_RMS_pct": 0.17
+    },
+    {
+      "code": "VARIANT-SE",
+      "keff": 1.184945,
+      "pct": -0.135,
+      "method": "nodal spherical harmonics",
+      "angular": "Pn-nodal",
+      "spatial": "finite element",
+      "power_MRE_pct": 0.28,
+      "power_RMS_pct": 0.35
+    },
+    {
+      "code": "PARTISN",
+      "keff": 1.18637,
+      "pct": -0.015,
+      "method": "discrete ordinates",
+      "angular": "SN",
+      "spatial": "diamond differencing",
+      "power_MRE_pct": 0.23,
+      "power_RMS_pct": 0.33
+    },
+    {
+      "code": "PERICLES",
+      "keff": 1.18658,
+      "pct": 0.003,
+      "method": "discrete ordinates",
+      "angular": "SN",
+      "spatial": "unstructured quad, bilinear",
+      "power_MRE_pct": 0.28,
+      "power_RMS_pct": 0.37
+    },
+    {
+      "code": "DORT-ORNL",
+      "keff": 1.18496,
+      "pct": -0.134,
+      "method": "discrete ordinates",
+      "angular": "SN-FDM",
+      "spatial": "cartesian FDM, linear",
+      "power_MRE_pct": 0.41,
+      "power_RMS_pct": 0.49
+    },
+    {
+      "code": "HELIOS",
+      "keff": 1.193299,
+      "pct": 0.569,
+      "method": "collision probability",
+      "angular": "CP",
+      "spatial": "flat source, arbitrary mesh",
+      "power_MRE_pct": 0.52,
+      "power_RMS_pct": 0.77
+    }
+  ],
+  "pin_power_table18": {
+    "APOLLO2": {
+      "max_pin_pct": 0.03,
+      "min_pin_pct": 3.1,
+      "max_err_pct": 4.16
+    },
+    "CRONOS2": {
+      "max_pin_pct": 0.9,
+      "min_pin_pct": 4.0,
+      "max_err_pct": 5.95
+    },
+    "CRONOS2-SN": {
+      "max_pin_pct": 0.34,
+      "min_pin_pct": 4.0,
+      "max_err_pct": 4.98
+    },
+    "DORT-GRS": {
+      "max_pin_pct": 0.48,
+      "min_pin_pct": 0.02,
+      "max_err_pct": 1.21
+    },
+    "COHINT": {
+      "max_pin_pct": -4.11,
+      "min_pin_pct": 8.11,
+      "max_err_pct": 11.36
+    },
+    "CHAPLET": {
+      "max_pin_pct": -0.13,
+      "min_pin_pct": 0.69,
+      "max_err_pct": 0.93
+    },
+    "TWODANT": {
+      "max_pin_pct": 1.43,
+      "min_pin_pct": -0.03,
+      "max_err_pct": 2.32
+    },
+    "DeCART": {
+      "max_pin_pct": -0.23,
+      "min_pin_pct": 1.68,
+      "max_err_pct": 1.84
+    },
+    "CRX": {
+      "max_pin_pct": 0.01,
+      "min_pin_pct": 0.71,
+      "max_err_pct": 1.07
+    },
+    "MCCG3D": {
+      "max_pin_pct": -0.01,
+      "min_pin_pct": 0.47,
+      "max_err_pct": 0.63
+    },
+    "UNGKRO": {
+      "max_pin_pct": 0.19,
+      "min_pin_pct": 1.94,
+      "max_err_pct": 4.21
+    },
+    "STRUCTURE": {
+      "max_pin_pct": -0.71,
+      "min_pin_pct": 4.36,
+      "max_err_pct": 4.52
+    },
+    "GEFCOP": {
+      "max_pin_pct": -0.1,
+      "min_pin_pct": -1.32,
+      "max_err_pct": 10.16
+    },
+    "VARIANT-ISE": {
+      "max_pin_pct": -0.07,
+      "min_pin_pct": 0.22,
+      "max_err_pct": 0.54
+    },
+    "VARIANT-SE": {
+      "max_pin_pct": 0.39,
+      "min_pin_pct": 0.11,
+      "max_err_pct": 1.13
+    },
+    "PARTISN": {
+      "max_pin_pct": 0.18,
+      "min_pin_pct": 0.18,
+      "max_err_pct": 5.23
+    },
+    "PERICLES": {
+      "max_pin_pct": -0.16,
+      "min_pin_pct": -0.21,
+      "max_err_pct": 0.92
+    },
+    "DORT-ORNL": {
+      "max_pin_pct": 0.57,
+      "min_pin_pct": -0.22,
+      "max_err_pct": 1.3
+    },
+    "HELIOS": {
+      "max_pin_pct": 0.49,
+      "min_pin_pct": 0.54,
+      "max_err_pct": 2.27
+    }
+  },
+  "other_literature": [
+    {
+      "code": "STELLA-P1 (M&C 2017)",
+      "keff": 1.18426,
+      "ref": "PEACH 1.18716",
+      "diff_pcm": -290,
+      "note": "P1 diffusion, homogenized pin model, C5G7-2D"
+    },
+    {
+      "code": "STELLA-SP3 (M&C 2017)",
+      "keff": 1.18561,
+      "ref": "PEACH 1.18716",
+      "diff_pcm": -155,
+      "note": "SP3 nodal, homogenized pin model, C5G7-2D"
+    },
+    {
+      "code": "SPHINCS no-SPH (NET 2021)",
+      "keff": 1.18337,
+      "ref": "nTRACER 1.18653",
+      "diff_pcm": -225,
+      "note": "MOC w/o self-shielding, C5G7-2D core"
+    },
+    {
+      "code": "SPHINCS w-SPH (NET 2021)",
+      "keff": 1.18625,
+      "ref": "nTRACER 1.18653",
+      "diff_pcm": -20,
+      "note": "MOC w/ self-shielding, C5G7-2D core"
+    },
+    {
+      "code": "SuperMC (arXiv:1306.5077)",
+      "keff": 1.182584,
+      "ref": "1.18655",
+      "diff_pcm": -397,
+      "note": "MOC, C5G7-MOX full 2x2 core"
+    }
+  ],
+  "notes": [
+    "NEA 2003 Table 17: 20 deterministic codes vs MCNP reference 1.186550 (multi-group, 7-group transport-corrected data).",
+    "Pattern: pure P1 diffusion low by ~280 pcm; SN low by 100-270 pcm; MOC within ~+130 pcm; Pn-nodal (VARIANT-ISE) +76 pcm with best power (MRE 0.11%).",
+    "Table 3 is the 2D multi-group reference solutions: MCNP 1.186550, MCNP-LANL 1.186380, KENO 1.186520, VIM 1.187035."
+  ],
+  "reference_provenance": {
+    "1.18655": "NEA/NSC/DOC(2003)16 Table 3 - MCNP 2D multi-group reference (300000 hist, +/-(0.008%)",
+    "1.18646": "C5G7-TD (Joo et al., NET 2022) initial steady-state, high-resolution; INL cites as 1.186456",
+    "note": "INL Rattlesnake paper (Wang et al.) states: 'the reference multiplication factor (1.18655) in the benchmark report is about 10 pcm higher' than the converged limit (~1.18645). So 1.18646 is the better high-fidelity reference."
+  },
+  "rattlesnake_inl_convergence": {
+    "source": "INL (Wang et al.), C5G7-2D, Rattlesnake (MOOSE), ref 1.186456",
+    "converged_keff": 1.186446,
+    "note": "converges to ~1 pcm; Table IV: coarse (Mesh8,p1,NA8)=81.9 pcm -> fine (Mesh32,p2,NA64)<10 pcm; angular & spatial errors reduce monotonically"
+  },
+  "diffusion_family_summary": {
+    "pure_P1_diffusion": [
+      {
+        "code": "CRONOS2 (FEM)",
+        "keff": 1.18323,
+        "diff_pcm": -280,
+        "power_rms_pct": 1.73,
+        "power_mre_pct": 1.21
+      },
+      {
+        "code": "STELLA-P1 (M&C2017, hom-pinned)",
+        "keff": 1.18426,
+        "diff_pcm": -290,
+        "ref": "PEACH 1.18716"
+      }
+    ],
+    "SN_low_order": [
+      {
+        "code": "CRONOS2-SN (FEM)",
+        "keff": 1.18338,
+        "diff_pcm": -267,
+        "power_rms_pct": 1.0
+      },
+      {
+        "code": "DORT-GRS (FDM)",
+        "keff": 1.184818,
+        "diff_pcm": -146
+      },
+      {
+        "code": "DORT-ORNL (FDM)",
+        "keff": 1.18496,
+        "diff_pcm": -134
+      },
+      {
+        "code": "PARTISN (diamond diff)",
+        "keff": 1.18637,
+        "diff_pcm": -15
+      },
+      {
+        "code": "PERICLES (unstructured)",
+        "keff": 1.18658,
+        "diff_pcm": 3
+      }
+    ],
+    "nodal_Pn_high_order": [
+      {
+        "code": "VARIANT-SE (FEM)",
+        "keff": 1.184945,
+        "diff_pcm": -135,
+        "power_rms_pct": 0.35
+      },
+      {
+        "code": "VARIANT-ISE (FEM+integral transport)",
+        "keff": 1.187454,
+        "diff_pcm": 76,
+        "power_rms_pct": 0.17,
+        "power_mre_pct": 0.11
+      },
+      {
+        "code": "WIMS-SH SUHAM-2D (G3/P2)",
+        "keff": 1.186284,
+        "diff_pcm": -22
+      }
+    ],
+    "MOC_reference_cluster": [
+      {
+        "code": "CHAPLET",
+        "keff": 1.18656,
+        "diff_pcm": 1
+      },
+      {
+        "code": "MCCG3D",
+        "keff": 1.18657,
+        "diff_pcm": 2
+      },
+      {
+        "code": "DeCART",
+        "keff": 1.1866,
+        "diff_pcm": 4
+      },
+      {
+        "code": "APOLLO2",
+        "keff": 1.18618,
+        "diff_pcm": -31
+      },
+      {
+        "code": "TWODANT",
+        "keff": 1.186677,
+        "diff_pcm": 11
+      }
+    ],
+    "worst": [
+      {
+        "code": "COHINT (P2 interface current)",
+        "keff": 1.1753,
+        "diff_pcm": -948
+      }
+    ]
+  },
+  "our_psn2d": {
+    "keff": 1.1886124,
+    "diff_pcm_vs_1.18646": 215,
+    "diff_pcm_vs_1.18655": 206,
+    "note": "positive side, same side as CRX(+133)/VARIANT-ISE(+76); consistent with node homogenization (no in-node self-shielding) bias, not discretization error (S=1->2 moves only ~4 pcm)"
+  }
+}
