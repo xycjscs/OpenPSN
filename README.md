@@ -78,19 +78,21 @@ cases:                   # 批量：M=方位角段数, S=空间细分, model=psn
 |------|------|------|------|
 | Fig.3 棋盘（1 群） | `checkerboard_1g.yaml` | 与快照逐点咬合 | 原文 Fig.3（<4 pcm） |
 | BWR 2 群束 | `bwr_bundle_2g.yaml` | Δ=+28.3 pcm（N=2, M=8） | 原文 Fig.8/10 |
-| C5G7-2D 1/4 芯（7 群） | `c5g7_2d_quarter_core.yaml` | k=1.18861（M12_S1） | MCNP5 1.18646，+215 pcm |
+| C5G7-2D 1/4 芯（7 群） | `c5g7_2d_quarter_core.yaml` | k=1.18861（M12_S1） | 1.18646（McGraw PHYSOR 2014 高保真），+215 pcm |
 | C5G7 单 UO2 组件 | `c5g7_uo2_assembly.yaml` | k=1.34030 | nTRACER 1.33367 |
 
-完整 348 点复现数据与图见 `snapshot/`（原始快照仓库）。
+完整 248 点复现数据与图见 `snapshot/`（原始快照仓库）。
 
 ## 6. C5G7 基准结果
 
 C5G7-2D MOX 燃料组件（51×51 pin，2×2 燃料块 + L 形水反射，7 群）：
 
 ```
-PSN2D   1.18861   +215 pcm   (vs MCNP5 1.18646)
-OpenMOC 1.18582   −64  pcm   (本机实测，官方 c5g7-2d.py 几何)
-MCNP5   1.18646    参考 (NEA 6048 / 2003 原文 MCNP 1.18655)
+PSN2D   1.18861   +215 pcm   (vs 1.18646)
+OpenMOC 1.18582   -64  pcm   (本机实测，官方 c5g7-2d.py 几何)
+参考    1.18646    McGraw et al. (PHYSOR 2014) LDG 高保真值
+                      (Rattlesnake 收敛极限 1.186446)
+参考    1.18655    MCNP5，NEA 2003 原文 Table 3（偏高约 10 pcm）
 ```
 
 - 空间细化 S=1→2（2601→10404 节点）k 仅动 ~4 pcm → 离散已收敛。

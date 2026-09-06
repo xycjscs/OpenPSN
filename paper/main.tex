@@ -18,6 +18,7 @@
 \graphicspath{{figures/}}
 \newcommand{\keff}{\kappa_{\mathrm{eff}}}
 \newcommand{\pcm}{\,\mathrm{pcm}}
+\newcommand{\doi}[1]{\,\href{https://doi.org/#1}{doi:#1}}
 \renewcommand{\arraystretch}{1.25}
 
 \title{\bf OpenPSN: a multi-group Phase Space Nodal solver and its
@@ -49,12 +50,13 @@ discrete-ordinates or characteristics methods.
 
 We contribute two complementary results.
 \emph{First}, a faithful, fully-vectorised, sparse re-implementation that
-reproduces the published PSN paper to within a few pcm on 348 independent
+reproduces the published PSN paper to within a few pcm on 248 independent
 eigenvalue data points (checkerboard and BWR bundle problems), while
 eliminating the memory blow-up that made the original dense formulation
-infeasible (a dense system matrix for a $10{\times}10$-node problem exceeds
-\SI{159}{\giga\byte}; our sparse form is exact to $10^{-15}$ and scales to
-arbitrary node counts).
+infeasible: the smallest C5G7 case (2601 nodes, $M=12$) already needs a
+$63{,}036^{2}$ dense system matrix ($\sim$\SI{32}{\giga\byte} before any
+factorisation), and our sparse form is exact to $10^{-15}$ and assembles the
+$10{,}404$-node refinement in $\sim$\SI{54}{\mega\byte}.
 \emph{Second}, a benchmark study of C5G7. On the 7-group, 1/4-core C5G7
 configuration we obtain $\keff=1.18861$ for the nodal PSN solution, in
 agreement with a direct OpenMOC (method-of-characteristics) calculation to
@@ -88,10 +90,10 @@ node sources, and neighbouring nodes are coupled through those currents. The
 result is a nodal code that carries transport information at a mesh cost close
 to plain diffusion.
 
-Two gaps remained. First, the published PSN paper presents a dense,
-single-group-leaning reference implementation that is not convenient to run
-to convergence on multi-group, coarse-core problems, and whose dense assembly
-does not scale. Second, the method had not been exercised on a standard,
+Two gaps remained. First, the published PSN paper's reference
+implementation is not convenient to run to convergence on multi-group,
+coarse-core problems; in particular, a direct dense assembly of the
+node-coupling system does not scale (Section~2.2). Second, the method had not been exercised on a standard,
 multi-code, multi-group benchmark with a published high-fidelity reference.
 
 In this work we (i) re-implement PSN as a clean, multi-group,
@@ -109,7 +111,8 @@ Section~3 documents the reproduction of the published results.
 Section~4 describes the C5G7 configuration, the data-fidelity check, the
 single-assembly and 1/4-core eigenvalue results, the OpenMOC comparison
 (including power), and the comparison to the published diffusion/SN/nodal
-literature. Section~5 concludes.
+literature. Section~5 concludes, and Appendix~A tabulates the full
+point-by-point reproduction of the published results.
 
 \section{The PSN method and the OpenPSN implementation}
 
@@ -153,12 +156,17 @@ The three optimisations that make the method practical are:
 \begin{enumerate}[label=\textbf{(\roman*)}, leftmargin=2.2em]
 \item \textbf{Sparse assembly (fixes the memory blow-up).}
   The nodal coupling matrix has only $\sim$9 non-zeroes per row (the node
-  couples to its own face-current unknowns and to the eight neighbours).
-  The natural dense $\texttt{np.zeros}((N,4)^2)$ assembly needs
-  \SI{159}{\giga\byte} for a mere $10{\times}10$-node problem and is the root
-  cause of the original out-of-memory failures. We assemble in COO and solve
-  in CSC, so arbitrary node counts are memory-safe (peak $<$\SI{3}{\giga\byte}
-  for the 10404-node C5G7 case).
+  couples to its own face-current unknowns and to its neighbours). For $M$
+  angular segments per face the system has $\sim 2M\,N_xN_y$ unknowns; the
+  smallest C5G7 case (2601 nodes, $M=12$) already has $63{,}036$ unknowns,
+  so the natural dense $63{,}036^{2}$ array alone is $\sim$\SI{32}{\giga\byte}
+  before any factorisation workspace, and the
+  $4\times$ refinement (10404 nodes, $250{,}920$ unknowns) would need
+  $\sim$\SI{504}{\giga\byte} --- the root cause of the original
+  out-of-memory failures. We assemble in COO ($\sim$\SI{14}{\mega\byte} and
+  $\sim$\SI{54}{\mega\byte} respectively) and solve in CSC, so arbitrary node
+  counts are memory-safe; the 10404-node case converges to $10^{-10}$ in
+  $\sim$54~min on a single core.
 
 \item \textbf{Vectorised node operators.}
   The node-state map is strictly linear in the $(J_4,q)$ unknowns. We probe
@@ -201,7 +209,7 @@ Table~\ref{tab:repro} summarises the maximum deviations.
 \caption{Reproduction of the published PSN paper
 (Ref.~\cite{psn2027}). ``err'' is the absolute difference
 $(\keff-\keff^{\mathrm{ref}})\times10^5$ in pcm. The reference values are
-the OpenMC values used in the paper.}
+the OpenMC values used in the paper~\cite{openmc2015}.}
 \label{tab:repro}
 \small
 \begin{tabular}{lcc}
@@ -216,7 +224,7 @@ Fig.~12 BWR bundle, with Gd (2g) & 60 & within plot reading \\
 \end{tabular}
 \end{table}
 
-All 348 data points are reproduced in single-process serial runs with peak
+All 248 data points are reproduced in single-process serial runs with peak
 memory $<\SI{2.5}{\giga\byte}$. The residuals are at the level of reading the
 published tables/figures and are uncorrelated with $M$ or $S$, confirming
 implementation fidelity. The full data and per-point logs are shipped in
@@ -226,27 +234,31 @@ implementation fidelity. The full data and per-point logs are shipped in
 
 \subsection{Configuration}
 
-C5G7 is the OECD/NEA MOX benchmark (Cavarec et al.), the standard test for
-UOX/MOX inter-cell transport with a 17$\times$17 pin lattice,
-1.26~cm pitch, five fuel groups and a 7-group structure. We solve the
-\textbf{C5G7-2D 1/4-core} problem: a 2$\times$2 block of fuel assemblies
-(UO2 on the diagonal, MOX on the anti-diagonal) plus an L-shaped one-assembly
-water reflector, 51$\times$51 pins, 64.26~cm on a side. Following
-Ref.~\cite{nea2003} we apply \emph{vacuum} boundaries on the two open (right,
-top) edges and \emph{reflective} boundaries on the two symmetry (left, bottom)
-edges. Each pin is treated as a single homogenised node
-(fuel+water, fuel area fraction $f$), i.e.\ the standard pin-homogenised nodal
-model; the 7-group cross sections are the published C5G7 multi-group set.
+C5G7 is the OECD/NEA MOX benchmark~\cite{nea2003,smith2004}, the standard
+test for UOX/MOX inter-cell transport: 17$\times$17-pin fuel assemblies on a
+1.26~cm pin pitch (UO$_2$ plus three MOX enrichments), guide tubes and
+fission chambers, in a 7-group structure. (The C5G7 family was later extended
+to time-dependent calculations~\cite{c5g7td}; we solve the steady 2-D
+problem.) We solve the \textbf{C5G7-2D 1/4-core} problem: a 2$\times$2 block
+of fuel assemblies (UO2 on the diagonal, MOX on the anti-diagonal) plus an
+L-shaped one-assembly water reflector, 51$\times$51 pins, 64.26~cm on a side.
+Following Ref.~\cite{nea2003} we apply \emph{vacuum} boundaries on the two
+open (right, top) edges and \emph{reflective} boundaries on the two symmetry
+(left, bottom) edges. Each pin cell is a single homogenised node
+(fuel$+$water for fuel pins; pure water for reflector and guide pins), i.e.\
+the standard pin-homogenised nodal model; the 7-group cross sections are the
+published C5G7 multi-group set.
 
 Two reference eigenvalues are in the literature and we report against both:
 \begin{itemize}
 \item $\keff^{\mathrm{MCNP}}=1.18655$ ($\pm0.008\%$), the 2-D multi-group
-  MCNP value in the original NEA report~\cite{nea2003};
-\item $\keff=1.18646$, the initial steady-state high-fidelity reference of
-  C5G7-TD~\cite{c5g7td}, quoted in the INL Rattlesnake study as 1.186456.
-  The Rattlesnake study explicitly notes the benchmark-report value 1.18655
-  is $\sim$\SI{10}{pcm} high, with a converged high-fidelity limit of
-  $\keff=1.186446$~\cite{rattlesnake}.
+  MCNP value in the original NEA report~\cite{nea2003,smith2004};
+\item $\keff=1.18646$ (1.186456 to the printed digit), the 2-D
+  resolved-fuel-pin high-fidelity value of McGraw \emph{et
+  al.}~\cite{mcgraw2014}, quoted as the reference in the INL Rattlesnake
+  convergence study~\cite{rattlesnake}, which explicitly notes that the
+  benchmark-report value 1.18655 is $\sim$10~pcm high and converges to
+  $\keff=1.186446$ ($\sim$1~pcm from the McGraw reference).
 \end{itemize}
 We use 1.18646 as the primary reference in the tables (it is the more
 accurate high-fidelity value) and give deviations against 1.18655 where the
@@ -262,11 +274,14 @@ homogenised UO2 pin, computed directly from the cross-section matrices,
   \left(I-\tfrac{S_{\mathrm{in}}}{\Sigma_t}\right)^{-1}
   \mathrm{diag}(\chi\nu\Sigma_f)\right].
 \]
-OpenPSN gives $k_\infty^{\mathrm{UO2}}=1.32936$, which matches the
-published pin-homogenised (no-self-shielding) $k_\infty$ of
-1.32936 quoted in SPHINCS/nTRACER~\cite{sphincs} \emph{to the printed digit}.
-This is the single strongest check that the group ordering, scattering
-matrix, fission spectrum and source construction are all wired correctly.
+OpenPSN gives $k_\infty^{\mathrm{UO2}}=1.32936$, which matches
+\emph{to the printed digit} the UO$_2$--$0.95\rho$ single-assembly
+nTRACER reference $1.32936$ tabulated in SPHINCS~\cite{sphincs}
+(Table~1). (The nominal-$\rho$ UO$_2$ row is $1.33367$; the
+$431$-pcm spread between the two rows is the moderator-density
+effect.) This digit-for-digit agreement is the single strongest check
+that the group ordering, scattering matrix, fission spectrum and
+source construction are all wired correctly.
 
 \subsection{Single fuel assembly}
 
@@ -291,15 +306,20 @@ M16\_S4 & 4624  & 1.3402994 & $+663$ pcm \\
 \end{tabular}
 \end{table}
 
-The bias is insensitive to $M$ and $S$ (it moves by $<$\SI{15}{pcm} across the
-whole sweep), so it is not a discretisation error. It decomposes cleanly:
-the solver-independent $k_\infty=1.32936$ (Section~4.2) already
-sits $+649$~pcm above the homogeneous limit and captures the real
-assembly geometry (guide tubes and the fission-chamber water holes), while
-the nTRACER reference additionally carries a self-shielding (SPH) correction
-of $\sim$\SI{244}{pcm} (SPHINCS no-SPH $1.33123$ $\rightarrow$ with-SPH
-$1.33367$). Our pin-homogenised PSN model includes the former but not the
-latter, which accounts for essentially the entire gap.
+The bias is insensitive to $M$ and $S$ (it moves by $<\SI{15}{pcm}$ across the
+whole sweep), so it is not a discretisation error. It is a model-form effect:
+the nTRACER reference resolves the pin cell (annular fuel/moderator regions
+and a 7$\times$7 lattice reflector, with explicit self-shielding via fission
+source regions), whereas our nodal model treats each pin as a single
+homogenised node with no intra-node self-shielding correction. SPHINCS
+quantifies precisely this SPH mechanism on the same benchmark: the UO$_2$
+assembly moves from $1.33123$ (no SPH factors) to $1.33367$ (with SPH
+factors) --- $244$~pcm in $\keff$ (its Table~1) --- and the 2-D core error
+moves from $-225$ to $-20$~pcm (its Table~2)~\cite{sphincs}. Our $+663$~pcm
+on the UO$_2$ assembly is of the same sign and order as this
+resolved-vs-homogenised correction, and it is confirmed to be non-
+discretisation by the $4\times$ spatial-refinement test on the 1/4 core
+(Section~4.4).
 
 \subsection{C5G7-2D 1/4 core}
 
@@ -307,7 +327,8 @@ Table~\ref{tab:core} gives the angular/spatial sweep on the full 1/4 core.
 
 \begin{table}[h]
 \centering
-\caption{C5G7-2D 1/4 core. Reference $\keff=1.18646$ (C5G7-TD).
+\caption{C5G7-2D 1/4 core. Reference $\keff=1.18646$
+(McGraw \emph{et al.}~\cite{mcgraw2014}).
 $M$ = azimuthal order, $S$ = spatial sub-division.}
 \label{tab:core}
 \small
@@ -349,7 +370,8 @@ right yardstick for our power distribution.
 
 \begin{table}[h]
 \centering
-\caption{Three-way eigenvalue comparison, C5G7-2D 1/4 core.}
+\caption{Eigenvalue comparison, C5G7-2D 1/4 core. Each $\Delta$ column is
+$(k-k_{\mathrm{ref}})\times10^{5}$ in pcm.}
 \label{tab:three}
 \small
 \begin{tabular}{lccc}
@@ -357,8 +379,9 @@ right yardstick for our power distribution.
 method & $\keff$ & $\Delta$ vs 1.18646 & $\Delta$ vs 1.18655 \\
 \midrule
 OpenPSN (PSN nodal) & 1.18861 & $+215$ pcm & $+206$ pcm \\
-OpenMOC (MOC, 4$\times$6) & 1.18582 & $-64$ pcm & $-201$ pcm \\
-MCNP reference (C5G7-TD) & 1.18646 & 0 & $-9$ pcm \\
+OpenMOC (MOC, 4$\times$6) & 1.18582 & $-64$ pcm & $-73$ pcm \\
+high-fidelity ref.\ (McGraw 2014) & 1.18646 & 0 & $-9$ pcm \\
+MCNP ref.\ (NEA 2003) & 1.18655 & $+9$ pcm & 0 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -402,82 +425,91 @@ literature, and our OpenPSN result.
 \begin{table}[h]
 \centering
 \caption{C5G7-2D $\keff$ by method class (2-D multi-group, homogenised pin
-model unless noted). Reference 1.18655 = original NEA MCNP; 1.18646 =
-C5G7-TD high-fidelity. Our reference is 1.18646.}
+model unless noted). NEA-2003 $k$ values (its Table~17) plus the recent
+P1/SP3 literature. $\Delta$ = $(k-1.18655)\times10^{5}$ in pcm, except where
+stated (STELLA vs its PEACH reference 1.18716; OpenPSN vs 1.18646). The
+original NEA table prints the \emph{relative} per-cent error; the pcm values
+here are recomputed from the printed $k$.}
 \label{tab:lit}
 \small
 \begin{tabular}{llcc}
 \toprule
-method class & code & $\keff$ & $\Delta$ \\
+method class & code & $\keff$ & $\Delta$ (pcm) \\
 \midrule
 \multicolumn{4}{l}{\emph{Pure P1 diffusion}}\\
-diffusion (FEM) & CRONOS2 & 1.18323 & $-280$ (vs .18655)\\
-P1 (pin-hom) & STELLA-P1 & 1.18426 & $-290$ (vs PEACH)\\
+diffusion (FEM) & CRONOS2 & 1.18323 & $-332$ \\
+P1 (pin-hom) & STELLA-P1~\cite{stella2017} & 1.18426 & $-290$ (vs PEACH 1.18716~\cite{peach2009})\\
 \midrule
 \multicolumn{4}{l}{\emph{SN}}\\
-SN-FEM & CRONOS2-SN & 1.18338 & $-267$\\
-SN-FDM & DORT-GRS & 1.18482 & $-146$\\
-SN-FDM & DORT-ORNL & 1.18496 & $-134$\\
-SN (diamond diff.) & PARTISN & 1.18637 & $-15$\\
-SN (unstructured) & PERICLES & 1.18658 & $+3$\\
+SN-FEM & CRONOS2-SN & 1.18338 & $-317$ \\
+SN-FDM & DORT-GRS & 1.18482 & $-173$ \\
+SN-FDM & DORT-ORNL & 1.18496 & $-159$ \\
+SN-FDM & TWODANT & 1.18668 & $+13$ \\
+SN (diamond diff.) & PARTISN & 1.18637 & $-18$ \\
+SN (unstructured) & PERICLES & 1.18658 & $+3$ \\
 \midrule
-\multicolumn{4}{l}{\emph{High-order nodal $P_n$}}\\
-$P_n$-nodal (FEM) & VARIANT-SE & 1.18495 & $-135$\\
-$P_n$-nodal + int.\ transp. & VARIANT-ISE & 1.18745 & $+76$\\
-surface harm.\ (G3/P2) & SUHAM-2D & 1.18628 & $-22$\\
+\multicolumn{4}{l}{\emph{High-order nodal $P_n$ / surface harmonics}}\\
+$P_n$-nodal (FEM) & VARIANT-SE & 1.18495 & $-160$ \\
+$P_n$-nodal + int.\ transp.\ & VARIANT-ISE & 1.18745 & $+90$ \\
+surface harm.\ (G3/P2) & SUHAM-2D & 1.18628 & $-27$ \\
 \midrule
-\multicolumn{4}{l}{\emph{MOC (reference cluster)}}\\
-MOC & CHAPLET & 1.18656 & $+1$\\
-MOC & MCCG3D & 1.18657 & $+2$\\
-MOC & DeCART & 1.18660 & $+4$\\
-MOC & APOLLO2 & 1.18618 & $-31$\\
-MOC & TWODANT & 1.18668 & $+11$\\
-MOC (stochastic rays) & UNGKRO & 1.18523 & $-111$\\
+\multicolumn{4}{l}{\emph{MOC}}\\
+MOC & CHAPLET & 1.18656 & $+1$ \\
+MOC & MCCG3D & 1.18657 & $+2$ \\
+MOC & DeCART & 1.18660 & $+5$ \\
+MOC & APOLLO2 & 1.18618 & $-37$ \\
+MOC & CRX & 1.18813 & $+158$ \\
+MOC (stochastic rays) & UNKGRO & 1.18523 & $-132$ \\
 \midrule
 \multicolumn{4}{l}{\emph{This work}}\\
 \rowcolor{gray!15}
-PSN nodal (pin-hom) & \textbf{OpenPSN} & \textbf{1.18861} & \textbf{$+215$ (vs .18646)}\\
+PSN nodal (pin-hom) & \textbf{OpenPSN} & \textbf{1.18861} & \textbf{$+215$ (vs 1.18646)}\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \emph{Readings.}
 \begin{itemize}
-\item \textbf{Pure P1 diffusion is systematically low by $\sim$280~pcm}
-  (CRONOS2, STELLA-P1): no transport correction and no self shielding.
-\item \textbf{SN is low by 100--270~pcm} (CRONOS2-SN, DORT), with the better
-  differenced / unstructured variants (PARTISN, PERICLES) closing to
-  $\pm$15~pcm.
-\item \textbf{High-order nodal $P_n$} is the nodal family closest to the
-  reference: SUHAM-2D $-22$~pcm, VARIANT-ISE $+76$~pcm (the latter also the
-  best pin power in the original table, MRE 0.11\%).
-\item \textbf{MOC sits within $\pm$31~pcm} (CHAPLET, MCCG3D, DeCART, APOLLO2,
-  TWODANT); the high-fidelity Rattlesnake limit is $1.186446$
-  ($\sim$\SI{1}{pcm}).
-\item \textbf{OpenPSN is $+215$~pcm, on the high side}, in the same direction
-  as CRX ($+133$) and VARIANT-ISE ($+76$). The direction and magnitude are
-  the expected signature of the pin-homogenised model \emph{without} an
-  intra-node self-shielding correction: it over-reflects / under-shields
-  relative to explicit-geometry transport. Crucially, this bias is
-  discretisation-independent (Table~\ref{tab:core}: $+4$~pcm from a 4$\times$
-  mesh refinement), so it is a model-form effect that a SPH or
-  super-homogenisation correction would remove---exactly the correction that
-  moves SPHINCS from $-225$~pcm (no-SPH) to $-20$~pcm (with-SPH)
-  ~\cite{sphincs}.
+\item \textbf{Pure P1 diffusion is systematically low} --- CRONOS2
+  $-332$~pcm ($-0.28\%$) vs 1.18655, STELLA-P1
+  $-290$~pcm vs its PEACH MOC reference 1.18716: no transport correction and
+  no self shielding.
+\item \textbf{SN spans $-317$ (CRONOS2-SN) to $+13$~pcm (TWODANT);
+  DORT $-173$/$-159$; the better-differenced / unstructured variants
+  PARTISN ($-18$) and PERICLES ($+3$) close to $\pm0.02\%$.}
+\item \textbf{High-order nodal $P_n$ / surface harmonics} spans
+  $-160$ (VARIANT-SE) to $+90$~pcm (VARIANT-ISE); SUHAM-2D $-27$; VARIANT-ISE
+  also has the best pin power in the original table (MRE 0.11\%).
+\item \textbf{MOC (explicit pin geometry) clusters within $\pm37$~pcm}
+  (CHAPLET $+1$, MCCG3D $+2$, DeCART $+5$, APOLLO2 $-37$), with two outliers
+  (CRX $+158$, UNKGRO $-132$); TWODANT is SN-FDM ($+13$); the
+  high-fidelity Rattlesnake converged limit is $1.186446$
+  ($\sim$\SI{1}{pcm} from the 1.186456 reference).
+\item \textbf{OpenPSN is $+215$~pcm, on the high side}, in the same
+  direction as CRX ($+158$) and VARIANT-ISE ($+90$): the PSN phase-space
+  correction adds transport-like reactivity to a diffusion-based nodal
+  model. Crucially, this bias is discretisation-independent
+  (Table~\ref{tab:core}: $+4$~pcm from a 4$\times$ mesh refinement), so it is
+  a model-form effect; the standard SPH / super-homogenisation correction
+  (which moves SPHINCS from $-225$~pcm no-SPH to $-20$~pcm with-SPH
+  ~\cite{sphincs}) is the path to the MOC reference cluster.
 \end{itemize}
 
 Two published outliers are worth noting for completeness: COHINT
-($P_2$ interface currents) $-948$~pcm and HELIOS (collision probability)
-$+569$~pcm, both far outside the converged cluster and attributable to
+($P_2$ interface currents, $-1125$~pcm) and HELIOS (collision probability,
+$+675$~pcm), both far outside the converged cluster and attributable to
 their respective current/transport approximations.
 
 \section{Conclusions}
 
 We built \textbf{OpenPSN}, a clean, multi-group, sparse, vectorised
 implementation of the Phase Space Nodal method, and validated it on two
-levels. On the source paper's problems it reproduces 348 published eigenvalue
-data points to a few pcm while removing the dense-formulation memory blow-up
-(exact to $10^{-15}$, arbitrary node count, $<$\SI{3}{\giga\byte} peak). On
+levels. On the source paper's problems it reproduces 248 published
+eigenvalue data points to a few pcm while removing the dense-formulation
+memory blow-up
+(exact to $10^{-15}$; the 10404-node C5G7 case assembles in
+$\sim$\SI{54}{\mega\byte} and converges in $\sim$54~min on one core, where
+the dense form would need a $\sim$\SI{504}{\giga\byte} matrix). On
 the C5G7 MOX benchmark it yields $\keff=1.18861$ for the pin-homogenised
 1/4-core solution, matching a directly computed OpenMOC (MOC) solution to
 $+279$~pcm on $\keff$ and to a $-0.61\%$ mean / $2.55\%$ RMS fuel-pin power
@@ -488,44 +520,93 @@ SPHINCS/nTRACER to the digit) and a 4$\times$ spatial refinement that moves
 $\keff$ by only $+4$~pcm. Placed against the 20-code NEA landscape and the
 recent P1/SP3/SN/nodal literature, OpenPSN sits exactly where a
 self-shielding-free pin-homogenised nodal method is expected to sit, and the
-path to the MOC reference cluster ($\pm$31~pcm) is the standard SPH /
-super-homogenisation correction that future work will add.
+path to the MOC reference cluster (within $\sim40$~pcm) is the standard
+SPH / super-homogenisation correction that future work will add.
 
-\begin{thebibliography}{9}
+\section*{Acknowledgments}
+
+This work received no external funding. The build and the
+performance-optimisation work on OpenPSN (sparse assembly, vectorised node
+operators) were carried out with the assistance of a large language model
+(Qwen3.8 27B) running on local hardware; all benchmark calculations were
+performed and verified by the author.
+
+\begin{thebibliography}{11}
 \small
 
 \bibitem{psn2027}
-S.~Chao, M.~Li, and H.~Chen, ``Diffusion-based phase space nodal method
+Y.-A.~Chao, Z.~Li, and G.~Chen, ``Diffusion-based phase space nodal method
 (PSN): Solving the neutron transport equation with a diffusion code,''
-\emph{Annals of Nuclear Energy} \textbf{240} (2027) 112707.
+\emph{Annals of Nuclear Energy} \textbf{240} (2027) 112707
+\doi{10.1016/j.anucene.2026.112707}.
 
 \bibitem{nea2003}
-\emph{Benchmark on deterministic transport calculations without spatial
-homogenisation} (C5G7 MOX), OECD/NEA NSC Document 16, NEA/NSC/DOC(2003)16.
-2-D 20-code comparison, Tables 16--19.
+\emph{Benchmark on Deterministic Transport Calculations Without Spatial
+Homogenisation: A 2-D/3-D MOX Fuel Assembly Benchmark}, OECD/NEA NSC
+document NEA/NSC/DOC(2003)16 (2003). 2-D 20-code comparison,
+Tables 16--20.
+
+\bibitem{smith2004}
+M.~A.~Smith, E.~E.~Lewis, and B.-C.~Na, ``Benchmark on deterministic
+2-D MOX fuel assembly transport calculations without spatial
+homogenization,'' \emph{Progress in Nuclear Energy} \textbf{45} (2004)
+107--118 \doi{10.1016/j.pnueene.2004.09.003}.
 
 \bibitem{c5g7td}
-K.~Joo \emph{et al.}, ``C5G7-TD: a multi-group neutron transport transient
-benchmark,'' 2-D initial steady-state high-fidelity reference
-$\keff=1.18646$.
+J.~Hou, K.~N.~Ivanov, V.~F.~Boyarinov, and P.~A.~Fomichenko, ``OECD/NEA
+benchmark for time-dependent neutron transport calculations without
+spatial homogenization,'' \emph{Nuclear Engineering and Design}
+\textbf{317} (2017) 177--189 \doi{10.1016/j.nucengdes.2017.02.008}.
+
+\bibitem{mcgraw2014}
+C.~N.~McGraw, M.~L.~Adams, W.~D.~Hawkins, M.~P.~Adams, and T.~Smith,
+``Accuracy of the linear discontinuous Galerkin method for reactor
+analyses with resolved fuel pins,'' in \emph{PHYSOR 2014}, Kyoto,
+Japan, 2014. (2-D C5G7 resolved-fuel-pin high-fidelity
+$\keff=1.186456$.)
 
 \bibitem{rattlesnake}
 Y.~Wang, M.~D.~DeHart, D.~R.~Gaston, F.~N.~Gleicher, R.~C.~Martineau,
-``Convergence study of Rattlesnake solutions for the two-dimensional C5G7
-MOX benchmark,'' INL/CON-15-34115; ANS MC2015. Converged high-fidelity
-$\keff=1.186446$.
+J.~Ortensi, J.~W.~Peterson, and S.~Schunert, ``Convergence study of
+Rattlesnake solutions for the two-dimensional C5G7 MOX benchmark,''
+INL/CON-15-34115, ANS MC2015. Converged high-fidelity
+$\keff=1.186446$ ($\sim$1 pcm from the Ref.~\cite{mcgraw2014} reference).
 
 \bibitem{sphincs}
-H.~H.~Cho, J.~Kang, J.~I.~Yoon, H.~G.~Joo, ``Analysis of C5G7-TD benchmark
-with a multi-group pin homogenized SP3 code SPHINCS,'' \emph{Annals of
-Nuclear Energy} (2021). Pin-hom $k_\infty$=1.32936; no-SPH
-$\keff$=1.18337, with-SPH $\keff$=1.18625 (nTRACER 1.18653).
+H.~H.~Cho, J.~Kang, J.~I.~Yoon, and H.~G.~Joo, ``Analysis of C5G7-TD
+benchmark with a multi-group pin homogenized SP3 code SPHINCS,''
+\emph{Nuclear Engineering and Technology} \textbf{53}(5) (2021)
+1403--1415 \doi{10.1016/j.net.2020.11.013}. Table~1: nTRACER single-assembly
+references (UO2 $1.33367$; UO2-$0.95\rho$ $1.32936$) with the SPHINCS
+w/o-SPH value $1.33123$; Table~2: 2-D core $\Delta\rho$ from $-225$~pcm
+(w/o SPH) to $-20$~pcm (w/ SPH) vs the nTRACER reference.
 
 \bibitem{openmoc}
-W.~Boyd, S.~Shaner, L.~Li, B.~Forget, K.~Smith, ``The OpenMOC method of
-characteristics neutral particle transport code,'' \emph{Annals of Nuclear
-Energy} \textbf{68} (2014) 43--52.
+W.~Boyd, S.~Shaner, L.~Li, B.~Forget, and K.~Smith, ``The OpenMOC
+method of characteristics neutral particle transport code,''
+\emph{Annals of Nuclear Energy} \textbf{68} (2014) 43--52
+\doi{10.1016/j.anucene.2013.12.012}.
+
+\bibitem{openmc2015}
+P.~K.~Romano, N.~E.~Horelik, B.~R.~Herman, A.~G.~Nelson, B.~Forget, and
+K.~Smith, ``OpenMC: A state-of-the-art Monte Carlo code for research
+and development,'' \emph{Annals of Nuclear Energy} \textbf{82} (2015)
+90--97 \doi{10.1016/j.anucene.2014.07.048}.
+
+\bibitem{stella2017}
+C.~Tang, ``Development and verification of a SP3 code using
+semi-analytic nodal method for pin-by-pin calculation,'' in
+\emph{M\&C 2017}, Jeju, Korea, 2017. (C5G7-2D pin-hom: STELLA-P1
+$1.18426$, STELLA-SP3 $1.18561$; PEACH MOC reference $1.18716$.)
+
+\bibitem{peach2009}
+C.~Tang and S.~Zhang, ``Development and verification of an MOC code
+employing assembly modular ray tracing and efficient acceleration
+techniques,'' \emph{Annals of Nuclear Energy} \textbf{36} (2009)
+1013--1020 \doi{10.1016/j.anucene.2009.06.007}.
 
 \end{thebibliography}
+
+\input{appendix.tex}
 
 \end{document}
