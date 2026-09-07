@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
 <title>OpenPSN — the PSN neutron transport solver, in your browser</title>
 <meta name="description" content="OpenPSN: a deterministic neutron transport solver built on the Phase Space Nodal method (PSN). No ray effects, diffusion-code simplicity, transport accuracy. Run the checkerboard benchmark live in your browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,11 +29,17 @@
   --sans: "Inter", -apple-system, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; background: var(--bg); }
+/* 防横向溢出：canvas 属性宽度(720/640)在首帧 CSS 生效前会撑宽文档，
+   触发 iOS/飞书 webview 的 fit-zoom 且缩回不来（右侧黑带）。
+   双保险：canvas max-width + html/body 裁剪滚动溢出。 */
+canvas { max-width: 100%; }
+html, body { overflow-x: hidden; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: var(--sans); font-size: 15.5px; line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
 }
 a { color: var(--acc2); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -279,7 +285,7 @@ td.you {
   border-radius: 6px;
 }
 .casebtns { display: flex; gap: 10px; margin-bottom: 14px; }
-.casebtns .seg { width: auto; min-width: 340px; }
+.casebtns .seg { width: auto; min-width: min(340px, 100%); }
 .note { font-size: 13px; color: var(--ink3); margin-top: 12px; max-width: 860px; }
 .note b { color: var(--ink2); }
 
