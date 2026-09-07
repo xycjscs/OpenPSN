@@ -526,10 +526,9 @@ footer .mono { font-family: var(--mono); font-size: 12px; margin-top: 8px; }
         <canvas id="heat" width="640" height="640"></canvas>
         <div class="heatlegend">
           <span><span class="sw" style="background:linear-gradient(90deg,#2b1a4d,#ff9e4a)"></span>colour ∝ φ (global scale)</span>
-          <span><span class="sw" style="background:#0a0f1c;border:1.5px solid #9fc0ff"></span>fuel cell</span>
-          <span><span class="sw" style="background:#0a0f1c;border:1.5px solid #39415a"></span>absorber cell</span>
+          <span><span class="sw" style="background:#0a0f1c;border:0;height:3px;border-radius:0;margin-bottom:4px;box-shadow:0 0 0 1.5px #fff"></span>white line = fuel ↔ absorber boundary</span>
         </div>
-        <div class="caption">Brighter = higher flux: fuel peaks at cell corners touching fuel; absorber cells are depressed. Note the smooth, ray-free shape.</div>
+        <div class="caption">Brighter = higher flux: fuel quadrants peak bright, absorber quadrants are depressed. The white cross-marks delimit the fuel/absorber material blocks. Note the smooth, ray-free shape.</div>
       </div>
       <div class="panel">
         <h3>Solver log</h3>
@@ -913,16 +912,38 @@ function drawHeat(phi, S) {
   const span = Math.max(hi - lo, 1e-12);
   const heatW = W - 54;                    // leave room for colorbar
   const cell = heatW / N;
+  const matOf = (i, j) => ((((j / S) | 0) + ((i / S) | 0)) % 2); // 0 fuel, 1 absorber
   for (let j = 0; j < N; j++) {
     for (let i = 0; i < N; i++) {
       const v = (phi[j * N + i] - lo) / span;
       const [r, g, b] = cmap(Math.pow(v, 0.65));
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.fillRect(i * cell, j * cell, cell + 1, cell + 1);
-      const fuel = (((j / S) | 0) + ((i / S) | 0)) % 2 === 0;
-      ctx.strokeStyle = fuel ? 'rgba(159,192,255,.55)' : 'rgba(57,65,90,.7)';
-      ctx.lineWidth = fuel ? 1.6 : 1;
+      const fuel = matOf(i, j) === 0;
+      ctx.strokeStyle = fuel ? 'rgba(159,192,255,.45)' : 'rgba(57,65,90,.55)';
+      ctx.lineWidth = 1;
       ctx.strokeRect(i * cell + .5, j * cell + .5, cell - 1, cell - 1);
+    }
+  }
+  // material boundary overlay: bright thick lines wherever fuel meets absorber
+  ctx.strokeStyle = 'rgba(235,242,255,.9)';
+  ctx.lineWidth = Math.max(2, cell * 0.09);
+  ctx.lineCap = 'square';
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const m = matOf(i, j);
+      if (i + 1 < N && m !== matOf(i + 1, j)) {
+        ctx.beginPath();
+        ctx.moveTo((i + 1) * cell, j * cell);
+        ctx.lineTo((i + 1) * cell, (j + 1) * cell);
+        ctx.stroke();
+      }
+      if (j + 1 < N && m !== matOf(i, j + 1)) {
+        ctx.beginPath();
+        ctx.moveTo(i * cell, (j + 1) * cell);
+        ctx.lineTo((i + 1) * cell, (j + 1) * cell);
+        ctx.stroke();
+      }
     }
   }
   // colorbar
