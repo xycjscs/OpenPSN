@@ -131,6 +131,7 @@ h2 .no { font-family: var(--mono); font-size: 14px; color: var(--acc2); margin-r
   background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
   padding: 22px 24px; position: relative; overflow: hidden;
   transition: border-color .2s, transform .2s;
+  min-width: 0; /* grid item: 允许轨道缩到视口宽，nowrap 公式框内部自滚 */
 }
 .card:hover { border-color: var(--line2); transform: translateY(-2px); }
 .card .ico {
@@ -295,6 +296,7 @@ td.you {
 .mcard {
   background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
   padding: 22px 24px;
+  min-width: 0; /* grid item: 同上，防 nowrap .eq 撑破 1fr 轨道裁掉右缘 */
 }
 .mcard h3 { margin: 0 0 8px; font-size: 15.5px; font-weight: 700; }
 .mcard p { color: var(--ink2); font-size: 14px; margin: 0 0 10px; }
