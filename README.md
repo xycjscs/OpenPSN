@@ -35,12 +35,6 @@ field rendered on screen.
 - 本地预览：`cd docs && python3 -m http.server 8899` →
   <http://127.0.0.1:8899/>（需 http，因 `fig3ref.json` 用 `fetch` 加载）。
 
-> **修过的 bug（2026-09）**：旧版 `tick()` 收敛分支引用了 Run 回调闭包里的
-> `t0`（顶层函数不可见），收敛瞬间抛 `ReferenceError`，导致 ① 通量热图不绘制、
-> ② `state.running` 永为 true → Run 按钮永久禁用、第二题无法运行。修复：
-> `t0` 提升到 `state.t0`，并把"解锁按钮/写结果"放在 `drawHeat` 之前，绘图包
-> try/catch —— 任何绘制错误都不再卡死求解器。
-
 ---
 
 ## 1. 功能
