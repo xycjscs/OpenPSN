@@ -16,6 +16,10 @@ runs entirely in your browser (no server, no dependencies), converging
 k<sub>eff</sub> to 10⁻¹⁰ in a few seconds, with the converged scalar-flux
 field rendered on screen.
 
+📄 **Paper (preprint):** *OpenPSN: a multi-group Phase Space Nodal solver
+and its validation on the C5G7 MOX benchmark* —
+<https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark>
+
 **Python 启动即可**：`python -m psn2d run <problem.yaml>`。任意群数（1 / 2 / 7
 群已验证），任意几何（材料网格 + 边界），角向/空间离散与收敛参数全部用户可配。
 
@@ -125,6 +129,8 @@ OpenMOC 1.18582   -64  pcm   (本机实测，官方 c5g7-2d.py 几何)
 - 空间细化 S=1→2（2601→10404 节点）k 仅动 ~4 pcm → 离散已收敛。
 - 独立代数 k∞ = 1.32936 与 SPHINCS/nTRACER 无自屏蔽值**逐位一致**（数据接线铁证）。
 - 与 20 个确定性代码的官方对比见论文（NEA/NSC/DOC(2003)16 Table 17）。
+
+论文：[OpenPSN: a multi-group Phase Space Nodal solver and its validation on the C5G7 MOX benchmark](https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark)（ResearchGate 预印本，2026）
 
 ## 7. 目录结构
 
