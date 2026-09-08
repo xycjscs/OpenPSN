@@ -10,10 +10,17 @@ Spec schema (see examples/):
     I: 30           # generic: even number of polar segments over 0..pi
     M: 24           # azimuthal segments (must be even)
   geometry:
+    # square mode (default):
     grid: [[0, 1], [1, 0]]   # material indices; FIRST ROW = bottom (y-),
                              # columns run left (x-) -> right (x+)
     unit_size: 1.0           # cm, per grid cell
     subdivide: 4             # PSN sub-nodes per grid cell per axis
+    # rectangular mode (geometry.rect: true): nodes carry their own widths
+    rect: false
+    mat_grid: [[...]]        # (ny x nx) material index per node
+    widths_x: [[...]]        # (ny x nx) node x-width in cm (or scalar)
+    widths_y: [[...]]        # (ny x nx) node y-width in cm (or scalar)
+                             # corners must meet corners only (no T-junctions)
   boundaries: {left: reflect, bottom: vacuum, right: reflect, top: reflect}
   materials:
     - name: fuel
@@ -62,12 +69,31 @@ def load_spec(path):
         raise ValueError("angular.M must be even (mirror pairs need paired segments)")
 
     geom = spec["geometry"]
-    grid = np.array(geom["grid"], dtype=int)
-    if grid.ndim != 2:
-        raise ValueError("geometry.grid must be a 2D list of rows")
-    nmat = len(spec["materials"])
-    if grid.min() < 0 or grid.max() >= nmat:
-        raise ValueError(f"grid material index out of range [0, {nmat-1}]")
+    if bool(geom.get("rect", False)):
+        # rectangular node grid: per-node widths, corners meet corners only
+        mg = np.array(geom["mat_grid"], dtype=int)
+        if mg.ndim != 2:
+            raise ValueError("geometry.mat_grid must be a 2D list of rows")
+        nmat = len(spec["materials"])
+        if mg.min() < 0 or mg.max() >= nmat:
+            raise ValueError(f"mat_grid material index out of range [0, {nmat-1}]")
+        for wname in ("widths_x", "widths_y"):
+            w = geom[wname]
+            if not isinstance(w, (list, tuple, np.ndarray)):
+                continue                              # scalar width (all nodes)
+            w = np.asarray(w, float)
+            if w.shape != mg.shape:
+                raise ValueError(f"{wname} shape {w.shape} != mat_grid {mg.shape}")
+            if (w <= 0).any():
+                raise ValueError(f"{wname} must be positive")
+        spec["geometry"]["mat_grid"] = mg.tolist()
+    else:
+        grid = np.array(geom["grid"], dtype=int)
+        if grid.ndim != 2:
+            raise ValueError("geometry.grid must be a 2D list of rows")
+        nmat = len(spec["materials"])
+        if grid.min() < 0 or grid.max() >= nmat:
+            raise ValueError(f"grid material index out of range [0, {nmat-1}]")
 
     ng = len(spec["materials"][0]["total"])
     for m in spec["materials"]:

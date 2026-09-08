@@ -21,10 +21,24 @@ from .solver import PSN2D
 
 
 def build_solver(spec, case):
-    grid = np.array(spec["geometry"]["grid"], dtype=int)
-    S = int(case["subdivide"])
-    mat_map = np.kron(grid, np.ones((S, S), int))
-    h = float(spec["geometry"]["unit_size"]) / S
+    geom = spec["geometry"]
+    if bool(geom.get("rect", False)):
+        # rectangular nodes: per-node widths, no subdivision (widths are the
+        # spatial resolution directly)
+        mat_map = np.array(geom["mat_grid"], dtype=int)
+        widths = (np.asarray(geom["widths_x"], float),
+                  np.asarray(geom["widths_y"], float))
+        # scalar widths broadcast to the grid shape
+        if widths[0].ndim == 0:
+            widths = (np.full(mat_map.shape, float(widths[0])),
+                      np.full(mat_map.shape, float(widths[1])))
+        h = float(widths[0].ravel()[0])     # representative (unused by rect)
+    else:
+        grid = np.array(geom["grid"], dtype=int)
+        S = int(case["subdivide"])
+        mat_map = np.kron(grid, np.ones((S, S), int))
+        h = float(geom["unit_size"]) / S
+        widths = None
     St, Sgg, nuSf, chi = model.arrays(spec)
     bnd = spec["boundaries"]
     boundary = (bnd["left"], bnd["bottom"], bnd["right"], bnd["top"])
@@ -32,9 +46,10 @@ def build_solver(spec, case):
     if generic:
         return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
                      boundary=boundary, generic=True, I=int(case["I"]),
-                     M=int(case["M"]))
+                     M=int(case["M"]), widths=widths)
     return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
-                 boundary=boundary, generic=False, M=int(case["M"]))
+                 boundary=boundary, generic=False, M=int(case["M"]),
+                 widths=widths)
 
 
 def run_case(spec, case, verbose=True):

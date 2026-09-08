@@ -1,0 +1,14 @@
+{
+ "checkerboard_1g.yaml::weak_M12": 1.129988617,
+ "checkerboard_1g.yaml::weak_M24": 1.130408557,
+ "bwr_bundle_2g.yaml::N2_M8": 1.188253019,
+ "bwr_bundle_2g.yaml::N4_M12": 1.188207628,
+ "c5g7_uo2_assembly.yaml::M8_S2": 1.340162855,
+ "c5g7_uo2_assembly.yaml::M12_S4": 1.340296,
+ "c5g7_uo2_assembly.yaml::M16_S4": 1.3402994,
+ "c5g7_uo2_assembly.yaml::M16_S6": 1.3403333,
+ "c5g7_2d_quarter_core.yaml::M8_S1": 1.1885557,
+ "c5g7_2d_quarter_core.yaml::M12_S1": 1.1886124,
+ "c5g7_2d_quarter_core.yaml::M12_S2": 1.1886487,
+ "c5g7_2d_quarter_core.yaml::M16_S2": 1.1886778
+}

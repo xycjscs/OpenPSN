@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/opt/data/workspace/OpenPSN/examples/c5g7_probe.py", line 21, in <module>
+    psn = M.build_solver(spec, case)
+  File "/opt/data/workspace/OpenPSN/psn2d/__main__.py", line 36, in build_solver
+    return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
+                 boundary=boundary, generic=False, M=int(case["M"]))
+  File "/opt/data/workspace/OpenPSN/psn2d/solver.py", line 73, in __init__
+    raise ValueError("M must be even (mirror pairs need paired segments)")
+ValueError: M must be even (mirror pairs need paired segments)

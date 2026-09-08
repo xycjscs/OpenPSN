@@ -36,6 +36,8 @@ from scipy.sparse.linalg import splu
 from .node import (node_alphas, node_alphas_generic, node_params_generic,
                       node_state, node_response_matrix, ty_polar_set,
                       generic_polar_set)
+from .node_rect import (node_params_rect, node_params_rect_generic,
+                        node_state_rect, node_response_matrix_rect)
 
 PI = np.pi
 
@@ -68,12 +70,45 @@ def face_pairs(mirror, M):
 class PSN2D:
     def __init__(self, mat_map, h, St, Sgg, nuSf, chi=None,
                  boundary=("reflect",) * 4, M=12, TY=None, full_2pi=False,
-                 generic=False, I=30):
+                 generic=False, I=30, widths=None):
         if M % 2 != 0:
             raise ValueError("M must be even (mirror pairs need paired segments)")
         self.mat = mat_map.astype(np.int64)
         self.h = h
         self.nx, self.ny = mat_map.shape[1], mat_map.shape[0]
+        # rectangular nodes: widths = (hx[nd], hy[nd]) per-node arrays.
+        # scalar/None -> square path (unchanged, bit-identical).
+        if widths is None:
+            self.rect = False
+            self.hx = self.hy = None
+            self.area = None
+        else:
+            hx, hy = np.asarray(widths[0], float), np.asarray(widths[1], float)
+            if hx.shape != mat_map.shape or hy.shape != mat_map.shape:
+                raise ValueError("widths arrays must match mat_map shape")
+            if (hx <= 0).any() or (hy <= 0).any():
+                raise ValueError("widths must be positive")
+            if not (np.allclose(hx, hx.ravel()[0])
+                    and np.allclose(hy, hy.ravel()[0])):
+                self.rect = True
+            else:
+                # uniform rectangles: still use the rect closed forms
+                # (a true generalization) but with one shape class.
+                self.rect = True
+            self.hx = hx
+            self.hy = hy
+            self.area = hx * hy
+            # shape classes: rounded (hx, hy) tuples -> per-node class id
+            rx = np.round(hx, 9)
+            ry = np.round(hy, 9)
+            self._shape_keys = {}
+            key_of = []
+            for v in zip(rx.ravel(), ry.ravel()):
+                if v not in self._shape_keys:
+                    self._shape_keys[v] = len(self._shape_keys)
+                key_of.append(self._shape_keys[v])
+            self.shape_id = np.array(key_of, np.int64).reshape(mat_map.shape)
+            self.nshape = len(self._shape_keys)
         self.St = np.atleast_2d(St).astype(float)      # (ng, nmat)
         self.Sgg = np.atleast_3d(Sgg).astype(float)    # (ng, ng, nmat)
         self.nuSf = np.atleast_2d(nuSf).astype(float)  # (ng, nmat)
@@ -241,7 +276,17 @@ class PSN2D:
                                        self._phi_m(m), self.dphi)
         return None
 
-    def _R(self, i, g, m, mat):
+    def _R(self, i, g, m, mat, n=None):
+        if self.rect:
+            # rectangular: R depends on the node's shape class
+            sh = int(self.shape_id[self.j_idx[n], self.i_idx[n]])
+            k = (i, g, m, mat, sh)
+            if k not in self._Rcache:
+                pr, alpha = self._pr_alpha_rect(i, g, m, mat, n)
+                R, _ = node_response_matrix_rect(pr, self._phi_m(m),
+                                                 self.dphi, alpha)
+                self._Rcache[k] = R
+            return self._Rcache[k]
         k = (i, g, m, mat)
         if k not in self._Rcache:
             if self.generic:
@@ -258,6 +303,9 @@ class PSN2D:
     def _state(self, J4, qn, i, g, n, m):
         """node_state with generic/restricted params selected automatically."""
         mat = self.mat[self.j_idx[n], self.i_idx[n]]
+        if self.rect:
+            pr, alpha = self._pr_alpha_rect(i, g, m, mat, n)
+            return node_state_rect(J4, qn, pr, self._phi_m(m), self.dphi, alpha)
         if self.generic:
             return node_state(J4, qn, self.St[g, mat], 1.0, self.h,
                               self._phi_m(m), self.dphi,
@@ -265,6 +313,20 @@ class PSN2D:
                               alpha=self._alpha_for(i, m))
         return node_state(J4, qn, self.St[g, mat], self.mu[i],
                           self.h, self._phi_m(m), self.dphi)
+
+    def _pr_alpha_rect(self, i, g, m, mat, n):
+        """Rectangular node params + alpha for node n (its hx, hy)."""
+        hx = float(self.hx[self.j_idx[n], self.i_idx[n]])
+        hy = float(self.hy[self.j_idx[n], self.i_idx[n]])
+        if self.generic:
+            pr = node_params_rect_generic(self.St[g, mat], hx, hy,
+                                          self.theta[i], self.dtheta)
+            alpha = node_alphas_generic(self.theta[i], self.dtheta, hx,
+                                        self._phi_m(m), self.dphi)
+        else:
+            pr = node_params_rect(self.St[g, mat], self.mu[i], hx, hy)
+            alpha = node_alphas(self.mu[i], 1.0, self._phi_m(m), self.dphi)
+        return pr, alpha
 
     # ------------------------------------------------------------------ #
     def build_system(self, i, g):
@@ -286,8 +348,8 @@ class PSN2D:
                 matA = self.mat[self.j_idx[A_n], self.i_idx[A_n]]
                 matB = self.mat[self.j_idx[B_n], self.i_idx[B_n]]
                 for m in range(M):
-                    RA = self._R(i, g, m, matA)
-                    RB = self._R(i, g, m, matB)
+                    RA = self._R(i, g, m, matA, A_n)
+                    RB = self._R(i, g, m, matB, B_n)
                     row = len(rows_rhs)
                     for j in range(4):
                         fj, sg = self.node_fmap[A_n][j]
@@ -310,7 +372,7 @@ class PSN2D:
                 mat = self.mat[self.j_idx[n], self.i_idx[n]]
                 phi_n = self.face_phi[f]
                 for m in range(M):
-                    R = self._R(i, g, m, mat)
+                    R = self._R(i, g, m, mat, n)
                     al = self._alpha_for(i, m)
                     alpha_lf = (al if al is not None
                                 else node_alphas(self.mu[i], self.h,
@@ -334,8 +396,8 @@ class PSN2D:
                 lf = self._local_face(n, f)
                 mat = self.mat[self.j_idx[n], self.i_idx[n]]
                 for (a, b) in self.face_pairs[f]:
-                    Ra = self._R(i, g, a, mat)
-                    Rb = self._R(i, g, b, mat)
+                    Ra = self._R(i, g, a, mat, n)
+                    Rb = self._R(i, g, b, mat, n)
                     row = len(rows_rhs)
                     for j in range(4):
                         fj, sg = self.node_fmap[n][j]
@@ -386,11 +448,33 @@ class PSN2D:
     def _vectorize_setup(self):
         """One-off tables for the vectorized node-state path."""
         self.mat_of_node = self.mat[self.j_idx, self.i_idx]
+        if self.rect:
+            self.shape_of_node = self.shape_id.ravel()
+            # groups = (mat, shape) pairs present in the model
+            keys = set(zip(self.mat_of_node.tolist(),
+                           self.shape_of_node.tolist()))
+            self._groups = sorted(keys)
+            self._grp_sel = {}
+            self._node_of_grp = {}
+            for (mat, sh) in self._groups:
+                sel = (self.mat_of_node == mat) & (self.shape_of_node == sh)
+                self._grp_sel[(mat, sh)] = sel
+                self._node_of_grp[(mat, sh)] = int(np.argmax(sel))
+            # representative widths per shape class
+            self._shape_dims = {}
+            for sh in range(self.nshape):
+                n0 = int(np.argmax(self.shape_of_node == sh))
+                self._shape_dims[sh] = (float(self.hx.ravel()[n0]),
+                                        float(self.hy.ravel()[n0]))
+        else:
+            self.shape_of_node = None
+            self._groups = [(m, 0) for m in sorted(set(self.mat_of_node.tolist()))]
+            self._grp_sel = {(m, 0): (self.mat_of_node == m) for m, _ in self._groups}
+            self._node_of_grp = {(m, 0): int(np.argmax(self._grp_sel[(m, 0)]))
+                                 for m, _ in self._groups}
+            self._shape_dims = {0: (float(self.h), float(self.h))}
         self._mats_present = sorted(set(self.mat_of_node.tolist()))
         self._mat_sel = {m: (self.mat_of_node == m) for m in self._mats_present}
-        self._node_of_mat = {}
-        for m in self._mats_present:
-            self._node_of_mat[m] = int(np.argmax(self._mat_sel[m]))
         # J4 gather tables: J4[n,m,j] = esgn[m,j,n] * u[cidx[m,j,n]]
         M, nd = self.M, self.nodes
         self._cidx = np.zeros((M, 4, nd), np.int64)
@@ -408,15 +492,15 @@ class PSN2D:
         self._bterms_by_sys = {}
         self._Scache = {}
 
-    def _state_matrix(self, i, g, m, mat):
+    def _state_matrix(self, i, g, m, grp):
         """9x9 linear map  [Phi(4); phi_bar; mom[1..4]]  =  S @ [J4(4); q(5)]
-        for direction (i,m), group g, material mat.
-        Probed with the VALIDATED node_state (self._state) on a reference
-        node of that material — no re-derived algebra."""
-        k = (i, g, m, mat)
+        for direction (i,m), group g, (material, shape) group.
+        Probed with the VALIDATED node_state on a reference node of that
+        group — no re-derived algebra."""
+        k = (i, g, m, grp)
         if k in self._Scache:
             return self._Scache[k]
-        n0 = self._node_of_mat[mat]
+        n0 = self._node_of_grp[grp]
         S = np.zeros((9, 9))
         for e in range(4):                       # J4 basis columns
             J4 = np.zeros(4); J4[e] = 1.0
@@ -449,9 +533,9 @@ class PSN2D:
             X[:, :, 4:] = qnode[:, None, :]
             Y = np.empty((self.nodes, M, 9))
             for m in range(M):
-                for mat in self._mats_present:
-                    S = self._state_matrix(i, g, m, mat)
-                    sel = self._mat_sel[mat]
+                for grp in self._groups:
+                    S = self._state_matrix(i, g, m, grp)
+                    sel = self._grp_sel[grp]
                     Y[sel, m, :] = X[sel, m, :] @ S.T
             pb += w * Y[:, :, 4].sum(axis=1)
             qim_sum[:, 0] += w * Y[:, :, 4].sum(axis=1)
@@ -482,9 +566,9 @@ class PSN2D:
         M = self.M
         raw = np.empty((self.nodes, M, 4))   # Phi at J4=0 (Phibar/alpha)
         for m in range(M):
-            for mat in self._mats_present:
-                S = self._state_matrix(i, g, m, mat)
-                sel = self._mat_sel[mat]
+            for grp in self._groups:
+                S = self._state_matrix(i, g, m, grp)
+                sel = self._grp_sel[grp]
                 raw[sel, m, :] = qnode[sel] @ S[:4, 4:].T
         b = np.zeros(self.ncol)
         for (m, lf), (rws, sgns, nds) in self._bterms_for(i, g).items():
@@ -509,11 +593,17 @@ class PSN2D:
         'full' variant (S + nuSf/lam)*mom that reproduces Fig.3 to <1 pcm."""
         matidx = self.mat[self.j_idx, self.i_idx]
         ng = self.ng
+        # physical fission RATE is nuSf * phi * node-area; for rectangular
+        # nodes the areas differ so they must enter the balance (for square
+        # nodes a constant area cancels in F_new/F_old — path unchanged).
+        area_w = self.area.ravel() if self.rect else None
         lam = 1.0
         phi = np.ones((ng, self.nodes))
         fission_rate = np.zeros(self.nodes)
         for g in range(ng):
             fission_rate += self.nuSf[g, matidx] * phi[g]
+        if area_w is not None:
+            fission_rate *= area_w
         # paraboloidal moments of uniform flux = [1,0,0,0,0]
         mom = np.zeros((ng, self.nodes, 5))
         mom[:, :, 0] = 1.0
@@ -532,6 +622,8 @@ class PSN2D:
             fission_rate = np.zeros(self.nodes)
             for g in range(ng):
                 fission_rate += self.nuSf[g, matidx] * phi[g]
+            if area_w is not None:
+                fission_rate *= area_w
             F_new = float(fission_rate.sum())
             lam_new = lam * F_new / F_old
             dlam = abs(lam_new - lam) / lam_new
