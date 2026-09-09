@@ -2,6 +2,8 @@
 
 **Transport accuracy, diffusion-code simplicity.**
 
+OpenPSN is licensed under the [Apache License 2.0](LICENSE).
+
 OpenPSN is a deterministic neutron transport solver built on the **Phase
 Space Nodal method (PSN)**: it solves the transport equation with the same
 machinery as a diffusion code, yet delivers transport-grade accuracy — with
