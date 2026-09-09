@@ -6,3 +6,4 @@ examples/c5g7_run.log
 __pycache__/
 *.pyc
 *.egg-info/
+paper/_bisect.* paper/_realtab.tex paper/tbl_test.*

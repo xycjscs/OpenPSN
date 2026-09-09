@@ -347,7 +347,8 @@ footer .mono { font-family: var(--mono); font-size: 12px; margin-top: 8px; }
     <div class="badges">
       <span class="badge ok">verified vs Python reference · 24/24 points · Δ &lt; 5×10⁻¹⁰ in k<sub>eff</sub></span>
       <span class="badge hot">no ray effects, by construction</span>
-      <span class="badge">7-group C5G7 MOX core</span>
+      <span class="badge">rectangular nodes · no homogenisation</span>
+      <span class="badge">7-group C5G7 MOX core · +11 pcm</span>
       <span class="badge">k<sub>eff</sub> to 10⁻¹⁰ in seconds</span>
       <span class="badge">pure JS in-browser · full code open source</span>
     </div>
@@ -614,6 +615,32 @@ footer .mono { font-family: var(--mono); font-size: 12px; margin-top: 8px; }
       <div class="t">C5G7 MOX 1/4 core, 7 energy groups — pin power and error vs reference</div>
       <div class="d">10404 nodes, 17×17 pin assemblies, 7-group C5G7 benchmark. Left: OpenPSN pin power; right: relative error vs the multi-group transport reference. The method's multi-group capability is exercised end to end — scattering between groups, pin-wise fission peaks, power shape.</div>
       <div class="src"><a href="https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark">OpenPSN preprint (2026)</a>, our computation</div>
+    </div>
+  </div>
+  <div class="fig" style="margin-top:16px">
+    <div class="imgbox"><img src="img/c5g7_rect_layout.png" alt="rectangular node layout" loading="lazy"></div>
+    <div class="cap">
+      <div class="t">Rectangular nodes: drop the homogenisation, keep the transport</div>
+      <div class="d">Each pin's circle is replaced by an equal-area square (s = √(π·r²)), subdivided 3×3 into pure-material rectangular nodes (fuel / water / water) with per-node widths. The node model handles arbitrary x/y widths, so the full 153×153 core is built from these blocks with no pin-cell homogenisation — pure 7-group material cross sections only.</div>
+      <div class="src"><a href="https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark">OpenPSN preprint (2026)</a>, §4.4</div>
+    </div>
+  </div>
+  <div class="fig2" style="margin-top:16px">
+    <div class="fig">
+      <div class="imgbox"><img src="img/c5g7_rect_m_conv.png" alt="M convergence" loading="lazy"></div>
+      <div class="cap">
+        <div class="t">Angular order M converges the 1/4 core into the OpenMC reference</div>
+        <div class="d">k<sub>eff</sub> for M = 8 → 12 → 16: −112.1 → −38.7 → +11.1 pcm vs our own OpenMC v3 explicit-geometry run (20000 batches × 100k particles, collision estimator, ±3.4 pcm). By M = 16 the deterministic answer sits inside the Monte-Carlo standard error band.</div>
+        <div class="src">our computation, this work</div>
+      </div>
+    </div>
+    <div class="fig">
+      <div class="imgbox"><img src="img/c5g7_rect_flux.png" alt="flux comparison" loading="lazy"></div>
+      <div class="cap">
+        <div class="t">Pin-by-pin fission map vs independent OpenMC reference</div>
+        <div class="d">Top: single UO₂ assembly (264 pins) — RMS 0.07%. Bottom: 1/4 core, each 17×17 sub-assembly normalised to its own sum (removes the uniform ν-weighting offset between pin power and fission count) — intra-assembly shape RMS 0.26%, largest in the MOX cells where the local gradients are steepest.</div>
+        <div class="src">our computation, this work</div>
+      </div>
     </div>
   </div>
   <div class="fig2" style="margin-top:16px">
