@@ -58,6 +58,13 @@ CASES = [
     ("c5g7_2d_quarter_core.yaml", "M12_S1", "full"),
     ("c5g7_2d_quarter_core.yaml", "M12_S2", "full"),
     ("c5g7_2d_quarter_core.yaml", "M16_S2", "full"),
+    # C5G7 rectangular nodes, un-homogenized material XS (paper Study II)
+    # single UO2 assembly 17x17 pins -> 51x51 rect nodes
+    ("c5g7_rect_uo2_assembly.yaml", "M8", "fast"),
+    ("c5g7_rect_uo2_assembly.yaml", "M16", "fast"),
+    # 1/4 core 51x51 pins -> 153x153 rect nodes (heavy: ~1500 outer iters each)
+    ("c5g7_rect_quarter_core.yaml", "M8", "full"),
+    ("c5g7_rect_quarter_core.yaml", "M16", "full"),
 ]
 
 
@@ -127,7 +134,9 @@ def main():
         return 2
 
     baseline = {}
-    if not args.record and os.path.exists(BASELINE):
+    # always load the existing baseline: --record MERGES new keys into it
+    # (recording with --only must not wipe the other baselines)
+    if os.path.exists(BASELINE):
         with open(BASELINE) as f:
             baseline = json.load(f)
 

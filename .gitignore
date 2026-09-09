@@ -7,4 +7,3 @@ __pycache__/
 *.pyc
 *.egg-info/
 paper/_bisect.* paper/_realtab.tex paper/tbl_test.*
-examples/c5g7_rect_core_run.log

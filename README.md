@@ -118,6 +118,15 @@ cases:                   # 批量：M=方位角段数, S=空间细分, model=psn
 
 完整 248 点复现数据与图见 `snapshot/`（原始快照仓库）。
 
+回归套件 `tests/run_examples.py` 覆盖上表全部问题（fast 层 ~3 min，full 层另含
+C5G7 1/4 芯均质化与矩形节点重 case），对照 `tests/baseline_keff.json` 的位级基线
+（Δ 容差 1.0 pcm，`--record` 合并记录新基线，`--only <yaml 片段>` 过滤）：
+
+```bash
+python tests/run_examples.py          # fast 层
+python tests/run_examples.py --full   # 含 full 层重 case
+```
+
 ## 6. C5G7 基准结果
 
 C5G7-2D MOX 燃料组件（51×51 pin，2×2 燃料块 + L 形水反射，7 群）：
@@ -158,6 +167,7 @@ OpenPSN/
 │   ├── fig3ref.json  #   论文 Fig.3 60 点复现数据（页面比对用）
 │   └── img/          #   内嵌插图（原论文 Fig.1/3/6/7/8/10 + C5G7 功率）
 ├── examples/         # 论文问题输入（1群/2群/7群）+ C5G7 数据与脚本
+├── tests/            # 回归套件：run_examples.py + baseline_keff.json（位级基线）
 ├── snapshot/         # 原始复现快照（core/ + drivers/ + 数据/图/日志）
 ├── requirements.txt
 └── README.md

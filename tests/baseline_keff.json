@@ -10,5 +10,9 @@
  "c5g7_2d_quarter_core.yaml::M8_S1": 1.1885557,
  "c5g7_2d_quarter_core.yaml::M12_S1": 1.1886124,
  "c5g7_2d_quarter_core.yaml::M12_S2": 1.1886487,
- "c5g7_2d_quarter_core.yaml::M16_S2": 1.1886778
+ "c5g7_2d_quarter_core.yaml::M16_S2": 1.1886778,
+ "c5g7_rect_uo2_assembly.yaml::M8": 1.333716389,
+ "c5g7_rect_uo2_assembly.yaml::M16": 1.334353624,
+ "c5g7_rect_quarter_core.yaml::M8": 1.1853742,
+ "c5g7_rect_quarter_core.yaml::M16": 1.1866067
 }
