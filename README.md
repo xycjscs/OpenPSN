@@ -113,8 +113,8 @@ cases:                   # 批量：M=方位角段数, S=空间细分, model=psn
 | BWR 2 群束 | `bwr_bundle_2g.yaml` | Δ=+28.3 pcm（N=2, M=8） | 原文 Fig.8/10 |
 | C5G7-2D 1/4 芯（7 群，均质化） | `c5g7_2d_quarter_core.yaml` | k=1.18861（M12_S1） | 1.18646（McGraw PHYSOR 2014 高保真），+215 pcm |
 | C5G7 单 UO2 组件（7 群，均质化） | `c5g7_uo2_assembly.yaml` | k=1.34030 | nTRACER 1.33367 |
-| C5G7 单 UO2 组件（7 群，矩形节点非均质） | `c5g7_rect_uo2_assembly.yaml` | k=1.3343536（M16） | 自算 OpenMC v3 HET 1.3334947，+86 pcm |
-| C5G7-2D 1/4 芯（7 群，矩形节点非均质） | `c5g7_rect_quarter_core.yaml` | k=1.1866067（M16, tol 1e-10） | 自算 OpenMC v3 HET 1.1864955（±3.4 pcm），+11 pcm |
+| C5G7 单 UO2 组件（7 群，矩形节点非均质） | `c5g7_rect_uo2_assembly.yaml` | k=1.3343536（M16） | 自算 OpenMC 显式几何参考 1.3334947，+86 pcm |
+| C5G7-2D 1/4 芯（7 群，矩形节点非均质） | `c5g7_rect_quarter_core.yaml` | k=1.1866067（M16, tol 1e-10） | 自算 OpenMC 显式几何参考 1.1864955（±3.4 pcm），+11 pcm |
 
 完整 248 点复现数据与图见 `snapshot/`（原始快照仓库）。
 
@@ -124,7 +124,7 @@ C5G7-2D MOX 燃料组件（51×51 pin，2×2 燃料块 + L 形水反射，7 群�
 
 ```
 矩形节点非均质（纯材料 XS，153×153 节点，3×3 每 pin）
-  M=8    1.1853742   -112.1 pcm   (vs 自算 OpenMC v3 HET 1.1864955 ±3.4 pcm)
+  M=8    1.1853742   -112.1 pcm   (vs 自算 OpenMC 显式几何参考 1.1864955 ±3.4 pcm)
   M=12   1.1861084    -38.7 pcm
   M=16   1.1866067    +11.1 pcm   （进入 MC 统计误差带）
 
@@ -133,7 +133,7 @@ C5G7-2D MOX 燃料组件（51×51 pin，2×2 燃料块 + L 形水反射，7 群�
 参考    1.18655    MCNP5，NEA 2003 原文 Table 3（偏高约 10 pcm）
 ```
 
-pin 级 fission map 对比（M16，自算 OpenMC v3 参考场，20000 批 × 100k 粒子，collision）：
+pin 级 fission map 对比（M16，自算 OpenMC 显式几何参考场，20000 批 × 100k 粒子，collision）：
 单组件 264 棒 mean −0.002% / RMS 0.070%；1/4 芯 1056 棒组内形状
 RMS 0.26%（UO2 组 0.14–0.19%，MOX 组 0.32%）。
 

@@ -621,7 +621,7 @@ footer .mono { font-family: var(--mono); font-size: 12px; margin-top: 8px; }
     <div class="imgbox"><img src="img/c5g7_rect_layout.png" alt="rectangular node layout" loading="lazy"></div>
     <div class="cap">
       <div class="t">Rectangular nodes: drop the homogenisation, keep the transport</div>
-      <div class="d">Each pin's circle is replaced by an equal-area square (s = √(π·r²)), subdivided 3×3 into pure-material rectangular nodes (fuel / water / water) with per-node widths. The node model handles arbitrary x/y widths, so the full 153×153 core is built from these blocks with no pin-cell homogenisation — pure 7-group material cross sections only.</div>
+      <div class="d">Each pin's circle is replaced by an equal-area square (s = √(π·r²)), subdivided 3×3 into material (un-homogenised) rectangular nodes (fuel / water / water) with per-node widths. The node model handles arbitrary x/y widths, so the full 153×153 core is built from these blocks with no pin-cell homogenisation — un-homogenised 7-group material cross sections only.</div>
       <div class="src"><a href="https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark">OpenPSN preprint (2026)</a>, §4.4</div>
     </div>
   </div>
@@ -630,7 +630,7 @@ footer .mono { font-family: var(--mono); font-size: 12px; margin-top: 8px; }
       <div class="imgbox"><img src="img/c5g7_rect_m_conv.png" alt="M convergence" loading="lazy"></div>
       <div class="cap">
         <div class="t">Angular order M converges the 1/4 core into the OpenMC reference</div>
-        <div class="d">k<sub>eff</sub> for M = 8 → 12 → 16: −112.1 → −38.7 → +11.1 pcm vs our own OpenMC v3 explicit-geometry run (20000 batches × 100k particles, collision estimator, ±3.4 pcm). By M = 16 the deterministic answer sits inside the Monte-Carlo standard error band.</div>
+        <div class="d">k<sub>eff</sub> for M = 8 → 12 → 16: −112.1 → −38.7 → +11.1 pcm vs our own OpenMC explicit-geometry run (20000 batches × 100k particles, collision estimator, ±3.4 pcm). By M = 16 the deterministic answer sits inside the Monte-Carlo standard error band.</div>
         <div class="src">our computation, this work</div>
       </div>
     </div>
