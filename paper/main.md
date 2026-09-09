@@ -451,6 +451,10 @@ $|\Delta\kappa_{\mathrm{eff}}|$.
 | explicit pin            |               |               |               |
 | ($1.3334947$)           |               |               |               |
 +-------------------------+---------------+---------------+---------------+
+| $\Delta$ vs OpenMC,     | $-101.0$      | $-69.3$       | $-37.2$       |
+| rect. rods              |               |               |               |
+| ($1.3347260$)           |               |               |               |
++-------------------------+---------------+---------------+---------------+
 | $\Delta$ vs nTRACER     | $+4.8$        | $+36.3$       | $+68.9$       |
 | ($1.33367$)             |               |               |               |
 +-------------------------+---------------+---------------+---------------+
@@ -462,6 +466,10 @@ $|\Delta\kappa_{\mathrm{eff}}|$.
 | explicit pin            |               |               |               |
 | ($1.1864955$)           |               |               |               |
 +-------------------------+---------------+---------------+---------------+
+| $\Delta$ vs OpenMC,     | $-184.3$      | $-110.9$      | $-61.1$       |
+| rect. rods              |               |               |               |
+| ($1.1872176$)           |               |               |               |
++-------------------------+---------------+---------------+---------------+
 | $\Delta$ vs McGraw      | $-108.6$      | $-35.2$       | $+14.7$       |
 | high-fidelity           |               |               |               |
 | ($1.18646$)             |               |               |               |
@@ -472,23 +480,27 @@ $|\Delta\kappa_{\mathrm{eff}}|$.
 
 : Rectangular-node OpenPSN (un-homogenised material XS). $\Delta$ in pcm
 versus the explicitly noted reference. References: the directly computed
-OpenMC explicit-geometry (fuel circle $+$ water annulus) runs on the
-same un-homogenised data, the high-fidelity reference $1.18646$ of
-McGraw *et al.* [@mcgraw2014], and nTRACER (SPHINCS). {#tab:rect}
+OpenMC explicit-geometry runs on the same un-homogenised data --- fuel
+circle $+$ water annulus, and the identical rectangular-rod geometry of
+the PSN nodes --- the high-fidelity reference $1.18646$ of McGraw *et
+al.* [@mcgraw2014], and nTRACER (SPHINCS). {#tab:rect}
 
-On the 1/4 core the eigenvalue climbs monotonically into the reference:
-$-112.1 \rightarrow -38.7 \rightarrow +11.1$ pcm for
-$M=8\rightarrow12\rightarrow16$, with $M{=}16$ inside the OpenMC
+On the 1/4 core the eigenvalue climbs monotonically toward the
+reference: $-112.1 \rightarrow -38.7 \rightarrow +11.1$ pcm for
+$M=8\rightarrow12\rightarrow16$, with $M{=}16$ at $\sim3$ of the OpenMC
 standard error ($\pm3.4$ pcm) and within $+14.7$ pcm of the
-high-fidelity reference $1.18646$. This is the cleanest statement of
-what the method can do: with the homogenisation model removed, the
-residual of the nodal PSN solution against a high-fidelity
-explicit-geometry transport calculation is at the level of the Monte
-Carlo statistics. (The assembly $M$ dependence drifts the other way,
-upward with $M$: the reflective assembly has no leakage channel to
-absorb the angular cliff, so the angular-moment closure over-corrects as
-$M$ grows; the core, with two vacuum edges, converges on the reference
-instead.)
+high-fidelity reference $1.18646$. Against the OpenMC run on the
+identical rectangular-rod geometry
+(Section [\[sec:rectref\]](#sec:rectref){reference-type="ref"
+reference="sec:rectref"}, Figure [5](#fig:rectflux){reference-type="ref"
+reference="fig:rectflux"}) the same sweep reads
+$-184.3 \rightarrow -110.9 \rightarrow -61.1$ pcm: still monotonically
+decreasing, so at $M{=}16$ the angular-moment closure, not the square
+tiling, is what sets the residual. (The assembly $M$ dependence drifts
+the other way, upward with $M$: the reflective assembly has no leakage
+channel to absorb the angular cliff, so the angular-moment closure
+over-corrects as $M$ grows; the core, with two vacuum edges, converges
+toward the reference instead.)
 
 #### Flux comparison, explicit geometry.
 
@@ -523,6 +535,54 @@ rectangular-node OpenPSN
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi><mo>=</mo><mn>16</mn></mrow><annotation encoding="application/x-tex">M{=}16</annotation></semantics></math>,
 un-homogenised material XS) vs. OpenMC (explicit geometry, 7-group
 collision estimator). One row per problem — single
+UO<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi></mi><mn>2</mn></msub><annotation encoding="application/x-tex">_2</annotation></semantics></math>
+assembly
+(17<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>17
+pins), then C5G7-2D 1/4 core, fuel region only
+(34<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>34
+pins); columns are OpenPSN, OpenMC, and the pin-by-pin relative error
+(fuel pins only), both maps normalised to unit sum.</figcaption>
+</figure>
+
+[]{#sec:rectref label="sec:rectref"}
+
+#### Rectangular-rod reference.
+
+The circular pin cell is the benchmark's reference geometry, while the
+PSN nodes tile the same cell with an equal-area square fuel block (side
+$0.9571$ cm, water gap $0.1514$ cm). To separate the geometric effect
+from the method difference we run OpenMC on exactly that rectangular-rod
+geometry (same un-homogenised data, same collision-estimator pin
+tallies, $20200$ batches $\times 10^{5}$ particles, fixed seed). The
+square-rod assembly returns $\kappa_{\mathrm{eff}}= 1.3347260$
+($\pm 3.6$ pcm) and the 1/4 core $1.1872176$ ($\pm 3.4$ pcm): $+123$ and
+$+72$ pcm above the cylindrical reference of
+Table [3](#tab:rect){reference-type="ref" reference="tab:rect"} --- the
+pure geometry effect of the square tiling on the same data. Against the
+rectangular-rod reference the $M$ sweep is
+$-101.0 \rightarrow -69.3 \rightarrow -37.2$ pcm on the assembly and
+$-184.3 \rightarrow -110.9 \rightarrow -61.1$ pcm on the 1/4 core:
+monotonically decreasing with $M$, i.e. the angular-moment closure is
+still the dominant residual, and the square tiling does not remove the
+systematic low bias. Figure [5](#fig:rectflux){reference-type="ref"
+reference="fig:rectflux"} compares the two solvers on this identical
+geometry. The pin-by-pin fission maps $\Sigma_f\phi$ agree with a mean
+of $-0.00\%$ and an RMS of $0.16\%$ (max $0.38\%$) on the assembly, and
+a mean of $-0.18\%$ and an RMS of $0.59\%$ (max $1.61\%$) over all
+$1056$ fuel pins of the 1/4 core (assembly means $+0.46\%$, $-0.64\%$,
+$-0.60\%$, $+0.05\%$): the same level as against the explicit
+cylindrical geometry (RMS $0.72\%$), so the pin-level shape difference
+is set by the method, not by the square tiling.
+
+<figure id="fig:rectflux" data-latex-placement="H">
+<img src="c5g7_rect_vs_rect_flux.png" style="width:98.0%" />
+<figcaption>Pin-averaged fission maps
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">Σ</mi><mi>f</mi></msub><mi>ϕ</mi></mrow><annotation encoding="application/x-tex">\Sigma_f\phi</annotation></semantics></math>,
+rectangular-node OpenPSN
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi><mo>=</mo><mn>16</mn></mrow><annotation encoding="application/x-tex">M{=}16</annotation></semantics></math>)
+vs. OpenMC on the identical rectangular-rod geometry (equal-area square
+fuel block per pin cell, 7-group collision estimator). One row per
+problem — single
 UO<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi></mi><mn>2</mn></msub><annotation encoding="application/x-tex">_2</annotation></semantics></math>
 assembly
 (17<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>17
@@ -635,11 +695,14 @@ $k$ against 1.18646. {#tab:lit}
   i.e. $+12.7$ pcm vs. the high-fidelity reference $1.18646$; with the
   rectangular-node model that removes homogenisation entirely, $M{=}16$
   lands at $+11.1$ pcm vs. the OpenMC explicit-geometry reference
-  (inside its Monte Carlo standard error) and $+14.7$ pcm vs. $1.18646$.
-  In either case OpenPSN sits inside the MOC reference cluster
-  ($\pm37$ pcm, plus the better-differenced SN and unstructured codes),
-  and the rectangular-node result is within the $M{=}16$ angular
-  convergence of the nodal PSN method on this problem.
+  ($\sim3.3$ its $\pm3.4$ pcm standard error) and $+14.7$ pcm
+  vs. $1.18646$, and at $-61.1$ pcm vs. the OpenMC run on the identical
+  rectangular-rod geometry (Section 4.4); the pin-level fission maps
+  agree within $0.6\%$ RMS on both geometries. In either case OpenPSN
+  sits inside the MOC reference cluster ($\pm37$ pcm, plus the
+  better-differenced SN and unstructured codes), and the
+  rectangular-node result is within the $M{=}16$ angular convergence of
+  the nodal PSN method on this problem.
 
 Two published outliers are worth noting for completeness: COHINT ($P_2$
 interface currents, $-1125$ pcm) and HELIOS (collision probability,
