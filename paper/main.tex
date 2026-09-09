@@ -10,6 +10,7 @@
 \usepackage[margin=1in]{geometry}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{float}
 \usepackage[hidelinks]{hyperref}
 \usepackage[table]{xcolor}
 \usepackage{titlesec}
@@ -410,7 +411,7 @@ best attainable core point is $-23.6$~pcm, i.e.\ the pinwise-homogenised
 core sits a little low of the OpenMC homogenised reference while the
 assembly converges to it from both sides.
 
-\begin{figure*}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.94\textwidth]{c5g7_bww_sweep_heatmap.png}
 \caption{Pinwise-homogenised (BWW) OpenPSN $\Delta\keff$ in pcm versus the
@@ -421,36 +422,34 @@ assembly (ref.\ $1.3336285$, 35 of 36 points computed); right: C5G7-2D
 64~GB LU fill-in cap). White box/dot marks the minimum-|$\Delta$| point
 per $S$ row.}
 \label{fig:bww}
-\end{figure*}
+\end{figure}
 
 \paragraph{Flux distribution at the best core point.}
 The $-23.6$~pcm best core point is not a sum of compensating local
-errors: Figure~\ref{fig:bwwflux} compares its pin-averaged fission map
-against the OpenMC homogenised-geometry reference on the same BWW
-cross sections (the two differ only in the transport method). The
-OpenPSN field is the pin power $\nu\Sigma_f\phi$, converted to
-$\Sigma_f\phi$ pin by pin with the material fission-weighted $\nu$
-($2.441$ UO$_2$, $2.865$--$2.874$ MOX, $2.434$ fission chamber), and
-both maps are normalised to unit sum. Over all $1056$ fuel pins the
-relative error has a mean of $+0.08\%$, an RMS of $0.17\%$ and a
-maximum of $0.38\%$ --- the UO$_2$ assemblies sit uniformly
-$+0.21\ldots+0.23\%$ and the MOX assemblies $-0.06\%$, a mild
-inter-assembly power-split offset with no pin-level structure. The
-homogenised-core eigenvalue therefore sits where the local physics
-says it should: the $-23.6$~pcm is a small, smooth, method-level bias,
-not a cancellation.
+errors: Figure~\ref{fig:bwwflux} compares its pin-averaged fission
+source map $\nu\Sigma_f\phi$ against the OpenMC homogenised-geometry
+reference on the same BWW cross sections (the two differ only in the
+transport method; the reference field is the converged 7-group flux of
+the same Monte Carlo calculation contracted with the homogenised
+$\nu\Sigma_f$, so both maps are the same quantity, each normalised to
+unit sum). Over all $1056$ fuel pins the relative error has a mean of
+$-0.00\%$, an RMS of $0.12\%$ and a maximum of $0.45\%$, with no
+systematic offset between the UO$_2$ and MOX assemblies (quadrant
+means $+0.02\%$, $-0.02\%$, $+0.01\%$, $-0.03\%$). The homogenised-core
+eigenvalue therefore sits where the local physics says it should: the
+$-23.6$~pcm is a small, smooth, method-level bias, not a cancellation.
 
-\begin{figure*}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.98\textwidth]{c5g7_bww_flux_compare.png}
-\caption{Pin-averaged fission maps $\Sigma_f\phi$ at the best
+\caption{Pin-averaged fission source maps $\nu\Sigma_f\phi$ at the best
 pinwise-homogenised core point (M16, S=2) vs.\ the OpenMC
 homogenised-geometry reference on the same BWW XS, C5G7-2D 1/4 core
-(fuel region, 34$\times$34 pins). Left: OpenPSN ($\nu$-corrected);
-centre: OpenMC reference (7-group, collision); right: relative error
-(fuel pins only, both maps normalised to unit sum).}
+(fuel region, 34$\times$34 pins). Left: OpenPSN; centre: OpenMC
+reference; right: relative error (fuel pins only, both maps normalised
+to unit sum).}
 \label{fig:bwwflux}
-\end{figure*}
+\end{figure}
 
 \subsection{Study II --- the rectangular-node model with explicit
 intra-node structure}
@@ -475,7 +474,7 @@ rectangles. The spatial resolution is fixed by this $3\times3$ tiling, so
 the only open discretisation knob is the angular order $M$; there is no
 $S$ axis in this model.
 
-\begin{figure*}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.98\textwidth]{c5g7_rect_layout.png}
 \caption{Rectangularisation of the C5G7 pin cell. (a) Original circular
@@ -486,7 +485,7 @@ single node corner, so the tiling has no T-junctions. (c) Global tiling:
 a $17\times17$ assembly is $51\times51=2601$ rectangles and the 1/4 core
 is $153\times153=23409$.}
 \label{fig:layout}
-\end{figure*}
+\end{figure}
 
 \paragraph{Angular convergence ($M$ sweep).}
 Table~\ref{tab:rect} gives the $M$ sweep with un-homogenised material XS on the single UO$_2$ assembly ($51\times51$ rect. nodes, all edges
@@ -559,18 +558,18 @@ intra-assembly shape error stays below $\pm1\%$ in every assembly; the two
 solvers agree within one percent on the pin-level fission distribution
 for the whole core.}
 
-\begin{figure*}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.98\textwidth]{c5g7_rect_flux_compare_nu.png}
 \caption{Pin-averaged fission maps $\Sigma_f\phi$, rectangular-node
-OpenPSN ($M{=}16$, un-homogenised material XS, $\nu$-corrected) vs.\
+OpenPSN ($M{=}16$, un-homogenised material XS) vs.\
 OpenMC (explicit geometry, 7-group collision estimator). One row per
 problem --- single UO$_2$ assembly (17$\times$17 pins), then C5G7-2D
 1/4 core, fuel region only (34$\times$34 pins); columns are OpenPSN,
 OpenMC, and the pin-by-pin relative error (fuel pins only), both maps
 normalised to unit sum.}
 \label{fig:flux}
-\end{figure*}
+\end{figure}
 
 \subsection{Comparison with the published diffusion / SN / nodal landscape}
 
@@ -621,8 +620,7 @@ MOC (stoch.\ rays) & UNKGRO & 1.18523 & $-132$ \\
 \midrule
 \multicolumn{4}{l}{\emph{This work}}\\
 \rowcolor{gray!15}
-PSN nodal (BWW pinwise-hom) & OpenPSN & 1.1865870 & $+12.7$ \\\
-PSN nodal (rect.\\ node, $M{=}16$) & OpenPSN & 1.1866067 & $+14.7$ \\
+PSN nodal (rect.\ node, $M{=}16$) & OpenPSN & 1.1866067 & $+14.7$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -689,7 +687,7 @@ BWW recipe) is $-23.6$~pcm versus the OpenMC homogenised reference,
 i.e.\ $+12.7$~pcm versus the high-fidelity reference
 $1.18646$. That residual is the homogenisation
 model itself, and the best-point pin-power field agrees with the
-same-recipe OpenMC map to $0.17\%$ RMS (max $0.38\%$): a smooth
+same-recipe OpenMC map to $0.12\%$ RMS (max $0.45\%$): a smooth
 method-level bias, not a cancellation of local errors.
 In the \emph{rectangular-node} study the homogenisation model is removed
 entirely: with un-homogenised 7-group material data the 1/4-core eigenvalue
@@ -697,8 +695,8 @@ converges
 monotonically with $M$ into the OpenMC explicit-geometry reference
 ($-112\rightarrow-39\rightarrow+11$~pcm for $M=8\rightarrow16$), lands
 $+14.7$~pcm from the high-fidelity reference $1.18646$, and its pin-averaged
-fission map $\Sigma_f\phi$ ($\nu$-corrected, same quantity as the Monte
-Carlo tally) agrees with OpenMC to
+fission map $\Sigma_f\phi$ (the same quantity as the Monte
+Carlo fission tally) agrees with OpenMC to
 $0.07\%$ RMS on the single assembly and $0.72\%$ over all $1056$ fuel pins
 of the core (max $1.52\%$; below $\pm1\%$ within every assembly, largest in
 the MOX cells where the local gradients are steepest).
