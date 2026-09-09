@@ -30,6 +30,9 @@ The inner (scattering) solve is done exactly per (i, m-set) for the current
 source; the fission part is power-iterated with k-update (equivalent to the
 paper's two-step iteration, 2.16 steps (1)-(4)).
 """
+import os
+from concurrent.futures import ThreadPoolExecutor
+
 import numpy as np
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import splu
@@ -40,6 +43,30 @@ from .node_rect import (node_params_rect, node_params_rect_generic,
                         node_state_rect, node_response_matrix_rect)
 
 PI = np.pi
+
+
+def _cgroup_cpu_quota():
+    """Effective CPU count: cgroup v2 quota if set, else os.cpu_count()."""
+    try:
+        with open("/sys/fs/cgroup/cpu.max") as f:
+            quota, period = f.read().split()
+        if quota != "max":
+            return max(1, int(quota) // int(period))
+    except (OSError, ValueError):
+        pass
+    return os.cpu_count() or 1
+
+
+def _pool_size(njobs):
+    """Sweep parallelism.  Default: half the available cores; override with
+    PSN_PAR (1 = serial, 0/absent = auto).  Never exceeds the job count."""
+    try:
+        p = int(os.environ.get("PSN_PAR", ""))
+    except ValueError:
+        p = 0
+    if p <= 0:
+        p = max(1, _cgroup_cpu_quota() // 2)
+    return max(1, min(njobs, p))
 
 
 def mirror_x(m, M):
@@ -144,6 +171,7 @@ class PSN2D:
         self._Rcache = {}
         self._syscache = {}
         self._lusys = {}
+        self._pool = None
 
     # ------------------------------------------------------------------ #
     def _node_pr_alpha(self, i, m, mat):
@@ -436,7 +464,14 @@ class PSN2D:
         key = (i, g)
         if key not in self._lusys:
             A, rows_rhs = self.build_system(i, g)
-            self._lusys[key] = (splu(csc_matrix(A)), rows_rhs)
+            # COLAMD: for the C5G7 rect-core systems this cuts the LU fill
+            # from ~205x to ~31x (factor 8.6 GB -> 1.3 GB per (i,g) system,
+            # 21 min -> 23 s of factorization; see c5g7/_probe_ordering.log).
+            lu = splu(csc_matrix(A), permc_spec="COLAMD")
+            # The factor is self-contained (splu holds no reference to the
+            # input matrix), so drop the sparse A (~90 MB per system).
+            self._syscache.pop(key, None)
+            self._lusys[key] = (lu, rows_rhs)
         return self._lusys[key]
 
     def _raw_flux(self, i, g, n, m, qn):
@@ -514,33 +549,97 @@ class PSN2D:
         self._Scache[k] = S
         return S
 
+    def _sweep_one(self, i, g, qnode):
+        """LU back-substitution + node response for ONE (i, g) direction.
+        Thread-safe: reads only shared tables, writes local arrays only."""
+        u = self.solve_i(i, g, qnode)
+        M = self.M
+        J4 = np.empty((self.nodes, M, 4))
+        for m in range(M):
+            for j in range(4):
+                J4[:, m, j] = self._esgn[m, j] * u[self._cidx[m, j]]
+        X = np.empty((self.nodes, M, 9))
+        X[:, :, :4] = J4
+        X[:, :, 4:] = qnode[:, None, :]
+        Y = np.empty((self.nodes, M, 9))
+        for m in range(M):
+            for grp in self._groups:
+                S = self._state_matrix(i, g, m, grp)
+                sel = self._grp_sel[grp]
+                Y[sel, m, :] = X[sel, m, :] @ S.T
+        return self.W[i] / M, Y
+
     def _sweep(self, g, qnode):
-        """Exact solve for the given source (vectorized)."""
+        """Exact solve for the given source (vectorized, single group)."""
         if not hasattr(self, '_Scache'):
             self._vectorize_setup()
         pb = np.zeros(self.nodes)
         qim_sum = np.zeros((self.nodes, 5))
-        M = self.M
         for i in range(self.I):
-            u = self.solve_i(i, g, qnode)
-            w = self.W[i] / M
-            J4 = np.empty((self.nodes, M, 4))
-            for m in range(M):
-                for j in range(4):
-                    J4[:, m, j] = self._esgn[m, j] * u[self._cidx[m, j]]
-            X = np.empty((self.nodes, M, 9))
-            X[:, :, :4] = J4
-            X[:, :, 4:] = qnode[:, None, :]
-            Y = np.empty((self.nodes, M, 9))
-            for m in range(M):
-                for grp in self._groups:
-                    S = self._state_matrix(i, g, m, grp)
-                    sel = self._grp_sel[grp]
-                    Y[sel, m, :] = X[sel, m, :] @ S.T
+            w, Y = self._sweep_one(i, g, qnode)
             pb += w * Y[:, :, 4].sum(axis=1)
             qim_sum[:, 0] += w * Y[:, :, 4].sum(axis=1)
             qim_sum[:, 1:] += w * Y[:, :, 5:].sum(axis=1)
         return pb, qim_sum
+
+    def _sweep_all(self, qnode):
+        """All groups in one dispatch.  Independent work units are the
+        (i, g) direction systems (I x ng = 21 for TY3 x 7-group); the
+        back-substitutions run on the thread pool (SuperLU's C solve
+        releases the GIL), then reduce in the same (g, i) order as the
+        serial path, so results are bit-identical to serial."""
+        if not hasattr(self, '_Scache'):
+            self._vectorize_setup()
+        jobs = [(g, i) for g in range(self.ng) for i in range(self.I)]
+        if self._pool is None:
+            res = {(g, i): self._sweep_one(i, g, qnode[g]) for g, i in jobs}
+        else:
+            futs = {(g, i): self._pool.submit(self._sweep_one, i, g, qnode[g])
+                    for g, i in jobs}
+            res = {gi: f.result() for gi, f in futs.items()}
+        phi = np.zeros((self.ng, self.nodes))
+        qim = np.zeros((self.ng, self.nodes, 5))
+        for g in range(self.ng):
+            for i in range(self.I):
+                w, Y = res[(g, i)]
+                phi[g] += w * Y[:, :, 4].sum(axis=1)
+                qim[g, :, 0] += w * Y[:, :, 4].sum(axis=1)
+                qim[g, :, 1:] += w * Y[:, :, 5:].sum(axis=1)
+        return phi, qim
+
+    def _prefactor_one(self, i, g):
+        self._lu(i, g)
+        self._bterms_for(i, g)
+        # rows_rhs is fully consumed by _bterms_for — drop it (a few hundred
+        # MB per system at core size).
+        lu, _ = self._lusys[(i, g)]
+        self._lusys[(i, g)] = (lu, None)
+
+    def _prefactor(self):
+        """Factorize every (i, g) system up front and build b-term tables,
+        so the sweep does only back-substitution.  SuperLU's factorization
+        releases the GIL, so jobs overlap on a thread pool.  The pool is
+        deliberately small: build+factor carries ~3 GB of transient per
+        job, a wave of 6 stays far inside the 62 GB cgroup.  A separate,
+        larger pool is then created for the sweep back-substitutions."""
+        jobs = [(g, i) for g in range(self.ng) for i in range(self.I)]
+        n = len(jobs)
+        if not hasattr(self, '_Scache'):
+            self._vectorize_setup()   # creates _bterms_by_sys/_groups tables
+        if n > 1:
+            pf = max(1, min(6, _pool_size(n)))
+            pool = ThreadPoolExecutor(max_workers=pf)
+            try:
+                futs = [pool.submit(self._prefactor_one, i, g)
+                        for g, i in jobs]
+                for f in futs:
+                    f.result()
+            finally:
+                pool.shutdown(wait=True)
+            self._pool = ThreadPoolExecutor(max_workers=_pool_size(n))
+        else:
+            self._prefactor_one(*jobs[0])
+            self._pool = None
 
     def _bterms_for(self, i, g):
         """(m, lf) -> (rows, sgns, nodes) for THIS (i, g) system only.
@@ -583,20 +682,64 @@ class PSN2D:
             J4[j] = sg * es * u[c]
         return self._state(J4, qn, i, g, n, m)
 
+    def _source_update(self, qim, lam, matidx):
+        """Plain B.3 paraboloidal source update for the whole spectrum.
+        qim: (ng, nodes, 5) paraboloidal moments of the current flux."""
+        ng = self.ng
+        s = np.empty((ng, self.nodes, 5))
+        for g in range(ng):
+            s[g] = np.zeros((self.nodes, 5))
+            for g2 in range(ng):
+                s[g] += (self.Sgg[g, g2, matidx]
+                         + self.chi[g] * self.nuSf[g2, matidx] / lam
+                         )[:, None] * qim[g2]
+        return s
+
     def keff(self, max_outer=2000, outer_tol=1e-9, verbose=True,
-             source="full"):
+             source="full", extrapolate=False):
         """Multi-group keff driver.
         Source moments (paper B.3): the paraboloidal source in group g is
             qmom_g = sum_{g2} [ Sgg[g,g2] + chi_g * nuSf[g2]/lam ] * mom(phi_g2)
         i.e. fission source is local (same spatial parabola as the flux),
         spectrally distributed by chi.  Reduces exactly to the single-group
-        'full' variant (S + nuSf/lam)*mom that reproduces Fig.3 to <1 pcm."""
+        'full' variant (S + nuSf/lam)*mom that reproduces Fig.3 to <1 pcm.
+
+        Dombey two-point source extrapolation (OFF by default; pass
+        ``extrapolate=True`` to enable): when the power sequence is
+        asymptotically geometric (dlam < 1e-4 and the two-point ratio
+        rho_hat = (k0-k1)/(k1-k2) sits in (0.5, 0.999)) the next source is
+        replaced by the Richardson estimate
+            S_ex = (S_n - rho_hat*S_{n-1}) / (1 - rho_hat),
+        which, for a purely geometric error e_n ~ a*rho^n, equals the
+        fixed point S* exactly.  (A linear combination of paraboloidal
+        sources is a valid paraboloidal source, so the next sweep is
+        well-defined.)  Acceptance is the EXACT fixed-point residual
+        ratio: with G the source-update map, accept iff
+            ||G(S_ex) - S_ex|| < 0.5 * ||G(S_n) - S_n||.
+        A rejected attempt costs one extra sweep and cools down 2
+        iterations; 6 consecutive failures cool down 30 (no hard disable,
+        the map keeps becoming more geometric).  Convergence is judged on
+        the plain (un-extrapolated) dlam sequence.
+
+        WARNING: the extrapolated trajectory is NOT bit-for-bit
+        equivalent to the plain iteration.  On the C5G7 rectangular
+        quarter-core M8 case it converged in 585 outer iterations (vs
+        1454 plain, ~2.5x faster) but returned 1.1853736, 0.06 pcm below
+        the plain value 1.1853742: the two-point extrapolation cancels the
+        dominant geometric mode but leaves a slow subdominant mode whose
+        per-iteration change then falls below the dkeff criterion before
+        it has decayed.  Reference values therefore come from the plain
+        iteration, which is why extrapolation is off by default; use it as
+        a ~2.5x speedup on large core cases when ~0.1 pcm accuracy is
+        acceptable (still within the 1 pcm regression tolerance)."""
         matidx = self.mat[self.j_idx, self.i_idx]
         ng = self.ng
         # physical fission RATE is nuSf * phi * node-area; for rectangular
         # nodes the areas differ so they must enter the balance (for square
         # nodes a constant area cancels in F_new/F_old — path unchanged).
         area_w = self.area.ravel() if self.rect else None
+        # parallel pre-factorization (SuperLU factorize releases the GIL)
+        self._prefactor()
         lam = 1.0
         phi = np.ones((ng, self.nodes))
         fission_rate = np.zeros(self.nodes)
@@ -607,18 +750,14 @@ class PSN2D:
         # paraboloidal moments of uniform flux = [1,0,0,0,0]
         mom = np.zeros((ng, self.nodes, 5))
         mom[:, :, 0] = 1.0
-        qnode = np.zeros((ng, self.nodes, 5))
-        for g in range(ng):
-            for g2 in range(ng):
-                qnode[g] += (self.Sgg[g, g2, matidx]
-                             + self.chi[g] * self.nuSf[g2, matidx] / lam
-                             )[:, None] * mom[g2]
+        qnode = self._source_update(mom, 1.0, matidx)
         F_old = float(fission_rate.sum())
+        lam_hist = []   # last 3 keff values (one per plain sweep)
+        s_hist = []     # last 2 sources actually swept
+        cool = 0        # iterations until extrapolation may retry
+        n_fail = 0      # consecutive rejected attempts
         for outer in range(max_outer):
-            phi = np.zeros((ng, self.nodes))
-            qim = np.zeros((ng, self.nodes, 5))
-            for g in range(ng):
-                phi[g], qim[g] = self._sweep(g, qnode[g])
+            phi, qim = self._sweep_all(qnode)
             fission_rate = np.zeros(self.nodes)
             for g in range(ng):
                 fission_rate += self.nuSf[g, matidx] * phi[g]
@@ -628,14 +767,63 @@ class PSN2D:
             lam_new = lam * F_new / F_old
             dlam = abs(lam_new - lam) / lam_new
             lam = lam_new
-            # paraboloidal source update (B.3), all groups:
-            for g in range(ng):
-                qnode[g] = np.zeros((self.nodes, 5))
-                for g2 in range(ng):
-                    qnode[g] += (self.Sgg[g, g2, matidx]
-                                 + self.chi[g] * self.nuSf[g2, matidx] / lam
-                                 )[:, None] * qim[g2]
+            lam_hist.append(lam)
+            if len(lam_hist) > 3:
+                lam_hist.pop(0)
+            s_hist.append(qnode)
+            if len(s_hist) > 2:
+                s_hist.pop(0)
+            s_next = self._source_update(qim, lam, matidx)
             F_old = F_new
+            # ---------------- Dombey two-point source extrapolation -------
+            qnode = s_next
+            if cool > 0:
+                cool -= 1
+            elif (extrapolate and outer >= 8 and n_fail < 6
+                  and dlam < 1e-4
+                  and len(lam_hist) == 3 and len(s_hist) == 2
+                  and lam_hist[1] != lam_hist[0]):
+                k2, k1, k0 = lam_hist
+                rhat = (k0 - k1) / (k1 - k2)
+                if 0.5 < rhat < 0.999:
+                    s_n, s_nm1 = s_hist[-1], s_hist[-2]
+                    s_ex = (s_n - rhat * s_nm1) / (1.0 - rhat)
+                    phi_ex, qim_ex = self._sweep_all(s_ex)
+                    fission_rate = np.zeros(self.nodes)
+                    for g in range(ng):
+                        fission_rate += self.nuSf[g, matidx] * phi_ex[g]
+                    if area_w is not None:
+                        fission_rate *= area_w
+                    F_ex = float(fission_rate.sum())
+                    lam_ex = lam * F_ex / F_old   # = F_ex/F_0 (telescoping)
+                    # exact fixed-point residual test (no extra sweep):
+                    r_n = float(np.linalg.norm(s_next - s_n) /
+                                max(1.0, float(np.linalg.norm(s_n))))
+                    s_ex_up = self._source_update(qim_ex, lam_ex, matidx)
+                    r_ex = float(np.linalg.norm(s_ex_up - s_ex) /
+                                 max(1.0, float(np.linalg.norm(s_ex))))
+                    if r_ex < 0.5 * r_n:
+                        # accept: continue the power sequence from S_ex
+                        qnode = s_ex
+                        cool = 2
+                        n_fail = 0
+                        if verbose:
+                            print(f"  dombey: rhat={rhat:.6f}  "
+                                  f"residual {r_n:.2e} -> {r_ex:.2e}  "
+                                  f"keff_ex={lam_ex:.7f}")
+                    else:
+                        n_fail += 1
+                        if verbose:
+                            print(f"  dombey reject: rhat={rhat:.6f}  "
+                                  f"r_n={r_n:.2e} r_ex={r_ex:.2e}  "
+                                  f"ratio={r_ex/max(r_n,1e-300):.2f} "
+                                  f"(fail {n_fail})")
+                        if n_fail >= 6:
+                            # not a pure geometric mode yet: cool down and
+                            # let it retry later, do not disable outright
+                            cool = 30
+                            n_fail = 0
+            # -----------------------------------------------------------------
             if verbose and (outer % 5 == 0 or dlam < outer_tol):
                 print(f"it {outer:4d}  keff={lam:.7f}  dkeff={dlam:.2e}  "
                       f"F={F_new:.5e}")
