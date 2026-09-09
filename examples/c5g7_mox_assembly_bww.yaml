@@ -1,0 +1,46 @@
+# PSN2D — C5G7 single MOX assembly (BWW flux-weighted self-shielded pin XS)
+# (17x17, reflective, pin-homogenized) (7-group, c5g7-mgxs.h5 family)
+#
+# one 17x17 MOX assembly; all-reflective boundary; pin = fuel(r=0.54) + water ring.
+# XS: c5g7_materials_bww_om.yaml (pinwise BWW self-shielded, same library as
+# the UO2 BWW sweep).
+problem: c5g7_mox_assembly_bww
+description: C5G7 single MOX assembly, 7-group PSN2D, BWW pinwise XS.
+
+geometry:
+  grid:
+    - [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+    - [3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+    - [3, 1, 1, 1, 1, 4, 1, 1, 4, 1, 1, 4, 1, 1, 1, 1, 3]
+    - [3, 1, 1, 4, 1, 2, 2, 2, 2, 2, 2, 2, 1, 4, 1, 1, 3]
+    - [3, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 3]
+    - [3, 1, 4, 2, 2, 4, 2, 2, 4, 2, 2, 4, 2, 2, 4, 1, 3]
+    - [3, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 3]
+    - [3, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 3]
+    - [3, 1, 4, 2, 2, 4, 2, 2, 5, 2, 2, 4, 2, 2, 4, 1, 3]
+    - [3, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 3]
+    - [3, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 3]
+    - [3, 1, 4, 2, 2, 4, 2, 2, 4, 2, 2, 4, 2, 2, 4, 1, 3]
+    - [3, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 3]
+    - [3, 1, 1, 4, 1, 2, 2, 2, 2, 2, 2, 2, 1, 4, 1, 1, 3]
+    - [3, 1, 1, 1, 1, 4, 1, 1, 4, 1, 1, 4, 1, 1, 1, 1, 3]
+    - [3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+    - [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
+  unit_size: 1.26
+  subdivide: 1
+
+boundaries:
+  left: reflect
+  bottom: reflect
+  right: reflect
+  top: reflect
+
+materials_file: c5g7_materials_bww_om.yaml
+
+angular:
+  model: ty3
+  M: 12
+
+solver:
+  keff_tol: 1e-10
+  max_outer: 6000

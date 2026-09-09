@@ -23,15 +23,24 @@ from .solver import PSN2D
 def build_solver(spec, case):
     geom = spec["geometry"]
     if bool(geom.get("rect", False)):
-        # rectangular nodes: per-node widths, no subdivision (widths are the
-        # spatial resolution directly)
-        mat_map = np.array(geom["mat_grid"], dtype=int)
-        widths = (np.asarray(geom["widths_x"], float),
-                  np.asarray(geom["widths_y"], float))
+        # rectangular nodes: per-node widths.  An optional per-case
+        # `subdivide` S splits every node into S x S sub-nodes (widths / S,
+        # material unchanged) — same kron recipe as the square path.  S=1 is
+        # the identity (arrays pass through untouched -> bit-identical).
+        mat_map0 = np.array(geom["mat_grid"], dtype=int)
+        hx0 = np.asarray(geom["widths_x"], float)
+        hy0 = np.asarray(geom["widths_y"], float)
         # scalar widths broadcast to the grid shape
-        if widths[0].ndim == 0:
-            widths = (np.full(mat_map.shape, float(widths[0])),
-                      np.full(mat_map.shape, float(widths[1])))
+        if hx0.ndim == 0:
+            hx0 = np.full(mat_map0.shape, float(hx0))
+            hy0 = np.full(mat_map0.shape, float(hy0))
+        S = int(case.get("subdivide", 1))
+        if S != 1:
+            f = np.full((S, S), 1.0 / S)
+            mat_map = np.kron(mat_map0, np.ones((S, S), int))
+            widths = (np.kron(hx0, f), np.kron(hy0, f))
+        else:
+            mat_map, widths = mat_map0, (hx0, hy0)
         h = float(widths[0].ravel()[0])     # representative (unused by rect)
     else:
         grid = np.array(geom["grid"], dtype=int)

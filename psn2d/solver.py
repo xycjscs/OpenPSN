@@ -31,6 +31,14 @@ source; the fission part is power-iterated with k-update (equivalent to the
 paper's two-step iteration, 2.16 steps (1)-(4)).
 """
 import os
+import sys
+import time
+
+# Note: OpenBLAS/OMP are pinned to 1 thread in psn2d/__init__.py (imported
+# before this module) — see the determinism guard there.
+
+import multiprocessing as _mp
+import multiprocessing.shared_memory as _shm
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -67,6 +75,72 @@ def _pool_size(njobs):
     if p <= 0:
         p = max(1, _cgroup_cpu_quota() // 2)
     return max(1, min(njobs, p))
+
+
+# Module handle to the currently-active PSN2D object; set by the parent
+# right before forking the sweep worker pool.  Forked children inherit it
+# read-only via copy-on-write (LU factors, state-matrix cache, b-term
+# tables are all built before the fork and never mutated afterwards).
+_SWEET_PSN = None
+
+
+def _sweep_worker(args):
+    """Forked sweep worker: one (i, g) direction, end to end.
+
+    Runs in a child process (its own GIL — the whole reason for processes;
+    the scipy build in use does NOT release the GIL around SuperLU's
+    gssv back-substitution, so a thread pool serializes on the lock and
+    MEASURES SLOWER than serial on the 21-job C5G7 core).  The source
+    vector is read from, and the per-job reduce is written to, POSIX
+    shared memory: no pickling of large arrays.  The local reduce below
+    uses the SAME expression order as the serial path of ``_sweep_all``,
+    so the parent's accumulation is bit-identical."""
+    (g, i), qname, rname, ng, I_, nodes, w = args
+    qs = _shm.SharedMemory(name=qname)
+    rs = _shm.SharedMemory(name=rname)
+    try:
+        qnode = np.frombuffer(qs.buf, dtype=np.float64).reshape(ng, nodes, 5)
+        q = qnode[g].copy()
+        out = np.frombuffer(rs.buf, dtype=np.float64).reshape(ng, I_, nodes, 5)
+        psn = _SWEET_PSN
+        M_ = psn.M
+        raw = np.empty((nodes, M_, 4))
+        for m in range(M_):
+            for grp in psn._groups:
+                S = psn._state_matrix(i, g, m, grp)
+                sel = psn._grp_sel[grp]
+                raw[sel, m, :] = q[sel] @ S[:4, 4:].T
+        b = np.zeros(psn.ncol)
+        for (m, lf), (rws, sgns, nds) in psn._bterms_for(i, g).items():
+            np.add.at(b, rws, sgns * raw[nds, m, lf])
+        lu, _ = psn._lusys[(i, g)]
+        u = lu.solve(b)
+        Y = np.empty((nodes, M_, 9))
+        J4 = np.empty((nodes, M_, 4))
+        for m in range(M_):
+            for j in range(4):
+                J4[:, m, j] = psn._esgn[m, j] * u[psn._cidx[m, j]]
+        X = np.empty((nodes, M_, 9))
+        X[:, :, :4] = J4
+        X[:, :, 4:] = q[:, None, :]
+        for m in range(M_):
+            for grp in psn._groups:
+                S = psn._state_matrix(i, g, m, grp)
+                sel = psn._grp_sel[grp]
+                Y[sel, m, :] = X[sel, m, :] @ S.T
+        o = out[g, i]
+        o[:, 0] = w * Y[:, :, 4].sum(axis=1)
+        o[:, 1:] = w * Y[:, :, 5:].sum(axis=1)
+    finally:
+        # drop EVERY numpy view of the shared buffers before closing them
+        # (a live view = an exported pointer -> BufferError on close);
+        # explicit None-assignment releases the frame slots deterministically
+        qnode = None
+        out = None
+        o = None
+        qs.close()
+        rs.close()
+    return (g, i)
 
 
 def mirror_x(m, M):
@@ -171,7 +245,10 @@ class PSN2D:
         self._Rcache = {}
         self._syscache = {}
         self._lusys = {}
-        self._pool = None
+        # process-pool sweep (see _start_sweep_pool / _sweep_all)
+        self._proc_pool = None
+        self._q_shm = None
+        self._r_shm = None
 
     # ------------------------------------------------------------------ #
     def _node_pr_alpha(self, i, m, mat):
@@ -584,19 +661,28 @@ class PSN2D:
 
     def _sweep_all(self, qnode):
         """All groups in one dispatch.  Independent work units are the
-        (i, g) direction systems (I x ng = 21 for TY3 x 7-group); the
-        back-substitutions run on the thread pool (SuperLU's C solve
-        releases the GIL), then reduce in the same (g, i) order as the
-        serial path, so results are bit-identical to serial."""
+        (i, g) direction systems (I x ng = 21 for TY3 x 7-group).
+
+        Two paths, bit-identical to each other:
+        * serial — small problems (ncol < _PROCPOOL_MIN_NCOL or PSN_PAR=1);
+          the original implementation, unchanged expression order.
+        * process pool — large problems.  A thread pool does NOT work here:
+          SuperLU's gssv back-substitution does not release the GIL in this
+          scipy build (measured 0.58x at 21 threads, i.e. slower than
+          serial), so the per-iteration solve runs in forked processes that
+          share the pre-factorized object read-only (COW) and exchange
+          sources/reduces through POSIX shared memory.  Workers reduce
+          locally with the serial path's exact expression order and the
+          parent accumulates in the same (g, i) order -> bit-identical."""
+        if self._proc_pool is None:
+            return self._sweep_all_serial(qnode)
+        return self._sweep_all_proc(qnode)
+
+    def _sweep_all_serial(self, qnode):
         if not hasattr(self, '_Scache'):
             self._vectorize_setup()
         jobs = [(g, i) for g in range(self.ng) for i in range(self.I)]
-        if self._pool is None:
-            res = {(g, i): self._sweep_one(i, g, qnode[g]) for g, i in jobs}
-        else:
-            futs = {(g, i): self._pool.submit(self._sweep_one, i, g, qnode[g])
-                    for g, i in jobs}
-            res = {gi: f.result() for gi, f in futs.items()}
+        res = {(g, i): self._sweep_one(i, g, qnode[g]) for g, i in jobs}
         phi = np.zeros((self.ng, self.nodes))
         qim = np.zeros((self.ng, self.nodes, 5))
         for g in range(self.ng):
@@ -605,6 +691,29 @@ class PSN2D:
                 phi[g] += w * Y[:, :, 4].sum(axis=1)
                 qim[g, :, 0] += w * Y[:, :, 4].sum(axis=1)
                 qim[g, :, 1:] += w * Y[:, :, 5:].sum(axis=1)
+        return phi, qim
+
+    def _sweep_all_proc(self, qnode):
+        """Process-pool sweep: sources in via shared memory, per-job local
+        reduces out via shared memory; parent accumulates in the exact
+        serial (g, i) order (bit-identical to _sweep_all_serial)."""
+        q_view = np.frombuffer(self._q_shm.buf, dtype=np.float64)
+        q_view.reshape(-1)[:] = np.ascontiguousarray(qnode).ravel()
+        ng, I_, nodes = self.ng, self.I, self.nodes
+        args = [((g, i), self._q_shm.name, self._r_shm.name,
+                 ng, I_, nodes, self.W[i] / self.M)
+                for g in range(ng) for i in range(I_)]
+        self._proc_pool.map_async(_sweep_worker, args).get()
+        out = np.frombuffer(self._r_shm.buf, dtype=np.float64)
+        out = out.reshape(ng, I_, nodes, 5)
+        phi = np.zeros((ng, nodes))
+        qim = np.zeros((ng, nodes, 5))
+        for g in range(ng):
+            for i in range(I_):
+                o = out[g, i]
+                phi[g] += o[:, 0]
+                qim[g, :, 0] += o[:, 0]
+                qim[g, :, 1:] += o[:, 1:]
         return phi, qim
 
     def _prefactor_one(self, i, g):
@@ -618,10 +727,10 @@ class PSN2D:
     def _prefactor(self):
         """Factorize every (i, g) system up front and build b-term tables,
         so the sweep does only back-substitution.  SuperLU's factorization
-        releases the GIL, so jobs overlap on a thread pool.  The pool is
-        deliberately small: build+factor carries ~3 GB of transient per
-        job, a wave of 6 stays far inside the 62 GB cgroup.  A separate,
-        larger pool is then created for the sweep back-substitutions."""
+        releases the GIL (measured ~19x at 6 threads), so factorization
+        overlaps on a thread pool.  The pool is deliberately small:
+        build+factor carries ~3 GB of transient per job, a wave of 6 stays
+        far inside the 62 GB cgroup."""
         jobs = [(g, i) for g in range(self.ng) for i in range(self.I)]
         n = len(jobs)
         if not hasattr(self, '_Scache'):
@@ -636,10 +745,69 @@ class PSN2D:
                     f.result()
             finally:
                 pool.shutdown(wait=True)
-            self._pool = ThreadPoolExecutor(max_workers=_pool_size(n))
         else:
             self._prefactor_one(*jobs[0])
-            self._pool = None
+
+    # ------------------ process-pool sweep (fork + COW) ------------------
+    # The back-substitution (SuperLU gssv) does NOT release the GIL in this
+    # scipy build (measured 2026-09-12: 21-thread solve scaling = 0.58x,
+    # i.e. SLOWER than serial; GIL-contention probe 1.61x under a busy
+    # Python main thread).  Factorization DOES release the GIL (hence the
+    # thread pool above), but the per-iteration sweep needs one GIL per
+    # worker -> a forked PROCESS pool.  Children inherit the parent object
+    # read-only via copy-on-write (21 COLAMD factors, 13 GB on the core,
+    # are never copied); sources flow in and per-job reduces flow out
+    # through POSIX shared memory, so the parent pays only a ~2 MB copy of
+    # the source and a ~6.5 MB readback per iteration.  The worker's local
+    # reduce uses the serial path's exact expression order, and the parent
+    # accumulates jobs in the same (g, i) order -> bit-identical results.
+    #
+    # Small problems stay serial: the fork + per-iter copy cost only pays
+    # off once one serial sweep exceeds ~0.2 s.
+    _PROCPOOL_MIN_NCOL = 150000
+
+    def _start_sweep_pool(self):
+        """Fork the worker pool AFTER everything the workers read is warm:
+        all LU factors, b-term tables and state-matrix caches (a warm
+        first serial sweep guarantees the latter two are populated)."""
+        global _SWEET_PSN
+        if self._proc_pool is not None:
+            return
+        n = self.ng * self.I
+        p = _pool_size(n)
+        if p <= 1 or self.ncol < self._PROCPOOL_MIN_NCOL:
+            return
+        # warm every lazy cache so no worker ever populates a shared cache
+        # (which would COW-diverge); the serial warm sweep already did this
+        # for the (0, 0) state matrices used in probing — do it for all.
+        for m in range(self.M):
+            for grp in self._groups:
+                self._state_matrix(0, 0, m, grp)
+        for g in range(self.ng):
+            for i in range(self.I):
+                _ = self._bterms_for(i, g)
+        self._q_shm = _shm.SharedMemory(create=True,
+                                        size=self.ng * self.nodes * 5 * 8)
+        self._r_shm = _shm.SharedMemory(create=True,
+                                        size=self.ng * self.I
+                                           * self.nodes * 5 * 8)
+        _SWEET_PSN = self
+        ctx = _mp.get_context("fork")
+        self._proc_pool = ctx.Pool(processes=p)
+
+    def _stop_sweep_pool(self):
+        global _SWEET_PSN
+        if self._proc_pool is not None:
+            self._proc_pool.close()
+            self._proc_pool.join()
+            self._proc_pool = None
+        for sh in (self._q_shm, self._r_shm):
+            if sh is not None:
+                sh.close()
+                sh.unlink()
+        self._q_shm = None
+        self._r_shm = None
+        _SWEET_PSN = None
 
     def _bterms_for(self, i, g):
         """(m, lf) -> (rows, sgns, nodes) for THIS (i, g) system only.
@@ -756,79 +924,93 @@ class PSN2D:
         s_hist = []     # last 2 sources actually swept
         cool = 0        # iterations until extrapolation may retry
         n_fail = 0      # consecutive rejected attempts
-        for outer in range(max_outer):
-            phi, qim = self._sweep_all(qnode)
-            fission_rate = np.zeros(self.nodes)
-            for g in range(ng):
-                fission_rate += self.nuSf[g, matidx] * phi[g]
-            if area_w is not None:
-                fission_rate *= area_w
-            F_new = float(fission_rate.sum())
-            lam_new = lam * F_new / F_old
-            dlam = abs(lam_new - lam) / lam_new
-            lam = lam_new
-            lam_hist.append(lam)
-            if len(lam_hist) > 3:
-                lam_hist.pop(0)
-            s_hist.append(qnode)
-            if len(s_hist) > 2:
-                s_hist.pop(0)
-            s_next = self._source_update(qim, lam, matidx)
-            F_old = F_new
-            # ---------------- Dombey two-point source extrapolation -------
-            qnode = s_next
-            if cool > 0:
-                cool -= 1
-            elif (extrapolate and outer >= 8 and n_fail < 6
-                  and dlam < 1e-4
-                  and len(lam_hist) == 3 and len(s_hist) == 2
-                  and lam_hist[1] != lam_hist[0]):
-                k2, k1, k0 = lam_hist
-                rhat = (k0 - k1) / (k1 - k2)
-                if 0.5 < rhat < 0.999:
-                    s_n, s_nm1 = s_hist[-1], s_hist[-2]
-                    s_ex = (s_n - rhat * s_nm1) / (1.0 - rhat)
-                    phi_ex, qim_ex = self._sweep_all(s_ex)
-                    fission_rate = np.zeros(self.nodes)
-                    for g in range(ng):
-                        fission_rate += self.nuSf[g, matidx] * phi_ex[g]
-                    if area_w is not None:
-                        fission_rate *= area_w
-                    F_ex = float(fission_rate.sum())
-                    lam_ex = lam * F_ex / F_old   # = F_ex/F_0 (telescoping)
-                    # exact fixed-point residual test (no extra sweep):
-                    r_n = float(np.linalg.norm(s_next - s_n) /
-                                max(1.0, float(np.linalg.norm(s_n))))
-                    s_ex_up = self._source_update(qim_ex, lam_ex, matidx)
-                    r_ex = float(np.linalg.norm(s_ex_up - s_ex) /
-                                 max(1.0, float(np.linalg.norm(s_ex))))
-                    if r_ex < 0.5 * r_n:
-                        # accept: continue the power sequence from S_ex
-                        qnode = s_ex
-                        cool = 2
-                        n_fail = 0
-                        if verbose:
-                            print(f"  dombey: rhat={rhat:.6f}  "
-                                  f"residual {r_n:.2e} -> {r_ex:.2e}  "
-                                  f"keff_ex={lam_ex:.7f}")
-                    else:
-                        n_fail += 1
-                        if verbose:
-                            print(f"  dombey reject: rhat={rhat:.6f}  "
-                                  f"r_n={r_n:.2e} r_ex={r_ex:.2e}  "
-                                  f"ratio={r_ex/max(r_n,1e-300):.2f} "
-                                  f"(fail {n_fail})")
-                        if n_fail >= 6:
-                            # not a pure geometric mode yet: cool down and
-                            # let it retry later, do not disable outright
-                            cool = 30
+        warm = True    # first sweep runs serial to warm every lazy cache
+        try:
+            for outer in range(max_outer):
+                if warm:
+                    # Serial warm sweep: populates _Scache/_bterms_by_sys
+                    # etc. so that, after the fork, NO worker ever writes
+                    # into a shared cache (a worker-side cache fill would
+                    # COW-diverge from the parent and is wasted work).
+                    phi, qim = self._sweep_all_serial(qnode)
+                    self._start_sweep_pool()
+                    warm = False
+                else:
+                    phi, qim = self._sweep_all(qnode)
+                fission_rate = np.zeros(self.nodes)
+                for g in range(ng):
+                    fission_rate += self.nuSf[g, matidx] * phi[g]
+                if area_w is not None:
+                    fission_rate *= area_w
+                F_new = float(fission_rate.sum())
+                lam_new = lam * F_new / F_old
+                dlam = abs(lam_new - lam) / lam_new
+                lam = lam_new
+                lam_hist.append(lam)
+                if len(lam_hist) > 3:
+                    lam_hist.pop(0)
+                s_hist.append(qnode)
+                if len(s_hist) > 2:
+                    s_hist.pop(0)
+                s_next = self._source_update(qim, lam, matidx)
+                F_old = F_new
+                # ---------------- Dombey two-point source extrapolation -------
+                qnode = s_next
+                if cool > 0:
+                    cool -= 1
+                elif (extrapolate and outer >= 8 and n_fail < 6
+                      and dlam < 1e-4
+                      and len(lam_hist) == 3 and len(s_hist) == 2
+                      and lam_hist[1] != lam_hist[0]):
+                    k2, k1, k0 = lam_hist
+                    rhat = (k0 - k1) / (k1 - k2)
+                    if 0.5 < rhat < 0.999:
+                        s_n, s_nm1 = s_hist[-1], s_hist[-2]
+                        s_ex = (s_n - rhat * s_nm1) / (1.0 - rhat)
+                        phi_ex, qim_ex = self._sweep_all(s_ex)
+                        fission_rate = np.zeros(self.nodes)
+                        for g in range(ng):
+                            fission_rate += self.nuSf[g, matidx] * phi_ex[g]
+                        if area_w is not None:
+                            fission_rate *= area_w
+                        F_ex = float(fission_rate.sum())
+                        lam_ex = lam * F_ex / F_old   # = F_ex/F_0 (telescoping)
+                        # exact fixed-point residual test (no extra sweep):
+                        r_n = float(np.linalg.norm(s_next - s_n) /
+                                    max(1.0, float(np.linalg.norm(s_n))))
+                        s_ex_up = self._source_update(qim_ex, lam_ex, matidx)
+                        r_ex = float(np.linalg.norm(s_ex_up - s_ex) /
+                                     max(1.0, float(np.linalg.norm(s_ex))))
+                        if r_ex < 0.5 * r_n:
+                            # accept: continue the power sequence from S_ex
+                            qnode = s_ex
+                            cool = 2
                             n_fail = 0
-            # -----------------------------------------------------------------
-            if verbose and (outer % 5 == 0 or dlam < outer_tol):
-                print(f"it {outer:4d}  keff={lam:.7f}  dkeff={dlam:.2e}  "
-                      f"F={F_new:.5e}")
-            if dlam < outer_tol:
-                break
+                            if verbose:
+                                print(f"  dombey: rhat={rhat:.6f}  "
+                                      f"residual {r_n:.2e} -> {r_ex:.2e}  "
+                                      f"keff_ex={lam_ex:.7f}")
+                        else:
+                            n_fail += 1
+                            if verbose:
+                                print(f"  dombey reject: rhat={rhat:.6f}  "
+                                      f"r_n={r_n:.2e} r_ex={r_ex:.2e}  "
+                                      f"ratio={r_ex/max(r_n,1e-300):.2f} "
+                                      f"(fail {n_fail})")
+                            if n_fail >= 6:
+                                # not a pure geometric mode yet: cool down and
+                                # let it retry later, do not disable outright
+                                cool = 30
+                                n_fail = 0
+                # -----------------------------------------------------------------
+                if verbose and (outer % 5 == 0 or dlam < outer_tol):
+                    print(f"it {outer:4d}  keff={lam:.7f}  dkeff={dlam:.2e}  "
+                          f"F={F_new:.5e}")
+                if dlam < outer_tol:
+                    break
+
+        finally:
+            self._stop_sweep_pool()
         return lam, phi, qnode
 
     # ------------------------------------------------------------------ #
