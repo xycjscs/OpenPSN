@@ -37,10 +37,8 @@ import time
 # Note: OpenBLAS/OMP are pinned to 1 thread in psn2d/__init__.py (imported
 # before this module) — see the determinism guard there.
 
-import mmap
 import multiprocessing as _mp
 import multiprocessing.shared_memory as _shm
-import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -95,109 +93,49 @@ def _shm_free_bytes():
         return 0
 
 
-class _MmapBuf:
-    """Parent-side handle around an open MAP_SHARED file mapping."""
-    __slots__ = ("_fd", "_mm")
-
-    def __init__(self, fd, mm):
-        self._fd, self._mm = fd, mm
-
-    @property
-    def buf(self):
-        return self._mm
-
-    def close(self):
-        try:
-            self._mm.close()
-        finally:
-            if self._fd is not None:
-                os.close(self._fd)
-                self._fd = None
-
-
 class _SharedBuf:
-    """Shared byte buffer for the process-pool sweep.
+    """Shared byte buffer for the process-pool sweep (POSIX shm ONLY).
 
-    POSIX shm (``psm_*`` on /dev/shm) when the segment fits in the tmpfs;
-    otherwise a file under ``$PSN_SWEEP_SHM_DIR`` (default /tmp) mmap'ed
-    MAP_SHARED.  On this host /dev/shm is a 64 MiB tmpfs while core
-    S>=5 sweep segments need 70-100 MiB: an over-cap shm segment SIGBUSes
-    the worker on the first write past the limit and pool.map then hangs
-    forever (C5G7 core M2_S6 deadlock, 2026-09-10).  The file path is
-    byte-for-byte the same memory model (shared pages, buffer protocol),
-    so the sweep result is unchanged.
+    The parent gates on q_size + r_size <= free tmpfs before creating
+    EITHER segment (tmpfs is charged on page touch, so the gate must
+    cover the SUM — see the note in ``_start_sweep_pool``).  A too-small
+    tmpfs raises MemoryError with an actionable message: there is
+    deliberately NO disk fallback.  A PSN2D sweep host must ship a
+    roomy /dev/shm (>= q+r for the largest sweep; the C5G7 quarter
+    core at S=6 needs ~100 MiB, the 64 MiB container default does not
+    fit core S>=5).  Run with ``PSN_PAR=1`` to stay serial and skip
+    the pool (and its shared buffers) entirely.
     """
-    __slots__ = ("name", "size", "_sm", "_mm", "_fd", "_path")
+    __slots__ = ("name", "size", "_sm")
 
-    def __init__(self, size, force_file=False):
+    def __init__(self, size):
         self.size = size
-        self._sm = None
-        self._mm = None
-        self._fd = None
-        self._path = None
-        self.name = ""
-        forced_file = force_file or os.environ.get("PSN_SWEEP_SHM", "1") == "0"
-        if not forced_file and size <= _shm_free_bytes():
-            try:
-                sm = _shm.SharedMemory(create=True, size=size)
-                self._sm = sm
-                self.name = sm.name
-                return
-            except OSError:
-                pass   # tmpfs full at alloc time -> fall through to /tmp
-        d = os.environ.get("PSN_SWEEP_SHM_DIR", "/tmp")
-        fd, path = tempfile.mkstemp(prefix="psn_sweep_", dir=d)
-        try:
-            os.ftruncate(fd, size)
-            self._mm = mmap.mmap(fd, size, flags=mmap.MAP_SHARED)
-        except Exception:
-            os.close(fd)
-            try:
-                os.unlink(path)
-            except OSError:
-                pass
-            raise
-        self._fd = fd
-        self._path = path
-        self.name = path
+        free = _shm_free_bytes()
+        if size > free:
+            raise MemoryError(
+                f"sweep pool needs {size / 2**20:.1f} MiB of /dev/shm but "
+                f"only {free / 2**20:.1f} MiB is free — enlarge the shm "
+                f"tmpfs (docker: --shm-size=4g) or run serial (PSN_PAR=1)")
+        self._sm = _shm.SharedMemory(create=True, size=size)
+        self.name = self._sm.name
 
     @property
     def buf(self):
-        return self._sm.buf if self._sm is not None else self._mm
+        return self._sm.buf
 
     def close(self):
         # Note: does NOT clear _sm — unlink() must still see it (the
         # sweep pool does close(); unlink(); and a cleared _sm would
-        # silently skip the shm_unlink, leaking the 64 MiB /dev/shm).
-        if self._sm is not None:
-            self._sm.close()
-        if self._mm is not None:
-            self._mm.close()
-            self._mm = None
-        if self._fd is not None:
-            os.close(self._fd)
-            self._fd = None
+        # silently skip the shm_unlink, leaking the segment).
+        self._sm.close()
 
     def unlink(self):
-        if self._sm is not None:
-            self._sm.unlink()
-            self._sm = None
-        if self._path is not None:
-            try:
-                os.unlink(self._path)
-            except OSError:
-                pass
-            self._path = None
+        self._sm.unlink()
+        self._sm = None
 
 
 def _open_buf(name):
-    """Worker side: open a shared sweep buffer by the name string the
-    parent put in the job args ('psm_*' -> POSIX shm, absolute path ->
-    /tmp file mapping)."""
-    if os.path.isabs(name):
-        fd = os.open(name, os.O_RDWR)
-        mm = mmap.mmap(fd, 0, flags=mmap.MAP_SHARED)
-        return _MmapBuf(fd, mm)
+    """Worker side: open the parent's POSIX-shm sweep segment by name."""
     return _shm.SharedMemory(name=name)
 
 
@@ -909,12 +847,18 @@ class PSN2D:
         # as free space until the workers write it (C5G7 core M4_S5
         # deadlock, 2026-09-10: q=52 MiB + r=17 MiB each passed the
         # per-segment check, together 69 MiB > the 64 MiB tmpfs).
+        # No disk fallback: a sweep host must have a roomy /dev/shm;
+        # _SharedBuf raises MemoryError with an actionable message.
         q_size = self.ng * self.nodes * 5 * 8
         r_size = self.ng * self.I * self.nodes * 5 * 8
-        use_shm = (os.environ.get("PSN_SWEEP_SHM", "1") != "0"
-                   and q_size + r_size <= _shm_free_bytes())
-        self._q_shm = _SharedBuf(q_size, force_file=not use_shm)
-        self._r_shm = _SharedBuf(r_size, force_file=not use_shm)
+        if q_size + r_size > _shm_free_bytes():
+            raise MemoryError(
+                f"sweep pool needs (q+r)={ (q_size + r_size) / 2**20:.1f} MiB "
+                f"of /dev/shm but only {_shm_free_bytes() / 2**20:.1f} MiB is "
+                f"free — enlarge the shm tmpfs (docker: --shm-size=4g) or "
+                f"run serial (PSN_PAR=1)")
+        self._q_shm = _SharedBuf(q_size)
+        self._r_shm = _SharedBuf(r_size)
         _SWEET_PSN = self
         ctx = _mp.get_context("fork")
         self._proc_pool = ctx.Pool(processes=p)

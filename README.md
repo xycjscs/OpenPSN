@@ -221,13 +221,15 @@ PSN（Phase Space Nodal，相空间节点法）节点法在每个节点内以四
   小问题（ncol < 15 万）自动串行。
 - **BLAS 恒单线程**：`psn2d/__init__.py` 在 import 时钉 OPENBLAS/OMP=1
   （bit-identical 回归的前提）。
-- **sweep 共享缓冲自适应**：源项/归约走共享内存（父进程付 ~MB 级拷贝）。
-  段 ≤ `/dev/shm` 剩余空间时用 POSIX shm（`psm_*`）；超容自动落
-  `/tmp` 文件 + `MAP_SHARED` mmap（位级等价，已验证）。`/dev/shm` 只有
-  64 MiB 的主机上，core 级 S≥5（r 段 70–100 MiB）会走文件路径——
-  这正是必需的，因为超容 shm 段会让 worker 首写 SIGBUS、进程池永久挂起
-  （C5G7 core M2_S6 死锁，2026-09-10）。`PSN_SWEEP_SHM=0` 强制文件路径，
-  `PSN_SWEEP_SHM_DIR` 换目录。
+- **sweep 共享缓冲 = POSIX shm 专用（无磁盘 fallback）**：源项/归约走
+  `/dev/shm`（父进程付 ~MB 级拷贝）。两段（q、r）整个运行期共存，
+  故安装时按 **q+r 合计** ≤ tmpfs 空闲判（tmpfs 按实际触碰页记账，
+  逐段检查有竞态——C5G7 core M4_S5：q=52 MiB + r=17 MiB 各自过检、
+  合计 69 MiB 超 64 MiB 上限，worker 尾写 SIGBUS、进程池挂起）。
+  **不足直接 fail-loud**（`MemoryError`，附扩容指引）：扫算是重活，
+  部署机必须配足 `/dev/shm`（core 最大点 S=6 需 ~100 MiB；64 MiB
+  的 Docker 默认装不下 core S≥5，建议 `--shm-size=4g`）。确实要在这
+  类小 shm 机器上跑，用 `PSN_PAR=1` 串行（跳过进程池及其共享段）。
 - **内存预算按机器总占用算**：父进程 RSS + fork worker 私有状态
   （COW 只共享读因子，私有部分是角度通量/局部归约）。62 GB 机器上
   core M12_S2 plain 全程约 41 GB，mmd/chol 后端低 2.6–8.8×。
