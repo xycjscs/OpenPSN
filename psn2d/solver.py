@@ -37,8 +37,10 @@ import time
 # Note: OpenBLAS/OMP are pinned to 1 thread in psn2d/__init__.py (imported
 # before this module) — see the determinism guard there.
 
+import mmap
 import multiprocessing as _mp
 import multiprocessing.shared_memory as _shm
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -84,6 +86,121 @@ def _pool_size(njobs):
 _SWEET_PSN = None
 
 
+def _shm_free_bytes():
+    """Free bytes on the POSIX-shm tmpfs (usually /dev/shm)."""
+    try:
+        st = os.statvfs("/dev/shm")
+        return st.f_bavail * st.f_frsize
+    except OSError:
+        return 0
+
+
+class _MmapBuf:
+    """Parent-side handle around an open MAP_SHARED file mapping."""
+    __slots__ = ("_fd", "_mm")
+
+    def __init__(self, fd, mm):
+        self._fd, self._mm = fd, mm
+
+    @property
+    def buf(self):
+        return self._mm
+
+    def close(self):
+        try:
+            self._mm.close()
+        finally:
+            if self._fd is not None:
+                os.close(self._fd)
+                self._fd = None
+
+
+class _SharedBuf:
+    """Shared byte buffer for the process-pool sweep.
+
+    POSIX shm (``psm_*`` on /dev/shm) when the segment fits in the tmpfs;
+    otherwise a file under ``$PSN_SWEEP_SHM_DIR`` (default /tmp) mmap'ed
+    MAP_SHARED.  On this host /dev/shm is a 64 MiB tmpfs while core
+    S>=5 sweep segments need 70-100 MiB: an over-cap shm segment SIGBUSes
+    the worker on the first write past the limit and pool.map then hangs
+    forever (C5G7 core M2_S6 deadlock, 2026-09-10).  The file path is
+    byte-for-byte the same memory model (shared pages, buffer protocol),
+    so the sweep result is unchanged.
+    """
+    __slots__ = ("name", "size", "_sm", "_mm", "_fd", "_path")
+
+    def __init__(self, size):
+        self.size = size
+        self._sm = None
+        self._mm = None
+        self._fd = None
+        self._path = None
+        self.name = ""
+        forced_file = os.environ.get("PSN_SWEEP_SHM", "1") == "0"
+        if not forced_file and size <= _shm_free_bytes():
+            try:
+                sm = _shm.SharedMemory(create=True, size=size)
+                self._sm = sm
+                self.name = sm.name
+                return
+            except OSError:
+                pass   # tmpfs full at alloc time -> fall through to /tmp
+        d = os.environ.get("PSN_SWEEP_SHM_DIR", "/tmp")
+        fd, path = tempfile.mkstemp(prefix="psn_sweep_", dir=d)
+        try:
+            os.ftruncate(fd, size)
+            self._mm = mmap.mmap(fd, size, flags=mmap.MAP_SHARED)
+        except Exception:
+            os.close(fd)
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+            raise
+        self._fd = fd
+        self._path = path
+        self.name = path
+
+    @property
+    def buf(self):
+        return self._sm.buf if self._sm is not None else self._mm
+
+    def close(self):
+        # Note: does NOT clear _sm — unlink() must still see it (the
+        # sweep pool does close(); unlink(); and a cleared _sm would
+        # silently skip the shm_unlink, leaking the 64 MiB /dev/shm).
+        if self._sm is not None:
+            self._sm.close()
+        if self._mm is not None:
+            self._mm.close()
+            self._mm = None
+        if self._fd is not None:
+            os.close(self._fd)
+            self._fd = None
+
+    def unlink(self):
+        if self._sm is not None:
+            self._sm.unlink()
+            self._sm = None
+        if self._path is not None:
+            try:
+                os.unlink(self._path)
+            except OSError:
+                pass
+            self._path = None
+
+
+def _open_buf(name):
+    """Worker side: open a shared sweep buffer by the name string the
+    parent put in the job args ('psm_*' -> POSIX shm, absolute path ->
+    /tmp file mapping)."""
+    if os.path.isabs(name):
+        fd = os.open(name, os.O_RDWR)
+        mm = mmap.mmap(fd, 0, flags=mmap.MAP_SHARED)
+        return _MmapBuf(fd, mm)
+    return _shm.SharedMemory(name=name)
+
+
 def _sweep_worker(args):
     """Forked sweep worker: one (i, g) direction, end to end.
 
@@ -96,8 +213,8 @@ def _sweep_worker(args):
     uses the SAME expression order as the serial path of ``_sweep_all``,
     so the parent's accumulation is bit-identical."""
     (g, i), qname, rname, ng, I_, nodes, w = args
-    qs = _shm.SharedMemory(name=qname)
-    rs = _shm.SharedMemory(name=rname)
+    qs = _open_buf(qname)
+    rs = _open_buf(rname)
     try:
         qnode = np.frombuffer(qs.buf, dtype=np.float64).reshape(ng, nodes, 5)
         q = qnode[g].copy()
@@ -786,11 +903,8 @@ class PSN2D:
         for g in range(self.ng):
             for i in range(self.I):
                 _ = self._bterms_for(i, g)
-        self._q_shm = _shm.SharedMemory(create=True,
-                                        size=self.ng * self.nodes * 5 * 8)
-        self._r_shm = _shm.SharedMemory(create=True,
-                                        size=self.ng * self.I
-                                           * self.nodes * 5 * 8)
+        self._q_shm = _SharedBuf(self.ng * self.nodes * 5 * 8)
+        self._r_shm = _SharedBuf(self.ng * self.I * self.nodes * 5 * 8)
         _SWEET_PSN = self
         ctx = _mp.get_context("fork")
         self._proc_pool = ctx.Pool(processes=p)

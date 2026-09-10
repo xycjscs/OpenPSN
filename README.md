@@ -213,3 +213,21 @@ PSN（Phase Space Nodal，相空间节点法）节点法在每个节点内以四
 相比传统 SN 差分，PSN 用更少的空间网格达到同等精度；相比 MOC，PSN 不依赖
 追踪方向在网格上的投影，对复杂网格更稳健。细节见原文与 `psn2d/solver.py`
 注释（含论文式号 B.3 的抛物线源更新）。
+
+## 9. 并行与部署
+
+- **sweep 并行 = fork 进程池**（SuperLU 回代不释放 GIL，线程池实测更慢）。
+  并行度默认 = 可用核数的一半（cgroup 感知），`PSN_PAR=1` 强制串行；
+  小问题（ncol < 15 万）自动串行。
+- **BLAS 恒单线程**：`psn2d/__init__.py` 在 import 时钉 OPENBLAS/OMP=1
+  （bit-identical 回归的前提）。
+- **sweep 共享缓冲自适应**：源项/归约走共享内存（父进程付 ~MB 级拷贝）。
+  段 ≤ `/dev/shm` 剩余空间时用 POSIX shm（`psm_*`）；超容自动落
+  `/tmp` 文件 + `MAP_SHARED` mmap（位级等价，已验证）。`/dev/shm` 只有
+  64 MiB 的主机上，core 级 S≥5（r 段 70–100 MiB）会走文件路径——
+  这正是必需的，因为超容 shm 段会让 worker 首写 SIGBUS、进程池永久挂起
+  （C5G7 core M2_S6 死锁，2026-09-10）。`PSN_SWEEP_SHM=0` 强制文件路径，
+  `PSN_SWEEP_SHM_DIR` 换目录。
+- **内存预算按机器总占用算**：父进程 RSS + fork worker 私有状态
+  （COW 只共享读因子，私有部分是角度通量/局部归约）。62 GB 机器上
+  core M12_S2 plain 全程约 41 GB，mmd/chol 后端低 2.6–8.8×。
