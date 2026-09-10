@@ -129,14 +129,14 @@ class _SharedBuf:
     """
     __slots__ = ("name", "size", "_sm", "_mm", "_fd", "_path")
 
-    def __init__(self, size):
+    def __init__(self, size, force_file=False):
         self.size = size
         self._sm = None
         self._mm = None
         self._fd = None
         self._path = None
         self.name = ""
-        forced_file = os.environ.get("PSN_SWEEP_SHM", "1") == "0"
+        forced_file = force_file or os.environ.get("PSN_SWEEP_SHM", "1") == "0"
         if not forced_file and size <= _shm_free_bytes():
             try:
                 sm = _shm.SharedMemory(create=True, size=size)
@@ -903,8 +903,18 @@ class PSN2D:
         for g in range(self.ng):
             for i in range(self.I):
                 _ = self._bterms_for(i, g)
-        self._q_shm = _SharedBuf(self.ng * self.nodes * 5 * 8)
-        self._r_shm = _SharedBuf(self.ng * self.I * self.nodes * 5 * 8)
+        # Both sweep segments live for the whole run, so the gate is on
+        # the SUM: tmpfs is charged on page touch, and a per-segment
+        # "fits" check is racy — a truncated-but-untouched segment shows
+        # as free space until the workers write it (C5G7 core M4_S5
+        # deadlock, 2026-09-10: q=52 MiB + r=17 MiB each passed the
+        # per-segment check, together 69 MiB > the 64 MiB tmpfs).
+        q_size = self.ng * self.nodes * 5 * 8
+        r_size = self.ng * self.I * self.nodes * 5 * 8
+        use_shm = (os.environ.get("PSN_SWEEP_SHM", "1") != "0"
+                   and q_size + r_size <= _shm_free_bytes())
+        self._q_shm = _SharedBuf(q_size, force_file=not use_shm)
+        self._r_shm = _SharedBuf(r_size, force_file=not use_shm)
         _SWEET_PSN = self
         ctx = _mp.get_context("fork")
         self._proc_pool = ctx.Pool(processes=p)
