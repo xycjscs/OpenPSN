@@ -87,11 +87,12 @@ python -m psn2d run examples/c5g7_2d_quarter_core.yaml --case M16_S2 --opt auto
 | `lu` | 紧凑组装 + COLAMD SuperLU | 无 C 依赖 |
 
 几何闸门（`chol`/`auto` 安装期检查，1e-12 精度，不过即 `ValueError`）：
-方形网格、材料图转置对称（`mat == mat.T`）、x/y 边界匹配、半平面
-M%4==0、vacuum alpha 有限非零；另有每系统随机 RHS 残差 ≤1e-11 的
-原方程校验。不符合的几何自动落回紧凑 MMD-LU。**矩形节点（`rect: true`）
-的行缩放矩阵因长宽比破坏 SPD 对称性（asym≈0.33），`chol` 必被拒绝，
-`auto` 落回紧凑 MMD-LU**（实测 keff 差 ≤4e-16，wall ≈ 0.6×）。
+材料图转置对称（`mat == mat.T`）、方格网（nx==ny）、x/y 边界匹配、
+半平面 M%4==0、vacuum alpha 有限非零；**矩形节点（`rect: true`）额外要求
+宽度序列转置匹配（hx[j,i] == hy[i,j]）**——行缩放按面长加权（x 面乘
+hy、y 面乘 hx，方形退化为常数 h），asym 压到 ~1e-16 后与方形同一链路；
+另有每系统随机 RHS 残差 ≤1e-11 的原方程校验。不符合的几何自动落回紧凑
+MMD-LU。
 
 C++ 桥编译（Eigen 头文件必须；METIS 可选，缺则用 AMD 排序）：
 

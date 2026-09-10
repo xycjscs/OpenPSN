@@ -261,27 +261,48 @@ def t_fail_loud_and_fallback():
 
 
 def t_rect_gate():
-    """Rectangular nodes: the row-scaled system loses SPD symmetry
-    (aspect ratio), so shared-chol must fail LOUD and auto must land
-    on compact-mmd — never a silent chol on a non-SPD matrix."""
+    """Rectangular nodes with transpose-symmetric widths: shared-chol must
+    now SUCCEED (face-length row scaling restores exact symmetry, probe
+    asym <= 2e-16), keff matches plain to roundoff, and a genuinely
+    non-transpose-symmetric rect geometry must still fail LOUD."""
     for spec_name, case_name in [("c5g7_rect_uo2_assembly.yaml", "M8"),
                                  ("c5g7_rect_mox_assembly.yaml", "M8")]:
         psn = M.build_solver(_spec(spec_name), _case(_spec(spec_name), case_name))
         assert psn.rect, f"{spec_name} unexpectedly non-rect"
-        try:
-            memopt.install_shared_chol(psn)
-            raise AssertionError(
-                f"{spec_name}: shared-chol accepted a rect geometry")
-        except ValueError as e:
-            assert "symmetric" in str(e), str(e)
-            print(f"  {spec_name}::{case_name}: shared-chol fail-loud "
-                  f"(ValueError: {str(e)[:55]}...)")
+        memopt.install_shared_chol(psn)
+        for i in range(psn.I):
+            for g in range(psn.ng):
+                psn._lu(i, g)
+        recs = psn._chol_records
+        asym = max(r["scaled_asymmetry"] for r in recs)
+        share = max(max(r["sharing_errors"]) for r in recs)
+        assert asym <= 1e-12 and share <= 1e-12, (asym, share)
+        print(f"  {spec_name}::{case_name}: shared-chol OK, "
+              f"records={len(recs)} asym<={asym:.1e} share<={share:.1e}")
         psn2 = M.build_solver(_spec(spec_name), _case(_spec(spec_name), case_name))
         rep = memopt.install_optimized(psn2, backend="auto")
-        assert rep["backend"] == "compact-mmd_at_plus_a", rep
-        assert "shared-chol" in rep["reason"], rep
-        print(f"  {spec_name}::{case_name}: auto -> {rep['backend']} "
-              f"(reason: {rep['reason'][:55]}...)")
+        assert rep["backend"] == "shared-chol", rep
+        print(f"  {spec_name}::{case_name}: auto -> {rep['backend']}")
+    # keff equivalence on the UO2 rect assembly (plain vs shared-chol)
+    k0, _, t0, _ = _keff("c5g7_rect_uo2_assembly.yaml", "M8", "off")
+    k, rep, t, pk = _keff("c5g7_rect_uo2_assembly.yaml", "M8", "chol")
+    d = abs(k - k0)
+    assert rep["backend"] == "shared-chol", rep
+    assert d < KEFF_TOL, f"rect shared-chol keff diff {d}"
+    print(f"  rect uo2 M8: plain k={k0:.9f} ({t0:.1f}s) | "
+          f"shared-chol k={k:.9f} d={d:.1e} peak={pk:.2f}GB ({t:.1f}s)")
+    # non-transpose-symmetric rect widths -> fail-loud, auto falls back
+    spec = _spec("c5g7_rect_uo2_assembly.yaml")
+    psn3 = M.build_solver(spec, _case(spec, "M8"))
+    wx = psn3.hx.astype(float).copy()
+    wx[1, 1] *= 1.01  # break hx[j,i] == hy[i,j] at one node
+    psn3.hx = wx
+    try:
+        memopt.install_shared_chol(psn3)
+        raise AssertionError("shared-chol accepted non-transpose-symmetric rect widths")
+    except ValueError as e:
+        assert "widths" in str(e), str(e)
+        print(f"  asymmetric-width rect fail-loud: ValueError({str(e)[:55]}...)")
     print("PASS rect_gate")
 
 
@@ -318,15 +339,15 @@ def t_full_core_backends():
 
 def t_full_rect_core():
     """Rectangular-node quarter core (ncol > 150k, fork pool COW path).
-    shared-chol is geometrically ineligible for rect (SPD gate), so auto
-    must land on compact-mmd — verifying the fallback survives the
-    process pool end to end."""
+    Transpose-symmetric widths: shared-chol must now be selected by auto
+    (vacuum faces on x/y-matched sides, face-length row scaling) — the
+    strongest end-to-end check of the rect path through the process pool."""
     spec_name, case_name = "c5g7_rect_quarter_core.yaml", "M8"
     k0, b0, t0, p0 = _keff_subprocess(spec_name, case_name, "off")
     print(f"  {spec_name}::{case_name} plain: k={k0:.9f} peak={p0:.2f}GB ({t0:.0f}s)")
     k, rep, t, pk = _keff_subprocess(spec_name, case_name, "auto")
     d = abs(k - k0)
-    assert rep == "compact-mmd_at_plus_a", rep
+    assert rep == "shared-chol", rep
     assert d < KEFF_TOL, f"auto keff diff {d}"
     print(f"    auto: k={k:.9f} d={d:.1e} peak={pk:.2f}GB ({t:.0f}s) "
           f"[{rep}]")

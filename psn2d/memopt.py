@@ -34,8 +34,9 @@ Three layers, each strictly weaker than the last, all fail-loud:
        numerically by the Cholesky factorization itself);
      * angular mirror pairs (m, M-1-m) reduce each polar to M/2 column
        blocks;
-     * on a transpose-symmetric geometry (square grid, mat == mat.T,
-       x/y-matched boundary types, half-plane M divisible by 4) the
+     * on a transpose-symmetric geometry (square or rect grid,
+       mat == mat.T, x/y-matched boundary types, transpose-matched widths
+       for rect nodes, half-plane M divisible by 4) the
        (x,y)-transpose of the angular pair carries each block onto another
        and all four blocks share ONE sparse Cholesky factor
        (``xy_transpose_permutation``);
@@ -263,34 +264,42 @@ def spd_row_scale(psn, i):
     Local outward current is ``e`` times the global current, with e = -1 at
     left/bottom boundaries and +1 at right/top.  Reflective slaves already
     carry the further -1 elimination sign folded into A.  Valid for
-    arbitrary configured faces (TY or generic polar, square or rect nodes).
+    arbitrary configured faces (TY or generic polar, square or rect nodes);
+    each row is weighted by its face length (x-faces: the node's y-width,
+    y-faces: its x-width; square nodes: h on every face), which is what
+    restores exact symmetry for rectangular nodes.
     """
     from psn2d.node import node_alphas
 
     d = np.empty(psn.ncol, dtype=np.float64)
     row = 0
     for f, fc in enumerate(psn.faces):
+        n = fc["a"]
+        lf = psn._local_face(n, f)
+        j, ii = psn.j_idx[n], psn.i_idx[n]
+        # face-length factor: x-faces carry the node's y-width, y-faces its
+        # x-width (square nodes: both equal to h, the historical convention)
+        ell = float(psn.hy[j, ii] if lf < 2 else psn.hx[j, ii]) if psn.rect else float(psn.h)
         if fc["type"] == "internal":
-            d[row:row + psn.M] = -1.0
+            d[row:row + psn.M] = -ell
             row += psn.M
             continue
         e = -1.0 if fc["side"] in (0, 1) else 1.0
         if fc["type"] == "reflect":
             count = len(psn.face_pairs[f])
-            d[row:row + count] = -e
+            d[row:row + count] = -e * ell
             row += count
             continue
         if fc["type"] != "vacuum":
             raise ValueError(f"Unknown face type: {fc['type']}")
-        local_face = psn._local_face(fc["a"], f)
         for m in range(psn.M):
             alpha = psn._alpha_for(i, m)
             if alpha is None:
                 alpha = node_alphas(psn.mu[i], psn.h,
                                     psn._phi_m(m), psn.dphi)
-            if not np.isfinite(alpha[local_face]) or alpha[local_face] == 0:
+            if not np.isfinite(alpha[lf]) or alpha[lf] == 0:
                 raise ValueError("Vacuum boundary alpha must be finite and nonzero")
-            d[row] = e / (2.0 * abs(alpha[local_face]))
+            d[row] = e * ell / (2.0 * abs(alpha[lf]))
             row += 1
     if row != psn.ncol:
         raise AssertionError((row, psn.ncol))
@@ -302,12 +311,23 @@ def xy_transpose_permutation(psn):
 
     Returns p, s with T[p[j], j] = s[j] where T is an orthogonal involution.
     On a transpose-symmetric material mesh with x/y-matched boundary types
-    the exact SPD operator obeys T.T @ B @ T = B.  Raises ValueError when
-    the geometry does not conform (fail-loud, no silent approximation).
+    the exact SPD operator obeys T.T @ B @ T = B.  Rectangular nodes require
+    transpose-matched widths (hx[j,i] == hy[i,j]) so the transposed node has
+    the mirror aspect ratio.  Raises ValueError when the geometry does not
+    conform (fail-loud, no silent approximation).
     """
-    if psn.nx != psn.ny or not np.array_equal(psn.mat, psn.mat.T):
-        raise ValueError("Exact reuse requires a square transpose-symmetric "
+    if not np.array_equal(psn.mat, psn.mat.T):
+        raise ValueError("Exact reuse requires a transpose-symmetric "
                          "material grid")
+    if psn.rect:
+        if psn.nx != psn.ny:
+            raise ValueError("Exact reuse requires a square node grid "
+                             "(nx == ny)")
+        if not np.allclose(psn.hx, psn.hy.T, rtol=0.0, atol=1e-12):
+            raise ValueError("Exact reuse requires transpose-matched node "
+                             "widths (hx[j,i] == hy[i,j])")
+    elif psn.nx != psn.ny:
+        raise ValueError("Exact reuse requires a square node grid")
     if psn.bnd[0] != psn.bnd[1] or psn.bnd[2] != psn.bnd[3]:
         raise ValueError("Exact reuse requires x/y-matched boundary types")
     if psn.M % 4 or psn.full_2pi:
