@@ -69,6 +69,34 @@ python -m psn2d run examples/c5g7_2d_quarter_core.yaml   # 7 群 C5G7-2D 1/4 芯
 python -m psn2d run examples/c5g7_uo2_assembly.yaml      # 7 群单 UO2 组件
 python -m psn2d run <file>.yaml --case M12_S1            # 只跑指定 case
 python -m psn2d run <file>.yaml --json                   # 结果输出 JSON
+python -m psn2d run <file>.yaml --opt auto               # 内存优化后端（见下）
+```
+
+**可选：内存优化后端（`--opt`，默认 `off`，默认路径位级不变）**
+
+```bash
+python -m psn2d run examples/c5g7_2d_quarter_core.yaml --case M16_S2 --opt auto
+```
+
+| 值 | 后端 | 说明 |
+|---|---|---|
+| `off`（默认） | 原始路径 | COLAMD SuperLU，位级可复现 |
+| `auto` | 共享 Cholesky → 紧凑 MMD-LU → 原路径 | 逐级回退，任一闸门不过即降级（显式报错，绝不静默近似） |
+| `chol` | 紧凑组装 + SPD 行缩放 + xy 转置因子共享 + Eigen 稀疏 Cholesky（METIS） | 需编译 `psn2d/memopt_cxx/libeigen_chol.so`；C5G7 1/4 芯 M16 实测峰值 RSS ≈ 1/9，keff 不变（≤1e-15） |
+| `mmd` | 紧凑组装 + 对称型 MMD 排序 SuperLU | 无 C 依赖 |
+| `lu` | 紧凑组装 + COLAMD SuperLU | 无 C 依赖 |
+
+几何闸门（`chol`/`auto` 安装期检查，1e-12 精度，不过即 `ValueError`）：
+方形网格、材料图转置对称（`mat == mat.T`）、x/y 边界匹配、半平面
+M%4==0、vacuum alpha 有限非零；另有每系统随机 RHS 残差 ≤1e-11 的
+原方程校验。不符合的几何自动落回紧凑 MMD-LU。
+
+C++ 桥编译（Eigen 头文件必须；METIS 可选，缺则用 AMD 排序）：
+
+```bash
+python psn2d/memopt_cxx/build.py \
+    --eigen-include /path/to/eigen3 \
+    --metis-include /path/to/include --metis-lib /path/to/lib/libmetis.so
 ```
 
 ## 4. 输入格式（YAML）
@@ -157,17 +185,20 @@ RMS 0.26%（UO2 组 0.14–0.19%，MOX 组 0.32%）。
 ```
 OpenPSN/
 ├── psn2d/            # 主包：现代多群 PSN（YAML 驱动）
-│   ├── __main__.py   #   CLI 入口 (run)
+│   ├── __main__.py   #   CLI 入口 (run, --opt 内存优化后端)
 │   ├── model.py      #   YAML 解析
 │   ├── solver.py     #   多群 PSN 节点求解器（稀疏+向量化）
-│   └── node.py       #   节点内插/消元
+│   ├── node.py       #   节点内插/消元
+│   ├── node_rect.py  #   矩形节点闭式解
+│   ├── memopt.py     #   可选内存优化后端（紧凑组装/共享Cholesky, --opt）
+│   └── memopt_cxx/   #   C++ Cholesky 桥（eigen_chol.cpp + build.py, 按需编译）
 ├── docs/             # 在线演示站（GitHub Pages → openpsn-ai.com）
 │   ├── index.html    #   产品页 + 浏览器内求解器
 │   ├── psn.js        #   纯 JS PSN 引擎（无依赖）
 │   ├── fig3ref.json  #   论文 Fig.3 60 点复现数据（页面比对用）
 │   └── img/          #   内嵌插图（原论文 Fig.1/3/6/7/8/10 + C5G7 功率）
 ├── examples/         # 论文问题输入（1群/2群/7群）+ C5G7 数据与脚本
-├── tests/            # 回归套件：run_examples.py + baseline_keff.json（位级基线）
+├── tests/            # 回归套件：run_examples.py + test_memopt.py + baseline_keff.json（位级基线）
 ├── snapshot/         # 原始复现快照（core/ + drivers/ + 数据/图/日志）
 ├── requirements.txt
 └── README.md

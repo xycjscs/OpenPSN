@@ -61,9 +61,15 @@ def build_solver(spec, case):
                  widths=widths)
 
 
-def run_case(spec, case, verbose=True):
+def run_case(spec, case, verbose=True, opt="off"):
     t0 = time.time()
     psn = build_solver(spec, case)
+    if opt != "off":
+        from . import memopt
+        report = memopt.install_optimized(psn, backend=opt)
+    else:
+        psn._memopt_backend = "plain"
+        report = None
     sol = spec["solver"]
     k, phi, qnode = psn.keff(max_outer=int(sol["max_outer"]),
                              outer_tol=float(sol["keff_tol"]),
@@ -79,6 +85,8 @@ def run_case(spec, case, verbose=True):
         "time_s": round(dt, 2),
         "nodes": psn.nodes,
     }
+    if report is not None:
+        out["memopt"] = report
     kref = case.get("kref")
     if kref is not None:
         out["kref"] = float(kref)
@@ -97,13 +105,15 @@ def cmd_run(args):
             return 2
     results = []
     for case in cases:
-        r = run_case(spec, case, verbose=not args.quiet)
+        r = run_case(spec, case, verbose=not args.quiet, opt=args.opt)
         results.append(r)
         if args.quiet:
             line = f"[{r['name']}] {r['model']} I={r['I']} M={r['M']} " \
                    f"S={r['subdivide']}: keff={r['keff']:.6f} ({r['time_s']} s)"
             if "pcm" in r:
                 line += f"  ref={r['kref']:.5f}  Δ={r['pcm']:+.1f} pcm"
+            if "memopt" in r:
+                line += f"  [{r['memopt']['backend']}]"
             print(line, flush=True)
     if args.json:
         print(json.dumps(results, indent=1, ensure_ascii=False))
@@ -118,6 +128,10 @@ def main(argv=None):
     pr.add_argument("--case", help="run only the named case")
     pr.add_argument("--json", action="store_true", help="print results as JSON")
     pr.add_argument("--quiet", action="store_true", help="no per-iteration output")
+    pr.add_argument("--opt", default="off",
+                    choices=["off", "auto", "chol", "mmd", "lu"],
+                    help="memory-optimized factorization backend "
+                         "(off = plain path, default)")
     pr.set_defaults(func=cmd_run)
     args = p.parse_args(argv)
     if not getattr(args, "func", None):
