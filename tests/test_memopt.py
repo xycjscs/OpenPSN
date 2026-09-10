@@ -23,7 +23,9 @@ Exit code 0 = all pass, 1 = at least one failure.
 """
 import argparse
 import gc
+import json
 import os
+import subprocess
 import sys
 import time
 
@@ -64,6 +66,57 @@ def _keff(spec, case_name, opt="off", quiet=True):
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6
     dt = time.time() - t0
     return float(k), report, dt, peak
+
+
+_SUBPROC_KEFF = r'''
+import json, os, sys, time
+repo_root = os.path.abspath(sys.argv[1])
+sys.path.insert(0, repo_root)
+from psn2d import model
+from psn2d import __main__ as M
+from psn2d import memopt
+spec_name, case_name, opt = sys.argv[2], sys.argv[3], sys.argv[4]
+spec = model.load_spec(os.path.join(repo_root, "examples", spec_name))
+case = next(c for c in model.expand_cases(spec) if c["name"] == case_name)
+psn = M.build_solver(spec, case)
+report = None
+if opt != "off":
+    report = memopt.install_optimized(psn, backend=opt)
+t0 = time.time()
+k, _, _ = psn.keff(max_outer=int(spec["solver"]["max_outer"]),
+                   outer_tol=float(spec["solver"]["keff_tol"]),
+                   verbose=0)
+wall = time.time() - t0
+hwm = None
+with open("/proc/self/status") as f:
+    for line in f:
+        if line.startswith("VmHWM:"):
+            hwm = float(line.split()[1]) / 1024.0
+print(json.dumps({"k": float(k), "wall_s": wall, "hwm_mib": hwm,
+                  "backend": (report or {}).get("backend", "plain")}))
+'''
+REPO_ROOT = os.path.dirname(HERE)
+
+
+def _keff_subprocess(spec_name, case_name, opt):
+    """Run one case in a FRESH subprocess; return (keff, backend, wall_s,
+    peak_GB).  The peak is the CHILD'S VmHWM — the true peak of that
+    backend alone.  Reading ru_maxrss in this process after sequential
+    multi-backend runs would report the parent's lifetime high-water
+    mark, i.e. residue from earlier backends (glibc does not return
+    freed arenas to the OS): that measurement error made the first
+    full-core run look like mmd used MORE memory than plain, when a
+    clean per-process run shows it uses less."""
+    r = subprocess.run(
+        [sys.executable, "-c", _SUBPROC_KEFF, REPO_ROOT, spec_name,
+         case_name, opt],
+        capture_output=True, text=True, timeout=14400)
+    if r.returncode != 0:
+        raise RuntimeError(f"subprocess keff failed:\n"
+                           f"stdout:\n{r.stdout}\nstderr:\n{r.stderr}")
+    out = json.loads(r.stdout.strip().splitlines()[-1])
+    return (out["k"], out["backend"], out["wall_s"],
+            (out["hwm_mib"] or 0.0) / 1024.0)
 
 
 def _sys_exact(psn_a, psn_b, i, g):
@@ -245,17 +298,21 @@ def _run_plain(psn):
 # --------------------------------------------------------------------------- #
 
 def t_full_core_backends():
+    # Clean per-backend peaks: each run in a fresh subprocess (child VmHWM).
+    # The old in-process version read the PARENT's ru_maxrss — a lifetime
+    # high-water mark polluted by residue from earlier backends (glibc
+    # keeps freed arenas), which made mmd look like it used MORE memory
+    # than plain on this very case.
     spec_name, case_name = "c5g7_2d_quarter_core.yaml", "M12_S2"
-    k0, rep0, t0, p0 = _keff(spec_name, case_name, "off")
+    k0, b0, t0, p0 = _keff_subprocess(spec_name, case_name, "off")
     print(f"  {spec_name}::{case_name} plain: k={k0:.9f} peak={p0:.2f}GB ({t0:.0f}s)")
     row = ""
     for opt in ("mmd", "chol"):
-        k, rep, t, pk = _keff(spec_name, case_name, opt)
+        k, rep, t, pk = _keff_subprocess(spec_name, case_name, opt)
         d = abs(k - k0)
         assert d < KEFF_TOL, f"{opt} keff diff {d}"
         row += f"\n    {opt}: k={k:.9f} d={d:.1e} peak={pk:.2f}GB ({t:.0f}s) " \
-               f"[{rep['backend']}]"
-        gc.collect()
+               f"[{rep}]"
     print(f"PASS full_core_backends{row}")
 
 
@@ -265,15 +322,14 @@ def t_full_rect_core():
     must land on compact-mmd — verifying the fallback survives the
     process pool end to end."""
     spec_name, case_name = "c5g7_rect_quarter_core.yaml", "M8"
-    k0, _, t0, p0 = _keff(spec_name, case_name, "off")
+    k0, b0, t0, p0 = _keff_subprocess(spec_name, case_name, "off")
     print(f"  {spec_name}::{case_name} plain: k={k0:.9f} peak={p0:.2f}GB ({t0:.0f}s)")
-    k, rep, t, pk = _keff(spec_name, case_name, "auto")
+    k, rep, t, pk = _keff_subprocess(spec_name, case_name, "auto")
     d = abs(k - k0)
-    assert rep["backend"] == "compact-mmd_at_plus_a", rep
+    assert rep == "compact-mmd_at_plus_a", rep
     assert d < KEFF_TOL, f"auto keff diff {d}"
     print(f"    auto: k={k:.9f} d={d:.1e} peak={pk:.2f}GB ({t:.0f}s) "
-          f"[{rep['backend']}]")
-    gc.collect()
+          f"[{rep}]")
     print("PASS full_rect_core")
 
 
