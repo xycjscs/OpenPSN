@@ -79,8 +79,17 @@ def _il_iq(ka):
         Il = (2.0 / ka) * (c - 2.0 * s / ka)
         Iq = (2.0 / ka) * (s - 3.0 * Il)
     else:
-        Il = 1.0 / 3.0 * (1.0 - ka * ka / 40.0)
-        Iq = 1.0 / 5.0
+        # small-ka series (cancellation-free, continuous at ka = 1e-3):
+        #   u = ka/2
+        #   Il = (1/u)(cosh u - sinh u/u) = u/3 + u^3/30 + u^5/840 + O(u^7)
+        #   Iq = v - (6/ka) Il             = u^2/15 + u^4/210 + O(u^6)
+        # Both moments -> 0 as ka -> 0.  (2026-09-11: the old branch returned
+        # constants Il=1/3, Iq=1/5 — off by O(1/ka), a factor ~2000 at the
+        # branch boundary.  Never triggered by c5g7 runs (min ka = 4.8e-3);
+        # regression test: tests/test_il_iq_small_ka.py.)
+        u = 0.5 * ka
+        Il = u * (1.0 / 3.0 + u * u * (1.0 / 30.0 + u * u / 840.0))
+        Iq = u * u * (1.0 / 15.0 + u * u / 210.0)
     return Il, Iq
 
 

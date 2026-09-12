@@ -120,8 +120,11 @@ def node_params(St, mu, a):
         Il = (2.0 / ka) * (c - 2.0 * s / ka)
         Iq = (2.0 / ka) * (s - 3.0 * Il)
     else:
-        Il = 1.0 / 3.0 * (1.0 - ka * ka / 40.0)
-        Iq = 1.0 / 5.0
+        # small-ka series, continuous at ka = 1e-3; both moments -> 0 (see
+        # node_rect._il_iq for the derivation; 2026-09-11 fix)
+        u = 0.5 * ka
+        Il = u * (1.0 / 3.0 + u * u * (1.0 / 30.0 + u * u / 840.0))
+        Iq = u * u * (1.0 / 15.0 + u * u / 210.0)
     return {"k": k, "ka": ka, "s": s, "c": c, "p": p,
             "Il": Il, "Iq": Iq, "R": 1.0 / mu, "beta": 1.0}
 
@@ -173,8 +176,11 @@ def node_params_generic(St, a, theta_i, dtheta_i):
         Il = (2.0 / ka) * (c - 2.0 * s / ka)
         Iq = (2.0 / ka) * (s - 3.0 * Il)
     else:
-        Il = 1.0 / 3.0 * (1.0 - ka * ka / 40.0)
-        Iq = 1.0 / 5.0
+        # small-ka series, continuous at ka = 1e-3; both moments -> 0 (see
+        # node_rect._il_iq for the derivation; 2026-09-11 fix)
+        u = 0.5 * ka
+        Il = u * (1.0 / 3.0 + u * u * (1.0 / 30.0 + u * u / 840.0))
+        Iq = u * u * (1.0 / 15.0 + u * u / 210.0)
     # (2.8c) polar factor (the azimuthal part is applied per face)
     alpha_polar = 0.25 * (dtheta_i - np.cos(2.0 * theta_i) * np.sin(dtheta_i)) \
         / (np.sin(theta_i) * np.sin(0.5 * dtheta_i))

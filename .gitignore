@@ -10,3 +10,9 @@ __pycache__/
 *.pyc
 *.egg-info/
 paper/_bisect.* paper/_realtab.tex paper/tbl_test.*
+
+# ASan debug builds (verification artifacts, not shipped)
+psn2d/memopt_cxx/*_asan.so
+
+# scratch scripts (throwaway probes, keep local)
+tmp_*.py

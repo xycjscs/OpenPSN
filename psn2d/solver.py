@@ -139,6 +139,19 @@ def _open_buf(name):
     return _shm.SharedMemory(name=name)
 
 
+def _prefactor_job(psn, per_worker, i, g):
+    """Prefactor inside a pool worker: cap THIS worker's BLAS threads at
+    per_worker (so W workers x per_worker <= psn.threads), do the job,
+    restore.  The parent re-asserts the full budget after the pool."""
+    from . import runtime
+    prev = runtime.get_thread_limit()
+    runtime.set_thread_limit(per_worker)
+    try:
+        psn._prefactor_one(i, g)
+    finally:
+        runtime.set_thread_limit(prev)
+
+
 def _sweep_worker(args):
     """Forked sweep worker: one (i, g) direction, end to end.
 
@@ -151,6 +164,10 @@ def _sweep_worker(args):
     uses the SAME expression order as the serial path of ``_sweep_all``,
     so the parent's accumulation is bit-identical."""
     (g, i), qname, rname, ng, I_, nodes, w = args
+    # strict budget (2026-09-12 user input): each forked worker pins to 1
+    # BLAS thread, so N workers x 1 <= the user's threads cap
+    from . import runtime
+    runtime.set_thread_limit(1)
     qs = _open_buf(qname)
     rs = _open_buf(rname)
     try:
@@ -226,9 +243,16 @@ def face_pairs(mirror, M):
 class PSN2D:
     def __init__(self, mat_map, h, St, Sgg, nuSf, chi=None,
                  boundary=("reflect",) * 4, M=12, TY=None, full_2pi=False,
-                 generic=False, I=30, widths=None):
+                 generic=False, I=30, widths=None, threads=None,
+                 mem_limit_gb=None):
         if M % 2 != 0:
             raise ValueError("M must be even (mirror pairs need paired segments)")
+        # Runtime inputs (user settings 2026-09-12): total parallel-unit
+        # budget and factor-pool memory cap.  Default threads = half the
+        # system core count; default memory cap 32 GB.
+        from . import runtime
+        self.threads = max(1, int(threads or runtime.default_threads()))
+        self.mem_limit_gb = float(mem_limit_gb or runtime.DEFAULT_MEM_LIMIT_GB)
         self.mat = mat_map.astype(np.int64)
         self.h = h
         self.nx, self.ny = mat_map.shape[1], mat_map.shape[0]
@@ -785,23 +809,47 @@ class PSN2D:
         releases the GIL (measured ~19x at 6 threads), so factorization
         overlaps on a thread pool.  The pool is deliberately small:
         build+factor carries ~3 GB of transient per job, a wave of 6 stays
-        far inside the 62 GB cgroup."""
+        far inside the 62 GB cgroup.  Thread budget (2026-09-12 user
+        input): W workers x (threads // W) BLAS threads <= self.threads."""
         jobs = [(g, i) for g in range(self.ng) for i in range(self.I)]
         n = len(jobs)
         if not hasattr(self, '_Scache'):
             self._vectorize_setup()   # creates _bterms_by_sys/_groups tables
         if n > 1:
-            pf = max(1, min(6, _pool_size(n)))
+            pf = max(1, min(6, self.threads))
+            per_worker = max(1, self.threads // pf)
+            from . import runtime
             pool = ThreadPoolExecutor(max_workers=pf)
             try:
-                futs = [pool.submit(self._prefactor_one, i, g)
+                futs = [pool.submit(_prefactor_job, self, per_worker, i, g)
                         for g, i in jobs]
                 for f in futs:
                     f.result()
             finally:
                 pool.shutdown(wait=True)
+            runtime.set_thread_limit(self.threads)   # restore parent budget
         else:
             self._prefactor_one(*jobs[0])
+
+    def _check_mem_gate(self):
+        """Fail-loud gate (2026-09-12 user input): the resident factor pool
+        — all (i, g) factors, COW-shared across workers — must fit the
+        user's memory cap ``mem_limit_gb`` (default 32 GB).  Measured on
+        the live factors, not estimated; over budget is an error, never a
+        silent fallback."""
+        total = 0
+        for (i, g), (factor, _rows) in self._lusys.items():
+            nnz = getattr(factor, "factor_nnz", None)
+            if nnz is None:
+                nnz = factor.L.nnz + factor.U.nnz
+            total += nnz * 16     # 8 B values + 4 B indices, x2 conservative
+        limit = self.mem_limit_gb * 2**30
+        if total > limit:
+            raise MemoryError(
+                f"factor pool {total / 2**30:.2f} GB "
+                f"({len(self._lusys)} systems) exceeds mem_limit_gb="
+                f"{self.mem_limit_gb:.0f}; increase the limit or use a "
+                f"smaller M / coarser grid / tiled backend")
 
     # ------------------ process-pool sweep (fork + COW) ------------------
     # The back-substitution (SuperLU gssv) does NOT release the GIL in this
@@ -830,6 +878,7 @@ class PSN2D:
             return
         n = self.ng * self.I
         p = _pool_size(n)
+        p = min(p, self.threads)   # strict budget (2026-09-12 user input)
         if p <= 1 or self.ncol < self._PROCPOOL_MIN_NCOL:
             return
         # warm every lazy cache so no worker ever populates a shared cache
@@ -974,8 +1023,13 @@ class PSN2D:
         # nodes the areas differ so they must enter the balance (for square
         # nodes a constant area cancels in F_new/F_old — path unchanged).
         area_w = self.area.ravel() if self.rect else None
+        # runtime budget (user input 2026-09-12): factorization phase runs
+        # with <= self.threads BLAS threads in the parent
+        from . import runtime
+        runtime.set_thread_limit(self.threads)
         # parallel pre-factorization (SuperLU factorize releases the GIL)
         self._prefactor()
+        self._check_mem_gate()
         lam = 1.0
         phi = np.ones((ng, self.nodes))
         fission_rate = np.zeros(self.nodes)

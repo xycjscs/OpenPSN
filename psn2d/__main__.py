@@ -20,8 +20,12 @@ from . import model
 from .solver import PSN2D
 
 
-def build_solver(spec, case):
+def build_solver(spec, case, threads=None, mem_limit_gb=None):
     geom = spec["geometry"]
+    # runtime inputs: CLI > YAML solver.threads / solver.mem_limit_gb > default
+    sol = spec.get("solver", {})
+    threads = threads or sol.get("threads")
+    mem_limit_gb = mem_limit_gb or sol.get("mem_limit_gb")
     if bool(geom.get("rect", False)):
         # rectangular nodes: per-node widths.  An optional per-case
         # `subdivide` S splits every node into S x S sub-nodes (widths / S,
@@ -55,15 +59,19 @@ def build_solver(spec, case):
     if generic:
         return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
                      boundary=boundary, generic=True, I=int(case["I"]),
-                     M=int(case["M"]), widths=widths)
+                     M=int(case["M"]), widths=widths, threads=threads,
+                     mem_limit_gb=mem_limit_gb)
     return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
                  boundary=boundary, generic=False, M=int(case["M"]),
-                 widths=widths)
+                 widths=widths, threads=threads,
+                 mem_limit_gb=mem_limit_gb)
 
 
-def run_case(spec, case, verbose=True, opt="off"):
+def run_case(spec, case, verbose=True, opt="off", threads=None,
+             mem_limit_gb=None):
     t0 = time.time()
-    psn = build_solver(spec, case)
+    psn = build_solver(spec, case, threads=threads,
+                       mem_limit_gb=mem_limit_gb)
     if opt != "off":
         from . import memopt
         report = memopt.install_optimized(psn, backend=opt)
@@ -105,7 +113,8 @@ def cmd_run(args):
             return 2
     results = []
     for case in cases:
-        r = run_case(spec, case, verbose=not args.quiet, opt=args.opt)
+        r = run_case(spec, case, verbose=not args.quiet, opt=args.opt,
+                     threads=args.threads, mem_limit_gb=args.mem_limit_gb)
         results.append(r)
         if args.quiet:
             line = f"[{r['name']}] {r['model']} I={r['I']} M={r['M']} " \
@@ -132,6 +141,14 @@ def main(argv=None):
                     choices=["off", "auto", "chol", "mmd", "lu"],
                     help="memory-optimized factorization backend "
                          "(off = plain path, default)")
+    pr.add_argument("--threads", type=int, default=None,
+                    help="total parallel-unit budget (default = half the "
+                         "system core count; factor phase <= N threads, "
+                         "sweep pool <= N workers x 1 thread)")
+    pr.add_argument("--mem-limit-gb", type=float, default=None,
+                    help="factor-pool memory cap in GB (default 32; "
+                         "fail-loud if the resident (i,g) factor pool "
+                         "exceeds it)")
     pr.set_defaults(func=cmd_run)
     args = p.parse_args(argv)
     if not getattr(args, "func", None):
