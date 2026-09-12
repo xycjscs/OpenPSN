@@ -81,8 +81,9 @@ python -m psn2d run examples/c5g7_2d_quarter_core.yaml --case M16_S2 --opt auto
 | 值 | 后端 | 说明 |
 |---|---|---|
 | `off`（默认） | 原始路径 | COLAMD SuperLU，位级可复现 |
-| `auto` | 共享 Cholesky → 紧凑 MMD-LU → 原路径 | 逐级回退，任一闸门不过即降级（显式报错，绝不静默近似） |
+| `auto` | 共享 Cholesky → tile → 紧凑 MMD-LU → 原路径 | 内存感知：先按 `--mem-limit-gb` 估算共享 Cholesky 因子池；装得下就用它，装不下自动切 **tile**（Schur 分块，从不构造全系统因子）；tile 也不可行才落回紧凑 MMD-LU |
 | `chol` | 紧凑组装 + SPD 行缩放 + xy 转置因子共享 + Eigen 稀疏 Cholesky（METIS） | 需编译 `psn2d/memopt_cxx/libeigen_chol.so`；C5G7 1/4 芯 M16 实测峰值 RSS ≈ 1/9，keff 不变（≤1e-15） |
+| `tile` | Schur 分块 + 每块 Eigen Cholesky（METIS）+ 稀疏多右端核 | 内存回退后端：按 `--mem-limit-gb` 自动选块大小，用户无需指定 tile 或 assembly；纯几何块划分，无 assembly 概念也能用（如棋盘基准）；keff 与原路径位级一致（实测 Δ=0.0000 pcm） |
 | `mmd` | 紧凑组装 + 对称型 MMD 排序 SuperLU | 无 C 依赖 |
 | `lu` | 紧凑组装 + COLAMD SuperLU | 无 C 依赖 |
 

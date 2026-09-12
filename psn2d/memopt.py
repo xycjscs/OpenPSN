@@ -661,18 +661,44 @@ def install_compact_lu(psn, permc_spec="COLAMD", verify_topology=True):
     psn._memopt_backend = f"compact-{permc_spec.lower()}"
 
 
-def install_optimized(psn, backend="auto"):
+def install_optimized(psn, backend="auto", mem_limit_gb=None):
     """Install a memory-optimized backend.  Returns a report dict.
 
-    auto: shared-chol -> compact-mmd -> plain (first that survives).
+    auto (memory-aware): use shared-Cholesky when its factor pool fits
+    ``mem_limit_gb``; otherwise switch to the **tile** backend, which never
+    materializes a full-system factor (Schur tiles, auto-sized from the same
+    budget).  If the tile backend is unavailable for the geometry/bridge it
+    degrades to compact-mmd -> plain (fail-loud if none survive).
+
+    tile: force the tile backend (auto tile size from ``mem_limit_gb``).
+    chol/mmd/lu: the explicit legacy backends (unchanged).
     """
     if backend in (None, "off"):
         psn._memopt_backend = "plain"
         return {"backend": "plain", "reason": "opt off"}
-    if backend in ("lu", "mmd", "chol", "auto"):
+    if backend in ("lu", "mmd", "chol", "auto", "tile"):
         pass
     else:
         raise ValueError(f"unknown backend {backend!r}")
+
+    from . import tile as _tile
+    if mem_limit_gb is None:
+        from . import runtime
+        mem_limit_gb = runtime.DEFAULT_MEM_LIMIT_GB
+
+    def _try_tile():
+        try:
+            return _tile.install_tile_backend(psn, mem_limit_gb=mem_limit_gb)
+        except Exception as e:
+            psn._lusys = {}
+            psn._syscache = {}
+            return e
+
+    if backend == "tile":
+        rep = _try_tile()
+        if isinstance(rep, Exception):
+            raise RuntimeError(f"tile backend failed: {rep}")
+        return {"backend": "tile", "systems": rep, "mem_limit_gb": mem_limit_gb}
 
     if backend == "lu":
         install_compact_lu(psn, permc_spec="COLAMD")
@@ -682,15 +708,51 @@ def install_optimized(psn, backend="auto"):
         return {"backend": psn._memopt_backend, "reason": "requested"}
 
     errors = []
+    fits = True
+    est_pool_gb = None
     if backend in ("chol", "auto"):
-        try:
-            install_shared_chol(psn)
-            if backend == "chol":
-                return {"backend": "shared-chol", "reason": "requested"}
-            return {"backend": "shared-chol", "reason": "all gates passed"}
-        except (ValueError, RuntimeError, TypeError, AssertionError) as e:
-            errors.append(f"shared-chol: {e}")
-            psn._lusys = {}          # drop any half-built entries
+        if backend == "auto":
+            # memory-aware: estimate the shared-chol pool BEFORE building it
+            # (building is exactly the step that would OOM).
+            try:
+                est, _ = _tile.pool_estimate_shared_chol(psn)
+                est_pool_gb = est / 2 ** 30
+                fits = est <= mem_limit_gb * 2 ** 30
+            except Exception as e:
+                fits = False
+                errors.append(f"shared-chol estimate: {e}")
+        if fits:
+            try:
+                install_shared_chol(psn)
+                reason = "requested" if backend == "chol" \
+                    else "pool fits mem budget"
+                rep = {"backend": "shared-chol", "reason": reason,
+                       "mem_limit_gb": mem_limit_gb}
+                if est_pool_gb is not None:
+                    rep["est_pool_gb"] = round(est_pool_gb, 3)
+                return rep
+            except (ValueError, RuntimeError, TypeError, AssertionError) as e:
+                errors.append(f"shared-chol: {e}")
+                psn._lusys = {}          # drop any half-built entries
+        elif backend == "chol":
+            # explicit chol but the pool won't fit: fail-loud
+            raise RuntimeError(
+                f"shared-Cholesky pool est. {est_pool_gb:.3f} GB exceeds "
+                f"mem_limit_gb={mem_limit_gb}; use backend 'tile' or raise "
+                f"the limit")
+    # auto: pool over budget (or shared-chol unavailable) -> tile
+    if backend == "auto":
+        rep = _try_tile()
+        if not isinstance(rep, Exception):
+            why = ("pool over mem budget" if not fits
+                   else "shared-chol unavailable")
+            out = {"backend": "tile", "systems": rep,
+                   "reason": f"auto -> tile ({why})",
+                   "mem_limit_gb": mem_limit_gb}
+            if est_pool_gb is not None:
+                out["est_pool_gb"] = round(est_pool_gb, 3)
+            return out
+        errors.append(f"tile: {rep}")
     if backend == "chol":
         raise RuntimeError(f"shared-Cholesky unavailable: {errors}")
     try:

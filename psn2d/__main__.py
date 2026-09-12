@@ -23,9 +23,10 @@ from .solver import PSN2D
 def build_solver(spec, case, threads=None, mem_limit_gb=None):
     geom = spec["geometry"]
     # runtime inputs: CLI > YAML solver.threads / solver.mem_limit_gb > default
+    # (falsy guard: 0 / None both mean "not set"; 0 is not a valid budget)
     sol = spec.get("solver", {})
     threads = threads or sol.get("threads")
-    mem_limit_gb = mem_limit_gb or sol.get("mem_limit_gb")
+    mem_limit_gb = mem_limit_gb or sol.get("mem_limit_gb") or None
     if bool(geom.get("rect", False)):
         # rectangular nodes: per-node widths.  An optional per-case
         # `subdivide` S splits every node into S x S sub-nodes (widths / S,
@@ -74,7 +75,8 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
                        mem_limit_gb=mem_limit_gb)
     if opt != "off":
         from . import memopt
-        report = memopt.install_optimized(psn, backend=opt)
+        report = memopt.install_optimized(psn, backend=opt,
+                                          mem_limit_gb=mem_limit_gb)
     else:
         psn._memopt_backend = "plain"
         report = None
@@ -138,9 +140,10 @@ def main(argv=None):
     pr.add_argument("--json", action="store_true", help="print results as JSON")
     pr.add_argument("--quiet", action="store_true", help="no per-iteration output")
     pr.add_argument("--opt", default="off",
-                    choices=["off", "auto", "chol", "mmd", "lu"],
+                    choices=["off", "auto", "chol", "mmd", "lu", "tile"],
                     help="memory-optimized factorization backend "
-                         "(off = plain path, default)")
+                         "(off = plain path, default; auto picks "
+                         "shared-chol vs tile from --mem-limit-gb)")
     pr.add_argument("--threads", type=int, default=None,
                     help="total parallel-unit budget (default = half the "
                          "system core count; factor phase <= N threads, "
