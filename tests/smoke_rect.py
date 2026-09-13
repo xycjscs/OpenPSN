@@ -21,7 +21,7 @@ from psn2d.solver import PSN2D  # noqa: E402
 
 def main():
     spec = load_spec(os.path.join(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__))), "examples", "checkerboard_1g.yaml"))
+        os.path.abspath(__file__))), "examples", "psn_repro", "checkerboard_1g.yaml"))
     St, Sgg, nuSf, chi = arrays(spec)
     bnd = ("reflect",) * 4
     kw = dict(boundary=bnd, generic=True, I=30, M=12)

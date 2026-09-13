@@ -37,7 +37,7 @@ from psn2d import tile as T                  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXAMPLES = os.path.join(os.path.dirname(HERE), "examples")
-CB = os.path.join(EXAMPLES, "checkerboard_1g.yaml")
+CB = os.path.join(EXAMPLES, "psn_repro", "checkerboard_1g.yaml")
 WEAK_REF = 1.12974      # OpenMC reference (coarse S=4 mesh, paper Fig.3)
 KEFF_TOL_PCM = 0.05
 

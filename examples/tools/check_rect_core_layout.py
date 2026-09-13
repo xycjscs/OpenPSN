@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Cross-check rect quarter-core layout vs the homogenized core grid."""
+import os
+
 import numpy as np
 import yaml
 
-old = yaml.safe_load(open("c5g7_2d_quarter_core.yaml"))
-new = yaml.safe_load(open("c5g7_rect_quarter_core.yaml"))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_EX = os.path.join(os.path.dirname(_HERE), "examples")
+old = yaml.safe_load(open(os.path.join(_EX, "c5g7", "study1_homogenised", "c5g7_2d_quarter_core.yaml")))
+new = yaml.safe_load(open(os.path.join(_EX, "c5g7", "study2_rectangular", "c5g7_rect_quarter_core.yaml")))
 g_old = np.array(old["geometry"]["grid"], int)
 g_new = np.array(new["geometry"]["mat_grid"], int)
 wx = np.array(new["geometry"]["widths_x"])

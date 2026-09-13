@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Extract PURE (unhomogenized) material XS from c5g7-mgxs.h5.
 
-Output: examples/c5g7_materials_pure.yaml
+Output: examples/c5g7/study2_rectangular/c5g7_materials_pure.yaml
 Materials: Water, UO2, MOX-4.3%, MOX-7%, MOX-8.7%, Control Rod (Gd),
            Fission Chamber — each with 7-group total / scatter / nuSigmaF,
 plus the global fission spectrum (identical chi across all fissile mats).
@@ -14,8 +14,8 @@ import h5py
 import yaml
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-H5 = os.path.join(HERE, "examples", "c5g7-mgxs.h5")
-OUT = os.path.join(HERE, "examples", "c5g7_materials_pure.yaml")
+H5 = os.path.join(HERE, "examples", "c5g7", "c5g7-mgxs.h5")
+OUT = os.path.join(HERE, "examples", "c5g7", "study2_rectangular", "c5g7_materials_pure.yaml")
 
 ORDER = [("Water", "water"),
          ("UO2", "uo2"),

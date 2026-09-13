@@ -72,12 +72,12 @@ Python ≥ 3.9。纯 Python（无 C 扩展、无 MPI），单机即可。
 ## 3. 运行
 
 ```bash
-python -m psn2d run examples/checkerboard_1g.yaml        # 1 群棋盘（Fig.3）
-python -m psn2d run examples/bwr_bundle_2g.yaml          # 2 群 BWR 束（Fig.8/10）
-python -m psn2d run examples/c5g7_2d_quarter_core.yaml   # 7 群 C5G7-2D 1/4 芯（均质化 XS）
-python -m psn2d run examples/c5g7_2d_quarter_core_bww_om.yaml   # Study I：BWW 自屏蔽均质化
-python -m psn2d run examples/c5g7_rect_uo2_assembly.yaml  # 7 群矩形节点单 UO2 组件（非均质）
-python -m psn2d run examples/c5g7_rect6_quarter_core.yaml # 7 群矩形节点 1/4 芯（6×6 准方划分）
+python -m psn2d run examples/psn_repro/checkerboard_1g.yaml        # 1 群棋盘（Fig.3）
+python -m psn2d run examples/psn_repro/bwr_bundle_2g.yaml          # 2 群 BWR 束（Fig.8/10）
+python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml   # 7 群 C5G7-2D 1/4 芯（均质化 XS）
+python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core_bww_om.yaml   # Study I：BWW 自屏蔽均质化
+python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml  # 7 群矩形节点单 UO2 组件（非均质）
+python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect6_quarter_core.yaml # 7 群矩形节点 1/4 芯（6×6 准方划分）
 python -m psn2d run <file>.yaml --case M12_S1            # 只跑指定 case
 python -m psn2d run <file>.yaml --json                   # 结果输出 JSON
 python -m psn2d run <file>.yaml --opt auto               # 内存优化后端（见下）
@@ -87,7 +87,7 @@ python -m psn2d run <file>.yaml --threads 24 --mem-limit-gb 32   # 并行/内存
 **可选：内存优化后端（`--opt`，默认 `off`，默认路径位级不变）**
 
 ```bash
-python -m psn2d run examples/c5g7_2d_quarter_core.yaml --case M16_S2 --opt auto
+python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml --case M16_S2 --opt auto
 ```
 
 | 值 | 后端 | 说明 |
@@ -155,14 +155,14 @@ cases:                   # 批量：M=方位角段数, S=空间细分, model=gen
 
 | 问题 | 输入 | 结果 | 对照 |
 |------|------|------|------|
-| Fig.3 棋盘（1 群） | `checkerboard_1g.yaml` | 与快照逐点咬合 | 原文 Fig.3（<4 pcm） |
-| BWR 2 群束 | `bwr_bundle_2g.yaml` | Δ=+28.3 pcm（N=2, M=8） | 原文 Fig.8/10 |
-| C5G7-2D 1/4 芯（7 群，均质化 XS） | `c5g7_2d_quarter_core.yaml` | k=1.18861（M12_S1） | 1.18646（McGraw PHYSOR 2014 高保真），+215 pcm |
-| C5G7 单 UO2 组件（7 群，均质化 XS） | `c5g7_uo2_assembly.yaml` | k=1.34030 | nTRACER 1.33367 |
-| Study I 1/4 芯（BWW 自屏蔽均质化） | `c5g7_2d_quarter_core_bww_om.yaml` | 最佳点 S=6, M=24：−7.7 pcm | 自算 OpenMC 同均质化参考 1.1867462（±3.4 pcm）；对高保真 1.18646 为 +28.6 pcm |
-| C5G7 单 UO2 组件（7 群，矩形节点非均质） | `c5g7_rect_uo2_assembly.yaml` | k=1.3347384（M24, S=1） | 自算 OpenMC 显式几何参考 1.3347260 ±3.6 pcm，+12.4 pcm |
-| C5G7-2D 1/4 芯（7 群，矩形节点非均质） | `c5g7_rect_quarter_core.yaml` | k=1.1871157（M24, S=1） | 自算 OpenMC 同几何参考 1.1872176 ±3.4 pcm，−10.2 pcm |
-| rect6 6×6 准方划分 1/4 芯 | `c5g7_rect6_quarter_core.yaml` | M=2/4/8/12/16：−278.8…−126.2 pcm（S=1） | 同上同几何参考；core M≥24 超 62 GB 机器预算 |
+| Fig.3 棋盘（1 群） | `psn_repro/checkerboard_1g.yaml` | 与快照逐点咬合 | 原文 Fig.3（<4 pcm） |
+| BWR 2 群束 | `psn_repro/bwr_bundle_2g.yaml` | Δ=+28.3 pcm（N=2, M=8） | 原文 Fig.8/10 |
+| C5G7-2D 1/4 芯（7 群，均质化 XS） | `c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml` | k=1.18861（M12_S1） | 1.18646（McGraw PHYSOR 2014 高保真），+215 pcm |
+| C5G7 单 UO2 组件（7 群，均质化 XS） | `c5g7/study1_homogenised/c5g7_uo2_assembly.yaml` | k=1.34030 | nTRACER 1.33367 |
+| Study I 1/4 芯（BWW 自屏蔽均质化） | `c5g7/study1_homogenised/c5g7_2d_quarter_core_bww_om.yaml` | 最佳点 S=6, M=24：−7.7 pcm | 自算 OpenMC 同均质化参考 1.1867462（±3.4 pcm）；对高保真 1.18646 为 +28.6 pcm |
+| C5G7 单 UO2 组件（7 群，矩形节点非均质） | `c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml` | k=1.3347384（M24, S=1） | 自算 OpenMC 显式几何参考 1.3347260 ±3.6 pcm，+12.4 pcm |
+| C5G7-2D 1/4 芯（7 群，矩形节点非均质） | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | k=1.1871157（M24, S=1） | 自算 OpenMC 同几何参考 1.1872176 ±3.4 pcm，−10.2 pcm |
+| rect6 6×6 准方划分 1/4 芯 | `c5g7/study2_rectangular/c5g7_rect6_quarter_core.yaml` | M=2/4/8/12/16：−278.8…−126.2 pcm（S=1） | 同上同几何参考；core M≥24 超 62 GB 机器预算 |
 
 完整 248 点复现数据与图见 `snapshot/`（原始快照仓库）。
 
@@ -248,7 +248,14 @@ OpenPSN/
 │   ├── psn.js        #   纯 JS PSN 引擎（无依赖）
 │   ├── fig3ref.json  #   论文 Fig.3 60 点复现数据（页面比对用）
 │   └── img/          #   内嵌插图（原论文 Fig.1/3/6/7/8/10 + C5G7 图）
-├── examples/         # 论文问题输入：1群/2群 + C5G7（BWW 均质化 / 均质化 / 矩形 3×3 / 矩形 6×6）
+├── examples/         # 论文问题输入（按论文结构分文件夹）
+│   ├── psn_repro/    #   §3 复现旧 PSN：1 群棋盘 + 2 群 BWR 束
+│   ├── c5g7/
+│   │   ├── c5g7-mgxs.h5       # 原始 7 群截面库
+│   │   ├── study1_homogenised/    # §4.3 Study I：pinwise 均质化（含 BWW 自屏蔽）
+│   │   └── study2_rectangular/    # §4.4 Study II：矩形节点 3×3 / 6×6（非均质 XS）
+│   ├── tools/        #   probe/chain/绘图等辅助脚本
+│   └── logs/         #   历史扫参日志
 ├── paper/            # 论文：main.tex + appendix.tex + figures/ + 三格式交付（pdf/md/docx）
 ├── tests/            # 回归套件：run_examples.py + test_memopt.py + test_tile.py
 │                     #   + verify_rect_node.py + baseline_keff.json（位级基线）

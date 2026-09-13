@@ -10,10 +10,10 @@ Single UO2 assembly (17x17 pins, all-reflective) with PURE material XS:
       4 corner nodes w x w        water,  w = 1.26 - s = 0.1514465 cm
   - corners meet corners only; the 17x17 pin grid -> 51x51 node grid.
   - pin layout (UO2 / Guide Tube x12 / Fission Chamber center) is copied
-    bit-for-bit from examples/c5g7_uo2_assembly.yaml (verified vs the
+    bit-for-bit from examples/c5g7/study1_homogenised/c5g7_uo2_assembly.yaml (verified vs the
     official C5G7 UO2 rodded template).
 
-XS: examples/c5g7_materials_pure.yaml (pure, UNhomogenized 7-group XS from
+XS: examples/c5g7/study2_rectangular/c5g7_materials_pure.yaml (pure, UNhomogenized 7-group XS from
 c5g7-mgxs.h5: water, uo2, mox43, mox7, mox87, gd, fc, gt).
 """
 import os
@@ -120,7 +120,7 @@ def main():
             {"name": "M16", "M": 16, "kref": 1.3411780},
         ],
     }
-    out = os.path.join(EX, "c5g7_rect_uo2_assembly.yaml")
+    out = os.path.join(EX, "c5g7", "study2_rectangular", "c5g7_rect_uo2_assembly.yaml")
     with open(out, "w") as f:
         f.write("# PSN2D — C5G7 single UO2 assembly, rectangular nodes, PURE XS\n"
                 f"# 51x51 nodes (17x17 pins x 3x3); fuel s={S_FUEL:.7f} cm "

@@ -3,7 +3,7 @@
 """Generate the C5G7 MOX assembly problems (both study types).
 
 1) Study I (pinwise BWW homogenised, square nodes):
-   examples/c5g7_mox_assembly_bww.yaml
+   examples/c5g7/study1_homogenised/c5g7_mox_assembly_bww.yaml
    17x17 grid, unit_size 1.26, all-reflective, materials from
    c5g7_materials_bww_om.yaml (pinwise flux-weighted self-shielded XS,
    same BWW library as the UO2 sweep).  Grid indices follow the UO2
@@ -11,7 +11,7 @@
    4=Guide Tube 5=Fission Chamber 6=Water.
 
 2) Study II (rectangular nodes, PURE material XS):
-   examples/c5g7_rect_mox_assembly.yaml
+   examples/c5g7/study2_rectangular/c5g7_rect_mox_assembly.yaml
    51x51 nodes (17x17 pins x 3x3), same equal-area-square recipe as
    gen_rect_c5g7_asm.py, PURE 7-group XS (c5g7_materials_pure.yaml),
    all-reflective.  Pure indices: 0=water 1=uo2 2=mox43 3=mox7
@@ -95,7 +95,7 @@ solver:
   keff_tol: 1e-10
   max_outer: 6000
 """
-    out = os.path.join(EX, "c5g7_mox_assembly_bww.yaml")
+    out = os.path.join(EX, "c5g7", "study1_homogenised", "c5g7_mox_assembly_bww.yaml")
     open(out, "w").write(txt)
     print("wrote", out)
 
@@ -169,7 +169,7 @@ def write_rect():
             {"name": "M16", "M": 16, "kref": None},
         ],
     }
-    out = os.path.join(EX, "c5g7_rect_mox_assembly.yaml")
+    out = os.path.join(EX, "c5g7", "study2_rectangular", "c5g7_rect_mox_assembly.yaml")
     with open(out, "w") as f:
         f.write("# PSN2D — C5G7 single MOX assembly, rectangular nodes, PURE XS\n"
                 f"# 51x51 nodes (17x17 pins x 3x3); fuel s={S_FUEL:.7f} cm "

@@ -10,11 +10,11 @@ Writes:  /opt/data/workspace/c5g7/psn_c5g7_2d_power.npz
 import sys, time
 import numpy as np
 
-sys.path.insert(0, '/opt/data/workspace/psn2d')
+sys.path.insert(0, '/opt/data/workspace/OpenPSN')
 from psn2d import model
 from psn2d import __main__ as M
 
-SPEC = '/opt/data/workspace/psn2d/examples/c5g7_2d_quarter_core.yaml'
+SPEC = '/opt/data/workspace/OpenPSN/examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml'
 OUT  = '/opt/data/workspace/c5g7/psn_c5g7_2d_power.npz'
 
 spec  = model.load_spec(SPEC)

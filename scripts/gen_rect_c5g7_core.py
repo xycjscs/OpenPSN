@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Generate the C5G7-2D 1/4 CORE rectangular-node test problem.
 
-Layout (same as examples/c5g7_2d_quarter_core.yaml, pin-level):
+# Layout (same as examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml, pin-level):
   51x51 pin grid; 2x2 fuel block (UO2 main-diagonal, MOX anti-diagonal)
   at bottom-left (core center), L-shaped pure-water reflector on
   right + top.  Mirror on left/bottom, vacuum on right/top.
@@ -158,7 +158,7 @@ def main():
             {"name": "M16", "M": 16, "kref": 1.18646},
         ],
     }
-    out = os.path.join(EX, "c5g7_rect_quarter_core.yaml")
+    out = os.path.join(EX, "c5g7", "study2_rectangular", "c5g7_rect_quarter_core.yaml")
     with open(out, "w") as f:
         f.write("# PSN2D — C5G7-2D 1/4 core, rectangular nodes, PURE XS\n"
                 f"# 153x153 nodes (51x51 pins x 3x3); fuel center s={S_FUEL:.7f} cm\n"

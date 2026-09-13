@@ -4,9 +4,9 @@
 Chao, Li & Chen, ANE 240 (2027) 112707 — independent Python implementation.
 Run a YAML problem:
 
-    python -m psn2d run examples/bwr_bundle_2g.yaml
-    python -m psn2d run examples/c5g7_2d.yaml --case M16
-    python -m psn2d run examples/checkerboard_1g.yaml --quick
+    python -m psn2d run examples/psn_repro/bwr_bundle_2g.yaml
+    python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml --case M16
+    python -m psn2d run examples/psn_repro/checkerboard_1g.yaml --quick
 """
 import argparse
 import json

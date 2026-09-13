@@ -14,7 +14,7 @@ S = int(sys.argv[1])
 MM = int(sys.argv[2])
 TOL = float(sys.argv[3]) if len(sys.argv) > 3 else 1e-10
 
-spec = model.load_spec('/opt/data/workspace/OpenPSN/examples/c5g7_2d_quarter_core.yaml')
+spec = model.load_spec('/opt/data/workspace/OpenPSN/examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml')
 case = {'name': f'M{MM}_S{S}', 'model': 'ty3', 'I': 30, 'M': MM,
         'subdivide': S, 'kref': 1.18646}
 t0 = time.time()

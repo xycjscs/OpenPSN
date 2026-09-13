@@ -42,34 +42,35 @@ BASELINE = os.path.join(HERE, "baseline_keff.json")
 # list (or be the single case if cases: is absent).
 CASES = [
     # checkerboard (paper Sec 4.1, Fig.3) — generic polar, 1-group
-    ("checkerboard_1g.yaml", "weak_M12", "fast"),
-    ("checkerboard_1g.yaml", "weak_M24", "fast"),
+    ("psn_repro/checkerboard_1g.yaml", "weak_M12", "fast"),
+    ("psn_repro/checkerboard_1g.yaml", "weak_M24", "fast"),
     # BWR bundle (paper Sec 4.3, Table 2 / Fig.8-12) — ty3, 2-group
-    ("bwr_bundle_2g.yaml", "N2_M8", "fast"),
-    ("bwr_bundle_2g.yaml", "N4_M12", "fast"),
+    ("psn_repro/bwr_bundle_2g.yaml", "N2_M8", "fast"),
+    ("psn_repro/bwr_bundle_2g.yaml", "N4_M12", "fast"),
     # C5G7 single UO2 assembly (17x17, 7-group)
-    ("c5g7_uo2_assembly.yaml", "M8_S2", "fast"),
+    ("c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M8_S2", "fast"),
     # heavy points (quarter core / high-subdivide assembly)
-    ("c5g7_uo2_assembly.yaml", "M12_S4", "full"),
-    ("c5g7_uo2_assembly.yaml", "M16_S4", "full"),
-    ("c5g7_uo2_assembly.yaml", "M16_S6", "full"),
+    ("c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M12_S4", "full"),
+    ("c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M16_S4", "full"),
+    ("c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M16_S6", "full"),
     # C5G7 1/4 core (51x51, 7-group)
-    ("c5g7_2d_quarter_core.yaml", "M8_S1", "full"),
-    ("c5g7_2d_quarter_core.yaml", "M12_S1", "full"),
-    ("c5g7_2d_quarter_core.yaml", "M12_S2", "full"),
-    ("c5g7_2d_quarter_core.yaml", "M16_S2", "full"),
+    ("c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml", "M8_S1", "full"),
+    ("c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml", "M12_S1", "full"),
+    ("c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml", "M12_S2", "full"),
+    ("c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml", "M16_S2", "full"),
     # C5G7 rectangular nodes, un-homogenized material XS (paper Study II)
     # single UO2 assembly 17x17 pins -> 51x51 rect nodes
-    ("c5g7_rect_uo2_assembly.yaml", "M8", "fast"),
-    ("c5g7_rect_uo2_assembly.yaml", "M16", "fast"),
+    ("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml", "M8", "fast"),
+    ("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml", "M16", "fast"),
     # 1/4 core 51x51 pins -> 153x153 rect nodes (heavy: ~1500 outer iters each)
-    ("c5g7_rect_quarter_core.yaml", "M8", "full"),
-    ("c5g7_rect_quarter_core.yaml", "M16", "full"),
+    ("c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml", "M8", "full"),
+    ("c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml", "M16", "full"),
 ]
 
 
 def _key(yamlb, case):
-    return f"{yamlb}::{case}"
+    # baseline keys are yaml BASENAMEs (path-independent)
+    return f"{os.path.basename(yamlb)}::{case}"
 
 
 _YAML_CACHE = {}

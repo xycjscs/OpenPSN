@@ -155,10 +155,10 @@ def _sys_exact(psn_a, psn_b, i, g):
 def t_compact_exact():
     """compact assembly == build_system, element-exact, every (i, g) system."""
     total = 0
-    for spec_name, case_name in [("c5g7_uo2_assembly.yaml", "M8_S2"),
-                                 ("checkerboard_1g.yaml", "weak_M12"),
-                                 ("c5g7_rect_uo2_assembly.yaml", "M8"),
-                                 ("c5g7_rect_mox_assembly.yaml", "M8")]:
+    for spec_name, case_name in [("c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M8_S2"),
+                                 ("psn_repro/checkerboard_1g.yaml", "weak_M12"),
+                                 ("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml", "M8"),
+                                 ("c5g7/study2_rectangular/c5g7_rect_mox_assembly.yaml", "M8")]:
         spec = _spec(spec_name)
         case = _case(spec, case_name)
         a = M.build_solver(spec, case)
@@ -177,10 +177,10 @@ def t_compact_exact():
 
 def t_keff_equiv_lu_mmd():
     """lu / mmd backends converge to the plain keff (small problems)."""
-    for spec_name, case_name in [("checkerboard_1g.yaml", "weak_M12"),
-                                 ("c5g7_uo2_assembly.yaml", "M8_S2"),
-                                 ("c5g7_rect_uo2_assembly.yaml", "M8"),
-                                 ("c5g7_rect_mox_assembly.yaml", "M8")]:
+    for spec_name, case_name in [("psn_repro/checkerboard_1g.yaml", "weak_M12"),
+                                 ("c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M8_S2"),
+                                 ("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml", "M8"),
+                                 ("c5g7/study2_rectangular/c5g7_rect_mox_assembly.yaml", "M8")]:
         k0, _, t0, _ = _keff(spec_name, case_name, "off")
         row = f"  {spec_name}::{case_name}: plain k={k0:.9f} ({t0:.1f}s)"
         for opt in ("lu", "mmd"):
@@ -200,7 +200,7 @@ def t_shared_chol_conforming():
         print("SKIP shared_chol_conforming (libeigen_chol.so not built; "
               "run psn2d/memopt_cxx/build.py)")
         return
-    spec_name, case_name = "c5g7_uo2_assembly.yaml", "M8_S2"
+    spec_name, case_name = "c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M8_S2"
     k0, _, t0, p0 = _keff(spec_name, case_name, "off")
     k, rep, t, pk = _keff(spec_name, case_name, "chol")
     d = abs(k - k0)
@@ -233,7 +233,7 @@ def t_angschur_conforming():
               "run psn2d/memopt_cxx/build.py)")
         return
     from psn2d import angschr
-    spec_name, case_name = "c5g7_uo2_assembly.yaml", "M8_S2"
+    spec_name, case_name = "c5g7/study1_homogenised/c5g7_uo2_assembly.yaml", "M8_S2"
     k0, _, t0, p0 = _keff(spec_name, case_name, "off")
     psn = M.build_solver(_spec(spec_name), _case(_spec(spec_name), case_name))
     rep = angschr.install_angschur_backend(psn, mem_limit_gb=32, verify=True)
@@ -296,8 +296,8 @@ def t_rect_gate():
     now SUCCEED (face-length row scaling restores exact symmetry, probe
     asym <= 2e-16), keff matches plain to roundoff, and a genuinely
     non-transpose-symmetric rect geometry must still fail LOUD."""
-    for spec_name, case_name in [("c5g7_rect_uo2_assembly.yaml", "M8"),
-                                 ("c5g7_rect_mox_assembly.yaml", "M8")]:
+    for spec_name, case_name in [("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml", "M8"),
+                                 ("c5g7/study2_rectangular/c5g7_rect_mox_assembly.yaml", "M8")]:
         psn = M.build_solver(_spec(spec_name), _case(_spec(spec_name), case_name))
         assert psn.rect, f"{spec_name} unexpectedly non-rect"
         memopt.install_shared_chol(psn)
@@ -315,15 +315,15 @@ def t_rect_gate():
         assert rep["backend"] == "shared-chol", rep
         print(f"  {spec_name}::{case_name}: auto -> {rep['backend']}")
     # keff equivalence on the UO2 rect assembly (plain vs shared-chol)
-    k0, _, t0, _ = _keff("c5g7_rect_uo2_assembly.yaml", "M8", "off")
-    k, rep, t, pk = _keff("c5g7_rect_uo2_assembly.yaml", "M8", "chol")
+    k0, _, t0, _ = _keff("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml", "M8", "off")
+    k, rep, t, pk = _keff("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml", "M8", "chol")
     d = abs(k - k0)
     assert rep["backend"] == "shared-chol", rep
     assert d < KEFF_TOL, f"rect shared-chol keff diff {d}"
     print(f"  rect uo2 M8: plain k={k0:.9f} ({t0:.1f}s) | "
           f"shared-chol k={k:.9f} d={d:.1e} peak={pk:.2f}GB ({t:.1f}s)")
     # non-transpose-symmetric rect widths -> fail-loud, auto falls back
-    spec = _spec("c5g7_rect_uo2_assembly.yaml")
+    spec = _spec("c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml")
     psn3 = M.build_solver(spec, _case(spec, "M8"))
     wx = psn3.hx.astype(float).copy()
     wx[1, 1] *= 1.01  # break hx[j,i] == hy[i,j] at one node
@@ -355,7 +355,7 @@ def t_full_core_backends():
     # high-water mark polluted by residue from earlier backends (glibc
     # keeps freed arenas), which made mmd look like it used MORE memory
     # than plain on this very case.
-    spec_name, case_name = "c5g7_2d_quarter_core.yaml", "M12_S2"
+    spec_name, case_name = "c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml", "M12_S2"
     k0, b0, t0, p0 = _keff_subprocess(spec_name, case_name, "off")
     print(f"  {spec_name}::{case_name} plain: k={k0:.9f} peak={p0:.2f}GB ({t0:.0f}s)")
     row = ""
@@ -373,7 +373,7 @@ def t_full_rect_core():
     Transpose-symmetric widths: shared-chol must now be selected by auto
     (vacuum faces on x/y-matched sides, face-length row scaling) — the
     strongest end-to-end check of the rect path through the process pool."""
-    spec_name, case_name = "c5g7_rect_quarter_core.yaml", "M8"
+    spec_name, case_name = "c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml", "M8"
     k0, b0, t0, p0 = _keff_subprocess(spec_name, case_name, "off")
     print(f"  {spec_name}::{case_name} plain: k={k0:.9f} peak={p0:.2f}GB ({t0:.0f}s)")
     k, rep, t, pk = _keff_subprocess(spec_name, case_name, "auto")
