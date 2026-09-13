@@ -128,12 +128,13 @@ materials:
 solver:
   max_outer: 3000
   keff_tol: 1e-10
-cases:                   # 批量：M=方位角段数, S=空间细分, model=psn|generic
-  - { name: M8_S1,  model: psn,      M: 8,  subdivide: 1 }
-  - { name: M12_S1, model: psn,      M: 12, subdivide: 1 }
-  - { name: M12_S2, model: psn,      M: 12, subdivide: 2 }
+cases:                   # 批量：M=方位角段数, S=空间细分, model=generic|ty3
+  - { name: M8_S1,  model: generic,  M: 8,  subdivide: 1 }
+  - { name: M12_S1, model: generic,  M: 12, subdivide: 1 }
+  - { name: M12_S2, model: generic,  M: 12, subdivide: 2 }
 ```
 
+- **model**：角度模型，`generic`（默认，论文 Sec.2 通用 PSN）或 `ty3`（TY 受限二维模型）。
 - **M**：方位角离散段数（角向精度）。
 - **S**：空间细分（每个材料网格再分为 S×S 子节点 → 空间精度）。
 - **kref**（可选）：参考 k 值，给出后自动打印 Δ（pcm）。
