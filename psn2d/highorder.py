@@ -498,6 +498,13 @@ def _ho_sweep_worker(args):
         out = _HO_SW.sweep.system(i, g).apply(q[g], check_residual=False)
         r[g, i] = out
     finally:
+        # drop EVERY numpy view of the shared buffers before closing them
+        # (a live view = an exported pointer -> BufferError on close);
+        # explicit None-assignment releases the frame slots
+        # deterministically (same discipline as solver._sweep_worker).
+        q = None
+        r = None
+        out = None
         q_shm.close()
         r_shm.close()
     return (g, i)
@@ -611,17 +618,25 @@ class HighOrderSweep:
         q_view[:] = np.ascontiguousarray(qnode).ravel()
         args = [(g, i, self._q_shm.name, self._r_shm.name,
                  ng, I_, nodes) for g in range(ng) for i in range(I_)]
-        self._pool.map_async(_ho_sweep_worker, args).get()
-        out = np.frombuffer(self._r_shm.buf, dtype=np.float64)
-        out = out.reshape(ng, I_, nodes, 5)
-        phi = np.zeros((ng, nodes))
-        qim = np.zeros((ng, nodes, 5))
-        for g in range(ng):
-            for i in range(I_):
-                o = out[g, i]
-                phi[g] += o[:, 0]
-                qim[g] += o
-        return phi, qim
+        try:
+            self._pool.map_async(_ho_sweep_worker, args).get()
+            out = np.frombuffer(self._r_shm.buf, dtype=np.float64)
+            out = out.reshape(ng, I_, nodes, 5)
+            phi = np.zeros((ng, nodes))
+            qim = np.zeros((ng, nodes, 5))
+            for g in range(ng):
+                for i in range(I_):
+                    o = out[g, i]
+                    phi[g] += o[:, 0]
+                    qim[g] += o
+            return phi, qim
+        finally:
+            # release the shared-buffer views: on an exception this frame
+            # stays on the traceback, and a live view is an exported
+            # pointer that would make stop_pool()'s close() raise
+            q_view = None
+            out = None
+            o = None
 
 
 # --------------------------------------------------------------------- #
