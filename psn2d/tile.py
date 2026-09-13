@@ -18,14 +18,19 @@ an SPD matrix; the seam's locality ("a seam row only couples to adjacent
 across-seam rows") comes from the PSN operator being 4-neighbor local, not
 from any assembly structure.
 
-Two competing memory terms (both monotone in P0, opposite directions, so a
-well-defined minimum exists):
+Two competing memory terms (measured on C5G7-rect6 136x136, M up to 192):
   * tile-factor memory  ~ P0        (fewer, bigger tiles -> more total fill)
-  * Schur-seam memory   ~ 1/P0^2    (seam width ~ 1/P0; S is quasi-dense on
-                                     the seam, so its memory ~ seam^2)
-The auto-sizer probes a few candidate P0s, measures the real factor fill and
-seam size, and picks the feasible P0 with the lowest resident estimate
-(breaking ties toward fewer tiles = faster).
+  * Schur-seam memory   ~ P0^0      (SEAM-INVARIANT, not 1/P0^2 as once
+                                     assumed: S row i spreads over the whole
+                                     tile ring adjacent to it, ring width
+                                     ~ P0, number of ring rows ~ 1/P0, so
+                                     total S nnz ~ sum_t k_t^2 ~ P0^0).
+Shrinking tiles therefore NEVER shrinks the Schur seam; the seam is the
+dominant and P0-invariant term.  The auto-sizer uses the estimate as a
+VETO: a candidate whose est exceeds the per-system budget is never
+constructed (building the largest candidate first is exactly what OOM'd
+M192 before the sizer could try smaller tiles).  The seam pre-veto is
+cheap (sp.find only, no factorization).
 
 Pipeline (per (i, g) system; factors built ONCE, reused for every outer
 iteration — the "decompose once, reuse forever" invariant):
@@ -216,8 +221,11 @@ def tile_candidates(psn):
 
 def _seam_width(psn, C, P0, R_I):
     """Total squared seam interface width sum_t k_t^2 for a P0 tiling, where
-    k_t = number of seam columns coupled to tile t.  Used to bound the (dense)
-    Schur S nnz without building S."""
+    k_t = number of seam columns coupled to tile t.  A LOOSE upper bound on
+    the (dense) Schur S nnz without building S (measured ~11x loose on
+    M16-rect6 P0=68: bound 42.7M vs true S nnz 3.85M — it counts each tile's
+    seam-coupled columns squared, which over-counts the true S pattern).  Use
+    it for VETO only with a wide margin, never as an exact size."""
     owner = row_owner(psn, P0)
     R_T = np.where(owner >= 0)[0]
     nt = int(owner[R_T].max()) + 1
@@ -400,6 +408,16 @@ class TileSystem:
             pass
 
 
+class TileInfeasible(MemoryError):
+    """Deterministic infeasibility: no tile size fits the memory budget.
+
+    The veto certificate (which bound exceeded the budget, by how much, for
+    which P0s) is carried in the message.  Retrying with identical inputs
+    cannot succeed; callers must NOT degrade to a heavier backend (a
+    full-system factor is worse, not better, than the tile pool)."""
+    pass
+
+
 # --------------------------------------------------------------------------- #
 # memory estimate + auto tile size
 # --------------------------------------------------------------------------- #
@@ -450,8 +468,23 @@ def install_tile_backend(psn, mem_limit_gb=None, ordering=1, verify=True,
     the shared-Cholesky backend).  ``mem_limit_gb`` is the WHOLE-pool budget;
     each (i, g) system gets an equal share and its tile size is auto-chosen.
 
-    Returns a report list.  Raises when the geometry is not SPD-scalable or the
-    budget cannot be met (fail-loud, like every other backend).
+    Memory discipline (the "tile must not OOM" guarantee):
+      * the Schur-seam bound is computed ONCE at install time (the sparsity
+        PATTERN of A is identical for every (i, g) — topology fixes it,
+        cross sections only change values).  S_bound(P0) is monotone
+        NON-DECREASING as P0 shrinks (probe data: sum_k2 6.66e5->1.17e6,
+        nI strictly up), so if the LARGEST candidate already exceeds the
+        per-system budget, every candidate is vetoed in a single seam pass
+        — no factorization is ever attempted for infeasible sizes;
+      * the estimate (factors ONE tile per surviving candidate) is a second
+        veto;
+      * the real build still runs with a per-candidate gate and MemoryError
+        capture, so a construction OOM rejects that candidate, never the
+        process.
+    Raises a MemoryError carrying the full veto certificate when no
+    configuration fits (fail-loud).
+
+    Returns a report list.
     """
     import types
 
@@ -474,6 +507,65 @@ def install_tile_backend(psn, mem_limit_gb=None, ordering=1, verify=True,
 
     reports = []
 
+    # ---- install-time vetoes (pattern-identical across all (i, g)) ------- #
+    # Seam fast path: S_bound (sum_k2 + nI*9) is a LOOSE upper bound on the
+    # Schur S nnz (measured ~10x loose at M16-rect6; it squares each tile's
+    # seam-coupled columns).  It is monotone non-decreasing as P0 shrinks,
+    # so the LARGEST candidate has the smallest bound: if that bound alone
+    # exceeds the per-system budget by SEAM_VETO_MARGIN, no configuration
+    # can fit and we raise before any factorization is attempted.  Within
+    # the margin the bound is too loose to decide — the estimate and the
+    # real build's gate (which see the true sizes) get the final say.
+    SEAM_VETO_MARGIN = 20.0
+    EST_VETO_MARGIN = 10.0     # est is ~10x conservative (its S part carries
+    # the 11x-loose S_bound); only a 10x-over-budget est may veto, everything
+    # closer goes to the real build's factor_nnz gate (the true metric).
+    cands_all = tile_candidates(psn)
+    verdicts = []
+    A0, _ = psn._compact_build(0, 0)
+    B0 = A0.multiply(ds[0][:, None]).tocsc()
+    sgn0 = -1.0 if B0.diagonal()[B0.diagonal() != 0].min() < 0 else 1.0
+    C0 = (sgn0 * B0).tocsc()
+    del A0, B0
+    P0_max = cands_all[0]
+    owner = row_owner(psn, P0_max)
+    R_I = np.where(owner < 0)[0]
+    nI_max = len(R_I)
+    sum_k2_max, _na0 = _seam_width(psn, C0, P0_max, R_I)
+    s_bound_max = sum_k2_max + nI_max * 9
+    if s_bound_max * 16 > per_system * SEAM_VETO_MARGIN:
+        del C0
+        raise TileInfeasible(
+            f"tile backend: Schur-seam infeasible for mem_limit_gb="
+            f"{mem_limit_gb} — even the largest tile (P0={P0_max}) leaves "
+            f"a seam whose bound is {s_bound_max:.3e} nnz "
+            f"(x16={s_bound_max * 16 / 2**30:.1f}GB) = "
+            f"{s_bound_max * 16 / per_system:.0f}x the per-system budget "
+            f"{per_system / 2**30:.3f}GB, and the bound is monotone as "
+            f"tiles shrink. The seam, not the tiles, is the memory floor.")
+    # Estimate veto (factors ONE tile per candidate; bounded memory).
+    survivors = []
+    for P0 in cands_all:
+        try:
+            est_b, _na = _estimate_resident(psn, C0, P0, ordering)
+        except MemoryError:
+            verdicts.append((P0, "est-oom", "estimate itself OOM"))
+            continue
+        if est_b > per_system * EST_VETO_MARGIN:
+            verdicts.append((P0, "est", f"est={est_b / 2**30:.1f}GB > "
+                                        f"{EST_VETO_MARGIN:.0f}x budget="
+                                        f"{per_system / 2**30:.3f}GB"))
+            continue
+        survivors.append((P0, est_b))
+    del C0
+    cert = lambda: "; ".join(f"P0={p}:{st}:{det}" for p, st, det in verdicts) \
+        or "no candidates"
+    if not survivors:
+        raise TileInfeasible(
+            f"tile backend: no P0 fits mem_limit_gb={mem_limit_gb} "
+            f"(per-system budget {per_system / 2**30:.3f}GB); "
+            f"certificate: {cert()}")
+
     def lu_opt(self, i, g):
         key = (i, g)
         if key not in self._lusys:
@@ -484,19 +576,19 @@ def install_tile_backend(psn, mem_limit_gb=None, ordering=1, verify=True,
             diag0 = B.diagonal()
             sgn = -1.0 if diag0[diag0 != 0].min() < 0 else 1.0
             C = (sgn * B).tocsc()
-            # Build-and-check: the estimate is ~10x conservative, so the REAL
-            # resident bytes decide.  Try up to 4 candidates, LARGEST P0 first
-            # (fewer tiles = faster, and tile-internal solves parallelize
-            # better); keep the largest that fits the per-system budget.
-            cands = _candidate_p0s(self)              # largest first (<=4)
-            est = {}
-            for P0 in cands:
-                est[P0] = _estimate_resident(self, C, P0, ordering)[0]
+            # Real build: largest surviving P0 first, per-candidate gate,
+            # MemoryError capture (a construction OOM rejects the candidate,
+            # never the process).
             best = None
             tried = []
-            for P0 in sorted(est, reverse=True):
-                ts = TileSystem(self, C, d, sgn, P0, ordering=ordering,
-                                verify=verify, chunk=chunk)
+            for P0, est_b in survivors:
+                try:
+                    ts = TileSystem(self, C, d, sgn, P0, ordering=ordering,
+                                    verify=verify, chunk=chunk)
+                except MemoryError:
+                    verdicts.append((P0, "build-oom", f"construction OOM "
+                                     f"(est was {est_b / 2**30:.2f}GB)"))
+                    continue
                 tried.append(ts)
                 # gate metric = the solver's _check_mem_gate exactly
                 # (factor_nnz * 16 B).  Fitting per_system here guarantees the
@@ -504,21 +596,24 @@ def install_tile_backend(psn, mem_limit_gb=None, ordering=1, verify=True,
                 if ts.factor_nnz * 16 <= per_system:
                     best = ts
                     break
+                verdicts.append((P0, "gate",
+                                 f"real factor_nnz={ts.factor_nnz} "
+                                 f"x16={ts.factor_nnz * 16 / 2**30:.2f}GB"))
+                ts.close()
             if best is None:
                 for ts in tried:
                     ts.close()
                 raise MemoryError(
-                    f"tile backend: even the finest tiles exceed "
-                    f"mem_limit_gb={mem_limit_gb}; tried "
-                    + ", ".join(f"P0={p}:{est[p]/2**30:.2f}GB(est)"
-                                for p in sorted(est)))
+                    f"tile backend: no (i={i}, g={g}) configuration fits "
+                    f"(per-system budget {per_system / 2**30:.3f}GB); "
+                    f"certificate: {cert()}")
             for ts in tried:
                 if ts is not best:
                     ts.close()
             self._lusys[key] = (best, None)
             reports.append(dict(i=i, g=g, P0=best.P0, nt=best.nt, nI=best.nI,
                                 S_nnz=best.S_nnz,
-                                est_GB=est[best.P0] / 2 ** 30,
+                                est_GB=est_b / 2 ** 30,
                                 resident_GB=best.resident_bytes() / 2 ** 30,
                                 asm_s=best.asm_s, verify_rel=best.verify_rel))
             del A, B, C

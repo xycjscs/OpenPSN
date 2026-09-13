@@ -140,10 +140,12 @@ def main(argv=None):
     pr.add_argument("--json", action="store_true", help="print results as JSON")
     pr.add_argument("--quiet", action="store_true", help="no per-iteration output")
     pr.add_argument("--opt", default="off",
-                    choices=["off", "auto", "chol", "mmd", "lu", "tile"],
+                    choices=["off", "auto", "chol", "mmd", "lu", "tile",
+                             "angschr"],
                     help="memory-optimized factorization backend "
                          "(off = plain path, default; auto picks "
-                         "shared-chol vs tile from --mem-limit-gb)")
+                         "shared-chol -> angschr -> tile from "
+                         "--mem-limit-gb)")
     pr.add_argument("--threads", type=int, default=None,
                     help="total parallel-unit budget (default = half the "
                          "system core count; factor phase <= N threads, "

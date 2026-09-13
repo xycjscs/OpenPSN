@@ -665,23 +665,29 @@ def install_optimized(psn, backend="auto", mem_limit_gb=None):
     """Install a memory-optimized backend.  Returns a report dict.
 
     auto (memory-aware): use shared-Cholesky when its factor pool fits
-    ``mem_limit_gb``; otherwise switch to the **tile** backend, which never
-    materializes a full-system factor (Schur tiles, auto-sized from the same
+    ``mem_limit_gb``; otherwise the **angular Schur** backend when its pool
+    estimate fits (exact two-level direction dissection, ~100x lighter than
+    the tile seam for the same full-M system — the M192 workhorse);
+    otherwise the **tile** backend (Schur tiles, auto-sized from the same
     budget).  If the tile backend is unavailable for the geometry/bridge it
     degrades to compact-mmd -> plain (fail-loud if none survive).
 
+    angschr: force the angular Schur backend (fail-loud certificate when
+    the pool exceeds the budget or the geometry is not direction-block-
+    diagonal).
     tile: force the tile backend (auto tile size from ``mem_limit_gb``).
     chol/mmd/lu: the explicit legacy backends (unchanged).
     """
     if backend in (None, "off"):
         psn._memopt_backend = "plain"
         return {"backend": "plain", "reason": "opt off"}
-    if backend in ("lu", "mmd", "chol", "auto", "tile"):
+    if backend in ("lu", "mmd", "chol", "auto", "tile", "angschr"):
         pass
     else:
         raise ValueError(f"unknown backend {backend!r}")
 
     from . import tile as _tile
+    from . import angschr as _angschr
     if mem_limit_gb is None:
         from . import runtime
         mem_limit_gb = runtime.DEFAULT_MEM_LIMIT_GB
@@ -694,11 +700,33 @@ def install_optimized(psn, backend="auto", mem_limit_gb=None):
             psn._syscache = {}
             return e
 
+    def _try_angschur():
+        try:
+            return _angschr.install_angschur_backend(
+                psn, mem_limit_gb=mem_limit_gb)
+        except Exception as e:
+            psn._lusys = {}
+            psn._syscache = {}
+            return e
+
     if backend == "tile":
         rep = _try_tile()
         if isinstance(rep, Exception):
+            if isinstance(rep, _tile.TileInfeasible):
+                raise rep            # deterministic: no tile size fits —
+            # re-raise with the certificate, do not paper over it
             raise RuntimeError(f"tile backend failed: {rep}")
         return {"backend": "tile", "systems": rep, "mem_limit_gb": mem_limit_gb}
+
+    if backend == "angschr":
+        rep = _try_angschur()
+        if isinstance(rep, Exception):
+            if isinstance(rep, _angschr.AngSchurInfeasible):
+                raise rep            # deterministic: pool over budget —
+            # re-raise with the certificate
+            raise RuntimeError(f"angschr backend failed: {rep}")
+        return {"backend": "angschr", "systems": rep,
+                "mem_limit_gb": mem_limit_gb}
 
     if backend == "lu":
         install_compact_lu(psn, permc_spec="COLAMD")
@@ -740,8 +768,28 @@ def install_optimized(psn, backend="auto", mem_limit_gb=None):
                 f"shared-Cholesky pool est. {est_pool_gb:.3f} GB exceeds "
                 f"mem_limit_gb={mem_limit_gb}; use backend 'tile' or raise "
                 f"the limit")
-    # auto: pool over budget (or shared-chol unavailable) -> tile
+    # auto: pool over budget (or shared-chol unavailable) -> angschr if its
+    # estimated pool fits, then tile; tile's TileInfeasible remains the
+    # final fail-loud certificate.
     if backend == "auto":
+        angschr_est_gb = None
+        try:
+            a_est, a_info = _angschr.estimate_pool(psn)
+            angschr_est_gb = a_est / 2**30
+        except Exception as e:
+            errors.append(f"angschr estimate: {e}")
+        if angschr_est_gb is not None and angschr_est_gb <= mem_limit_gb:
+            rep = _try_angschur()
+            if not isinstance(rep, Exception):
+                out = {"backend": "angschr", "systems": rep,
+                       "reason": ("auto -> angschr (shared-chol pool over "
+                                  "mem budget, angschr pool fits)"),
+                       "mem_limit_gb": mem_limit_gb,
+                       "angschr_est_pool_gb": round(angschr_est_gb, 3)}
+                if est_pool_gb is not None:
+                    out["shared_chol_est_pool_gb"] = round(est_pool_gb, 3)
+                return out
+            errors.append(f"angschr: {rep}")
         rep = _try_tile()
         if not isinstance(rep, Exception):
             why = ("pool over mem budget" if not fits
@@ -752,6 +800,13 @@ def install_optimized(psn, backend="auto", mem_limit_gb=None):
             if est_pool_gb is not None:
                 out["est_pool_gb"] = round(est_pool_gb, 3)
             return out
+        if isinstance(rep, _tile.TileInfeasible):
+            # Deterministic infeasibility with a veto certificate: every
+            # remaining backend (compact-mmd, plain) factors the FULL system
+            # and is strictly more expensive than the tile pool.  Degrading
+            # would turn a seconds-level certificate into an hours-level
+            # OOM — fail loud instead.
+            raise rep
         errors.append(f"tile: {rep}")
     if backend == "chol":
         raise RuntimeError(f"shared-Cholesky unavailable: {errors}")

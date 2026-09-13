@@ -224,6 +224,37 @@ def t_shared_chol_conforming():
     print("PASS shared_chol_conforming")
 
 
+def t_angschur_conforming():
+    """Angular Schur on a direction-block-diagonal all-reflect geometry
+    (UO2 assembly, M % 4 == 0): keff must match plain to iteration
+    roundoff, with per-system verification records in place."""
+    if memopt._find_eigen_chol() is None:
+        print("SKIP angschr_conforming (libeigen_chol.so not built; "
+              "run psn2d/memopt_cxx/build.py)")
+        return
+    from psn2d import angschr
+    spec_name, case_name = "c5g7_uo2_assembly.yaml", "M8_S2"
+    k0, _, t0, p0 = _keff(spec_name, case_name, "off")
+    psn = M.build_solver(_spec(spec_name), _case(_spec(spec_name), case_name))
+    rep = angschr.install_angschur_backend(psn, mem_limit_gb=32, verify=True)
+    sol = _spec(spec_name)["solver"]
+    k, _, _ = psn.keff(max_outer=int(sol["max_outer"]),
+                       outer_tol=float(sol["keff_tol"]), verbose=0)
+    d = abs(k - k0)
+    assert d < KEFF_TOL, f"angschr keff diff {d}"
+    assert len(rep) == psn.I * psn.ng, (len(rep), psn.I * psn.ng)
+    vrel = max(r["verify_rel"] for r in rep)
+    assert vrel < 1e-9, vrel
+    # S components: M/2 independent blocks of size = boundary-face count
+    assert rep[0]["ncomp"] == psn.M // 2, rep[0]
+    print(f"  {spec_name}::{case_name}: plain k={k0:.9f} ({t0:.0f}s) | "
+          f"angschr k={k:.9f} d={d:.1e} "
+          f"verify_rel<={vrel:.1e} ncomp={rep[0]['ncomp']} "
+          f"pool={sum(r['resident_GB'] for r in rep):.2f}GB "
+          f"sform={sum(r['sform_s'] for r in rep):.0f}s")
+    print("PASS angschr_conforming")
+
+
 def _asym_psn():
     """3x3 grid, material pattern NOT transpose-symmetric, mixed boundaries."""
     mat = np.array([[0, 1, 0],
@@ -360,6 +391,7 @@ TESTS = [
     ("compact_exact", t_compact_exact, "fast"),
     ("keff_equiv_lu_mmd", t_keff_equiv_lu_mmd, "fast"),
     ("shared_chol_conforming", t_shared_chol_conforming, "fast"),
+    ("angschr_conforming", t_angschur_conforming, "fast"),
     ("fail_loud_and_fallback", t_fail_loud_and_fallback, "fast"),
     ("rect_gate", t_rect_gate, "fast"),
     ("full_core_backends", t_full_core_backends, "full"),

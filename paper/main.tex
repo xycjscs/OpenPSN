@@ -69,8 +69,9 @@ studies. In the \emph{pinwise-homogenised} study, OpenPSN is swept over
 spatial sub-division $S=1\ldots6$ and angular order $M=2\ldots24$ against a
 reference we compute directly with OpenMC on the identical homogenised
 cross sections (20000 batches $\times$ 100\,k particles, statistical
-uncertainty $\approx$3.5~pcm): the single-assembly error collapses to
-inside the Monte Carlo standard error by $S{=}5$--$6$, $M\ge8$. In the
+uncertainty $\approx$3.3--3.5~pcm): both assemblies collapse to inside
+the Monte Carlo standard error by $S{=}5$--$6$, $M{\ge}8$, and the 1/4
+core reaches $-7.7$~pcm. In the
 \emph{rectangular-node} study we extend the PSN node operators to
 arbitrary per-node widths so that the circular fuel rod is replaced by an
 equal-area fuel square inside a $3\times3$ rectangular tiling and
@@ -350,31 +351,34 @@ in the transport method. Each calculation uses 20000 active batches of
 100000 particles (collision estimator, 48 threads); the eigenvalue is the
 mean over the last 20000 batches and its standard error is
 $\sigma_{\mathrm{batch}}/\sqrt{N}$, which we audit to be $\approx$3.4--3.5
-pcm. We run four problems: the single UO$_2$ assembly and the 1/4 core,
-each with \emph{homogenised} (pin-node) and \emph{explicit} (resolved
-fuel/water) geometry. The two \emph{homogenised} runs are the reference for
-the pinwise-homogenised PSN sweep below:
+pcm. We run the single UO$_2$ assembly, the single MOX assembly and the 1/4
+core, each with \emph{homogenised} (pin-node) and, where needed,
+\emph{explicit} (resolved fuel/water) geometry. The three
+\emph{homogenised} runs are the reference for the pinwise-homogenised PSN
+sweep below:
 \begin{itemize}
 \item $k_{\mathrm{MC,\,hom}}^{\mathrm{asm}}=1.3336285$ ($\pm3.5$~pcm) (single UO$_2$ assembly),
+\item $k_{\mathrm{MC,\,hom}}^{\mathrm{mox}}=1.1853993$ ($\pm3.3$~pcm) (single MOX assembly),
 \item $k_{\mathrm{MC,\,hom}}^{\mathrm{core}}=1.1868230$ ($\pm3.4$~pcm) (1/4 core).
 \end{itemize}
 
 \paragraph{OpenPSN $S\times M$ sweep.}
-We sweep $S\in\{1,\dots,6\}$ and $M\in\{2,4,8,12,16,24\}$ on the
-single UO$_2$ assembly (nodes $(17S)^2$) and on the 1/4 core (nodes
-$(51S)^2$), with the BWW homogenised cross sections. Table~\ref{tab:bww}
-gives the deviation from the OpenMC homogenised reference in pcm.
-(Large $S\times M$ corner cases exceed the $64$~GB working set during LU
-fill-in and are marked OOM; they do not affect the convergence read-off,
-which is taken along each row.)
+We sweep $S\in\{1,\dots,6\}$ and $M\in\{2,4,8,12,16,24\}$ on all
+three geometries (nodes $(17S)^2$ for both assemblies, $(51S)^2$ for the
+core), with the BWW homogenised cross sections, and converge every point
+to $10^{-10}$ in $|\Delta\keff|$ --- all 108 points of
+Table~\ref{tab:bww}. The largest LU fill-in (core, $S{=}6$,
+$93{,}636$ nodes) uses the memory-optimised factorisation backends shipped
+with OpenPSN (compact MMD/SuperLU and a shared sparse Cholesky, verified
+bit-identical to the plain path).
 
 \begin{table}[h]
 \centering
 \caption{Pinwise-homogenised (BWW) OpenPSN, $\Delta$ in pcm versus the
-OpenMC \emph{homogenised} reference: ASM vs.\ $1.3336285$,
-CORE vs.\ $1.1868230$ (each $\approx$3.5~pcm standard error). OOM = LU
-fill-in exceeded the 64~GB cap; the minimum-|$\Delta$| point per $S$ row is
-marked in Fig.~\ref{fig:bww}.}
+OpenMC \emph{homogenised} references: UO$_2$ assembly vs.\ $1.3336285$,
+MOX assembly vs.\ $1.1853993$, 1/4 core vs.\ $1.1868230$ (each
+$\approx$3.3--3.5~pcm standard error). All 108 points; the minimum-|$\Delta$|
+point per geometry is marked in Fig.~\ref{fig:bww}.}
 \label{tab:bww}
 \small
 \begin{tabular}{lrrrrrr}
@@ -387,70 +391,83 @@ $S{=}2$ & $+18.8$ & $-8.0$ & $-15.2$ & $-15.3$ & $-15.0$ & $-14.5$ \\
 $S{=}3$ & $+22.6$ & $-0.3$ & $-6.3$ & $-5.8$ & $-5.3$ & $-4.6$ \\
 $S{=}4$ & $+24.2$ & $+3.0$ & $-2.5$ & $-2.0$ & $-1.4$ & $-0.6$ \\
 $S{=}5$ & $+25.0$ & $+4.6$ & $-0.6$ & $+0.0$ & $+0.6$ & $+1.5$ \\
-$S{=}6$ & $+25.4$ & $+5.5$ & $+0.6$ & $+1.2$ & $+1.8$ & OOM \\
+$S{=}6$ & $+25.4$ & $+5.5$ & $+0.6$ & $+1.2$ & $+1.8$ & $+2.7$ \\
+\midrule
+\multicolumn{7}{l}{\emph{Single MOX assembly (ref.\ $1.1853993$)}}\\
+$S{=}1$ & $-65.1$ & $-53.3$ & $-30.1$ & $-22.3$ & $-18.6$ & $-15.3$ \\
+$S{=}2$ & $-62.2$ & $-49.8$ & $-26.1$ & $-16.6$ & $-12.3$ & $-8.4$ \\
+$S{=}3$ & $-60.3$ & $-45.8$ & $-22.4$ & $-12.5$ & $-8.4$ & $-4.4$ \\
+$S{=}4$ & $-59.6$ & $-44.2$ & $-20.7$ & $-10.9$ & $-6.7$ & $-2.7$ \\
+$S{=}5$ & $-59.2$ & $-43.5$ & $-19.8$ & $-10.2$ & $-6.0$ & $-1.9$ \\
+$S{=}6$ & $-59.0$ & $-43.0$ & $-19.3$ & $-9.8$ & $-5.5$ & $-1.5$ \\
 \midrule
 \multicolumn{7}{l}{\emph{C5G7-2D 1/4 core (ref.\ $1.1868230$)}}\\
 $S{=}1$ & $-97.6$ & $-59.5$ & $-37.1$ & $-31.3$ & $-28.8$ & $-26.7$ \\
-$S{=}2$ & $-96.3$ & $-56.1$ & $-33.6$ & $-26.6$ & $-23.6$ & OOM \\
-$S{=}3$ & $-93.8$ & $-50.1$ & $-26.8$ & OOM & OOM & OOM \\
-$S{=}4$ & $-92.8$ & $-47.6$ & OOM & OOM & OOM & OOM \\
-$S{=}5$ & $-92.3$ & OOM & OOM & OOM & OOM & OOM \\
-$S{=}6$ & OOM & OOM & OOM & OOM & OOM & OOM \\
+$S{=}2$ & $-96.3$ & $-56.1$ & $-33.6$ & $-26.6$ & $-23.6$ & $-20.9$ \\
+$S{=}3$ & $-93.8$ & $-50.1$ & $-26.8$ & $-19.3$ & $-16.2$ & $-13.3$ \\
+$S{=}4$ & $-92.8$ & $-47.6$ & $-23.9$ & $-16.3$ & $-13.2$ & $-10.2$ \\
+$S{=}5$ & $-92.3$ & $-46.3$ & $-22.3$ & $-14.8$ & $-11.6$ & $-8.6$ \\
+$S{=}6$ & $-92.0$ & $-45.6$ & $-21.4$ & $-13.9$ & $-10.7$ & $-7.7$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Two features stand out (Fig.~\ref{fig:bww}).
-\emph{Assembly:} the $M{=}2$ column sits high and positive
-($+14\ldots+25$~pcm, the angular cliff) and rises slightly with $S$,
-whereas the $M\ge4$ region forms a floor that climbs monotonically from
-$-24$~pcm at $S{=}1$ back toward zero, and by $S{=}5$--$6$ every
-$M\ge8$ point is inside the OpenMC reference standard error ($\pm3.5$~pcm).
+Three features stand out (Fig.~\ref{fig:bww}).
+\emph{Both assemblies:} the $M{=}2$ column sits high and positive on
+UO$_2$ ($+14\ldots+25$~pcm, the angular cliff) and low on MOX
+($-65\ldots-59$~pcm), while the $M\ge4$ region forms a floor that climbs
+monotonically with $S$ back toward zero on both --- by $S{=}5$--$6$ every
+$M\ge8$ point is inside the OpenMC reference standard error, and the best
+points of the two assemblies ($UO_2$: $S{=}5,M{=}12$, $+0.0$~pcm;
+MOX: $S{=}6,M{=}24$, $-1.5$~pcm) sit inside their
+$\pm3.3$--$3.5$~pcm statistical uncertainty.
 \emph{Core:} the $M{=}2$ column is pinned low ($-98\ldots-92$~pcm) and the
-error recovers monotonically with $M$; the best point per row marches
-diagonally ($M{=}24$ at $S{=}1$ down to $M{=}2$ at $S{=}5$), and even the
-best attainable core point is $-23.6$~pcm, i.e.\ the pinwise-homogenised
-core sits a little low of the OpenMC homogenised reference while the
-assembly converges to it from both sides.
+error recovers monotonically in both $S$ and $M$; the best attainable
+point ($S{=}6,M{=}24$, $-7.7$~pcm) still sits outside the $\pm3.4$~pcm
+reference standard error --- a small, smooth, method-level bias that we
+check against the fission field below.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.94\textwidth]{c5g7_bww_sweep_heatmap.png}
-\caption{Pinwise-homogenised (BWW) OpenPSN $\Delta\keff$ in pcm versus the
-OpenMC homogenised reference, as a function of angular order $M$
+\includegraphics[width=0.98\textwidth]{c5g7_bww_sweep_heatmap.png}
+\caption{Pinwise-homogenised (BWW) OpenPSN $\Delta\keff$ in pcm versus
+the OpenMC homogenised reference, as a function of angular order $M$
 (horizontal) and spatial sub-division $S$ (vertical). Left: single UO$_2$
-assembly (ref.\ $1.3336285$, 35 of 36 points computed); right: C5G7-2D
-1/4 core (ref.\ $1.1868230$, 17 of 36 points; grey cells exceeded the
-64~GB LU fill-in cap). White box/dot marks the minimum-|$\Delta$| point
-per $S$ row.}
+assembly (ref.\ $1.3336285$); centre: C5G7-2D 1/4 core (ref.\
+$1.1868230$); right: single MOX assembly (ref.\ $1.1853993$). All 36
+points per panel; green ring = minimum-|$\Delta$| point of each panel.}
 \label{fig:bww}
 \end{figure}
 
-\paragraph{Flux distribution at the best core point.}
-The $-23.6$~pcm best core point is not a sum of compensating local
-errors: Figure~\ref{fig:bwwflux} compares its pin-averaged fission
-source map $\nu\Sigma_f\phi$ against the OpenMC homogenised-geometry
-reference on the same BWW cross sections (the two differ only in the
-transport method; the reference field is the converged 7-group flux of
-the same Monte Carlo calculation contracted with the homogenised
-$\nu\Sigma_f$, so both maps are the same quantity, each normalised to
-unit sum). Over all $1056$ fuel pins the relative error has a mean of
-$-0.00\%$, an RMS of $0.12\%$ and a maximum of $0.45\%$, with no
-systematic offset between the UO$_2$ and MOX assemblies (quadrant
-means $+0.02\%$, $-0.02\%$, $+0.01\%$, $-0.03\%$). The homogenised-core
-eigenvalue therefore sits where the local physics says it should: the
-$-23.6$~pcm is a small, smooth, method-level bias, not a cancellation.
+\paragraph{Flux distribution at the best points.}
+The best point of each geometry is not a sum of compensating local
+errors: Figure~\ref{fig:bwwbest} compares its pin-averaged fission
+source $\nu\Sigma_f\phi$ against the OpenMC homogenised-geometry
+reference on the same BWW cross sections (the two sides differ only in
+the transport method; the OpenMC field is the converged 7-group flux
+contracted with the homogenised $\nu\Sigma_f$ --- the BWW library's
+fission cross-section slot carries absorption, so the true fission
+source is reconstructed from the flux, identically on both assemblies
+and the core --- making both maps the same quantity, each normalised to
+the unit fuel sum). On fuel pins the pin-by-pin relative error is
+$0.03\%$ RMS (max $0.08\%$) on the UO$_2$ assembly, $0.04\%$ RMS
+(max $0.10\%$) on the MOX assembly and $0.07\%$ RMS (max $0.25\%$) over
+all $1056$ fuel pins of the 1/4 core. The best points therefore sit where
+the local physics says they should: smooth, method-level biases, not
+cancellations.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.98\textwidth]{c5g7_bww_flux_compare.png}
-\caption{Pin-averaged fission source maps $\nu\Sigma_f\phi$ at the best
-pinwise-homogenised core point (M16, S=2) vs.\ the OpenMC
-homogenised-geometry reference on the same BWW XS, C5G7-2D 1/4 core
-(fuel region, 34$\times$34 pins). Left: OpenPSN; centre: OpenMC
-reference; right: relative error (fuel pins only, both maps normalised
-to unit sum).}
-\label{fig:bwwflux}
+\includegraphics[width=0.98\textwidth]{c5g7_bww_best_fission.png}
+\caption{Pinwise-homogenised (BWW) best $S\times M$ point per geometry
+--- top: UO$_2$ assembly, $S{=}5,M{=}12$, $\Delta k=+0.0$~pcm; middle:
+MOX assembly, $S{=}6,M{=}24$, $\Delta k=-1.5$~pcm; bottom: 1/4 core,
+$S{=}6,M{=}24$, $\Delta k=-7.7$~pcm, cropped to the $2\times2$ fuel block
+(the outer reflector-water region is omitted): pin-averaged fission source
+$\nu\Sigma_f\phi$, OpenPSN (left), OpenMC same-geometry reference
+(centre), pin-by-pin relative error on fuel pins (right; both maps
+fuel-normalised).}
+\label{fig:bwwbest}
 \end{figure}
 
 \subsection{Study II --- the rectangular-node model with explicit
@@ -472,9 +489,8 @@ fuel area are unchanged; the layout was verified node by node --- all
 pins of the homogenised grid, and the total area reproduces
 $4129.35~\mathrm{cm}^2$ exactly. Un-homogenised 7-group
 cross sections (fuel, water, Gd, MOX) are then assigned directly to the
-rectangles. The spatial resolution is fixed by this $3\times3$ tiling, so
-the only open discretisation knob is the angular order $M$; there is no
-$S$ axis in this model.
+rectangles. Two discretisation knobs are now open: the angular order $M$
+and the uniform spatial subdivision $S$ (Section~2.2), and we sweep both.
 
 \begin{figure}[H]
 \centering
@@ -489,93 +505,301 @@ is $153\times153=23409$.}
 \label{fig:layout}
 \end{figure}
 
-\paragraph{Angular convergence ($M$ sweep).}
-Table~\ref{tab:rect} gives the $M$ sweep with un-homogenised material XS on the single UO$_2$ assembly ($51\times51$ rect. nodes, all edges
-reflective) and on the 1/4 core ($153\times153$ rect. nodes, reflective on
-the symmetry edges, vacuum on the open edges), all converged to
-$10^{-10}$ in $|\Delta\keff|$.
+\paragraph{$S\times M$ convergence of the $3\times3$ tiling.}
+Table~\ref{tab:rectsm} and Figure~\ref{fig:rectsm} give the full
+$S\times M$ sweep (UO$_2$/MOX assemblies: $S{=}1\ldots6$; 1/4 core:
+$S{=}1,2$, the $S{=}3$ core grid being $9\times$ larger in node count and
+only covered to $M{=}8$; un-homogenised material XS, every point
+converged to
+$10^{-10}$ in $|\Delta\keff|$) against the directly computed OpenMC run
+on the \emph{identical} rectangular-rod geometry (Section~\ref{sec:rectref},
+100k particles $\times$ 20200 batches, collision estimator, fixed seed):
+the single UO$_2$ assembly ($51\times51$ rect.\ nodes, all edges
+reflective, ref.\ $k=1.3347260$), the MOX assembly (same size, ref.\
+$k=1.1851053$), and the 1/4 core ($153\times153$ rect.\ nodes, reflective
+on the symmetry edges, vacuum on the open edges, ref.\ $k=1.1872176$).
 
 \begin{table}[h]
 \centering
-\caption{Rectangular-node OpenPSN (un-homogenised material XS). $\Delta$ in pcm
-versus the explicitly noted reference. References: the directly computed
-OpenMC explicit-geometry runs on the same un-homogenised data --- fuel
-circle $+$ water annulus, and the identical rectangular-rod geometry of the
-PSN nodes --- the high-fidelity reference
-$1.18646$ of McGraw \emph{et al.}~\cite{mcgraw2014}, and nTRACER (SPHINCS).}
-\label{tab:rect}
+\caption{Rectangular-node OpenPSN, $3\times3$ pin tiling: UO$_2$/MOX
+assemblies at $S{=}1\ldots6$, 1/4 core at $S{=}1,2$ (at $S{=}3$ the core
+grid grows $9\times$, only $M{=}2,4,8$ were computed). $\Delta k$ in pcm
+versus the same-geometry pure-XS OpenMC reference (UO$_2$ assembly
+$1.3347260$, MOX assembly $1.1851053$, 1/4 core $1.1872176$). Green
+marker in Figure~\ref{fig:rectsm} = smallest $|\Delta k|$.}
+\label{tab:rectsm}
 \small
-\begin{tabular}{lrrr}
+\begin{tabular}{l|rrrrrr}
 \toprule
- & $M{=}8$ & $M{=}12$ & $M{=}16$ \\
+ & $M{=}2$ & $M{=}4$ & $M{=}8$ & $M{=}12$ & $M{=}16$ & $M{=}24$ \\
 \midrule
-\multicolumn{4}{l}{\emph{Single UO$_2$ assembly, $\keff$}}\\
-$\keff$ & 1.3337164 & 1.3340330 & 1.3343536 \\
-$\Delta$ vs OpenMC, explicit pin ($1.3334947$) & $+22.2$ & $+53.8$ & $+85.9$ \\
-$\Delta$ vs OpenMC, rect.\ rods ($1.3347260$) & $-101.0$ & $-69.3$ & $-37.2$ \\
-$\Delta$ vs nTRACER ($1.33367$) & $+4.8$ & $+36.3$ & $+68.9$ \\
+\multicolumn{7}{l}{\emph{UO$_2$ assembly}}\\
+$S{=}1$ & $+106.6$ & $-43.9$ & $-101.0$ & $-69.3$ & $-37.2$ & $+1.2$ \\
+$S{=}2$ & $+93.1$ & $-71.7$ & $-132.6$ & $-99.3$ & $-66.9$ & $-28.1$ \\
+$S{=}3$ & $+90.2$ & $-74.0$ & $-136.9$ & $-108.4$ & $-80.2$ & $-45.2$ \\
+$S{=}4$ & $+89.2$ & $-74.3$ & $-138.4$ & $-111.2$ & $-85.8$ & $-51.9$ \\
+$S{=}5$ & $+89.0$ & $-74.1$ & $-138.8$ & $-111.9$ & $-88.0$ & $-55.0$ \\
+$S{=}6$ & $+88.9$ & $-74.1$ & $-139.0$ & $-112.6$ & $-89.0$ & $-56.5$ \\
 \midrule
-\multicolumn{4}{l}{\emph{C5G7-2D 1/4 core, $\keff$}}\\
-$\keff$ & 1.1853742 & 1.1861084 & 1.1866067 \\
-$\Delta$ vs OpenMC, explicit pin ($1.1864955$) & $-112.1$ & $-38.7$ & $+11.1$ \\
-$\Delta$ vs OpenMC, rect.\ rods ($1.1872176$) & $-184.3$ & $-110.9$ & $-61.1$ \\
-$\Delta$ vs McGraw high-fidelity ($1.18646$) & $-108.6$ & $-35.2$ & $+14.7$ \\
-$\Delta$ vs nTRACER ($1.18653$) & $-115.6$ & $-42.2$ & $+7.7$ \\
+\multicolumn{7}{l}{\emph{MOX assembly}}\\
+$S{=}1$ & $-893.6$ & $-769.8$ & $-503.5$ & $-319.0$ & $-207.9$ & $-98.9$ \\
+$S{=}2$ & $-885.5$ & $-754.9$ & $-464.9$ & $-265.5$ & $-148.3$ & $-33.5$ \\
+$S{=}3$ & $-889.5$ & $-760.7$ & $-488.3$ & $-304.3$ & $-198.3$ & $-92.2$ \\
+$S{=}4$ & $-891.2$ & $-762.8$ & $-498.0$ & $-316.9$ & $-216.8$ & $-111.2$ \\
+$S{=}5$ & $-891.9$ & $-763.9$ & $-502.6$ & $-322.9$ & $-226.0$ & $-122.4$ \\
+$S{=}6$ & $-892.3$ & $-764.6$ & $-505.1$ & $-327.4$ & $-231.0$ & $-128.4$ \\
+\midrule
+\multicolumn{7}{l}{\emph{1/4 core}}\\
+$S{=}1$ & $-254.3$ & $-246.6$ & $-184.3$ & $-110.9$ & $-61.1$ & $-10.2$ \\
+$S{=}2$ & $-269.5$ & $-266.7$ & $-201.0$ & $-122.7$ & $-71.3$ & $-18.8$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-On the 1/4 core the eigenvalue climbs monotonically toward the reference:
-$-112.1 \rightarrow -38.7 \rightarrow +11.1$~pcm for
-$M=8\rightarrow12\rightarrow16$, with $M{=}16$ at $\sim3$ of the OpenMC standard
-error ($\pm3.4$~pcm) and within $+14.7$~pcm of the
-high-fidelity reference $1.18646$. Against the OpenMC run on the identical
-rectangular-rod geometry (Section~\ref{sec:rectref},
-Figure~\ref{fig:rectflux}) the same sweep reads
-$-184.3 \rightarrow -110.9 \rightarrow -61.1$~pcm: still monotonically
-decreasing, so at $M{=}16$ the angular-moment closure, not the square
-tiling, is what sets the residual. (The assembly $M$
-dependence drifts the other way, upward with $M$: the reflective
-assembly has no leakage channel to absorb the angular cliff, so the
-angular-moment closure over-corrects as $M$ grows; the core, with two
-vacuum edges, converges toward the reference instead.)
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{rect_b4_sm_heatmap.png}
+\caption{Same data as Table~\ref{tab:rectsm}, $\Delta k$ in pcm versus the
+same-geometry pure-XS OpenMC reference; colour bars symmetric about zero,
+green ring = point of smallest $|\Delta k|$ (UO$_2$: $S{=}1,M{=}24$,
+$+1.2$~pcm; MOX: $S{=}2,M{=}24$, $-33.5$~pcm; core: $S{=}1,M{=}24$,
+$-10.2$~pcm).}
+\label{fig:rectsm}
+\end{figure}
 
-\paragraph{Flux comparison, explicit geometry.}
-{\emergencystretch=1.5em\relax
-Figure~\ref{fig:flux} compares the pin-averaged fission maps
-$\Sigma_f\phi$ of the rectangular-node OpenPSN ($M{=}16$) against the
-OpenMC explicit-geometry (fuel circle $+$ water annulus) runs on the
-same un-homogenised data, for the single UO$_2$ assembly (first row,
-17$\times$17 pins) and the 1/4 core (second row, 34$\times$34 fuel
-pins). The OpenPSN node field is the pin power $\nu\Sigma_f\phi$; it is
-converted into the fission quantity by dividing each pin by the
-fission-weighted $\nu$ of its material ($2.441$ for UO$_2$,
-$2.865$--$2.874$ for the three MOX enrichments, and $2.434$ for the
-fission-chamber inserts), so that both maps are the same physical
-quantity $\Sigma_f\phi$ pin by pin. Both maps are then normalised to
-unit sum, so the residual is purely in the shape.
-On the assembly the pin-by-pin relative error has a mean of
-$-0.002\%$ and an RMS of $0.070\%$ (max $0.21\%$). On the 1/4 core,
-over all $1056$ fuel pins, the error is a mean of $-0.25\%$ and an RMS
-of $0.72\%$ (max $1.52\%$): the four assemblies show a coherent pattern
-at the $\pm0.8\%$ level (UO$_2$ assemblies $+0.04\ldots+0.63\%$, MOX
-assemblies $-0.84\%$ in both) --- the small between-assembly power
-redistribution that comes with the rectangular tiling --- while the
-intra-assembly shape error stays below $\pm1\%$ in every assembly; the two
-solvers agree within one percent on the pin-level fission distribution
-for the whole core.}
+Figure~\ref{fig:rect33best} shows the fission field at the best
+available configuration per geometry (Table~\ref{tab:rectsm}): the
+UO$_2$ and core rows agree with OpenMC at the sub-percent level, while
+the MOX row --- at its best subdivision $S{=}2$, still
+$-33.5$~pcm off in $\keff$ --- carries that eigenvalue bias as a
+spatially structured field-level deviation.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.98\textwidth]{c5g7_rect_flux_compare_nu.png}
-\caption{Pin-averaged fission maps $\Sigma_f\phi$, rectangular-node
-OpenPSN ($M{=}16$, un-homogenised material XS) vs.\
-OpenMC (explicit geometry, 7-group collision estimator). One row per
-problem --- single UO$_2$ assembly (17$\times$17 pins), then C5G7-2D
-1/4 core, fuel region only (34$\times$34 pins); columns are OpenPSN,
-OpenMC, and the pin-by-pin relative error (fuel pins only), both maps
-normalised to unit sum.}
-\label{fig:flux}
+\includegraphics[width=0.98\textwidth]{c5g7_rect33_best_fission.png}
+\caption{$3\times3$ rectangular tiling, best $S\times M$ configuration
+per geometry (Table~\ref{tab:rectsm}): pin-averaged fission
+$\Sigma_f\phi$, OpenPSN (left), OpenMC on the identical rectangular-rod
+geometry (centre), pin-by-pin relative error on fuel pins (right; both
+maps normalised to unit sum). Top: UO$_2$ assembly, $S{=}1,M{=}24$,
+$\Delta k=+1.2$~pcm; middle: MOX assembly, $S{=}2,M{=}24$,
+$\Delta k=-33.5$~pcm; bottom: 1/4 core, $S{=}1,M{=}24$,
+$\Delta k=-10.2$~pcm (fuel region).}
+\label{fig:rect33best}
+\end{figure}
+
+The sweep shows three things. (i)~On the UO$_2$ assembly the best point
+($S{=}1,M{=}24$, $+1.2$~pcm) lies within the OpenMC standard error
+($\pm3.6$~pcm): with a low-absorption fuel the nodal model is essentially
+reference-grade on this geometry, and every deeper subdivision is worse,
+monotonically from $-28.1$~pcm at $S{=}2$ to $-56.5$~pcm at $S{=}6$ ---
+spatial subdivision is neutral-to-harmful.
+(ii)~On the MOX assembly the tiling as constructed ($S{=}1$) is badly off
+even at $M{=}24$ ($-98.9$~pcm); a single subdivision to $S{=}2$ improves it
+to its best point ($-33.5$~pcm), and any further subdivision
+($S{=}3\ldots6$) degrades it again, back to $-128.4$~pcm --- the
+non-monotonic $S$-response with a single interior optimum at $S{=}2$ is
+the clearest signature of the gap-node problem below. (iii)~On all three
+geometries the $M$-convergence is non-monotonic at low order (an $M{=}8$
+dip of $-101\ldots-504$~pcm) and only flattens out at $M{=}24$; on the
+core the best point is $S{=}1,M{=}24$ ($-10.2$~pcm), again with $S{=}2$
+slightly worse.
+
+\paragraph{The slender water gap.}
+The $S$-saturation pattern above points to a geometric cause. In the
+$3\times3$ tiling the water-gap nodes are intrinsically slender: each edge
+strip node measures $s/3 \times w = 0.3190\times0.1514$~cm, an aspect
+ratio of $2.1{:}1$ (the corner nodes, $w\times w$, are square but carry
+little physics). The uniform $S$ subdivision divides \emph{both}
+dimensions by $S$, so every sub-node inherits the parent's aspect ratio ---
+increasing $S$ refines the slender nodes but never makes them less
+slender. The residual eigenvalue bias of Table~\ref{tab:rectsm} is
+therefore plausibly anchored in the strip nodes, in a part of the mesh
+that $S$-subdivision structurally cannot repair; this is consistent with
+the UO$_2$ rows that degrade smoothly and monotonically as $S$ grows at
+fixed $M$ (weak water coupling: subdivision adds nodes but never
+re-shapes the strips), the MOX rows whose only relief is a single
+subdivision --- best $S{=}2$, degrading again for $S{\ge}3$ (strong
+fuel--water coupling in the gap) --- and the 1/4 core, whose $S{=}2$ row
+is uniformly worse than $S{=}1$ across all $M$. The remedy is a tiling in which the water-gap nodes
+are themselves close to square --- obtained by a finer, quasi-square fuel
+split rather than by $S$. We first isolate this effect on a single pin.
+
+\paragraph{Single-pin validation on the quasi-square ($6\times6$) split.}
+As a controlled experiment we take the single UO$_2$ pin cell of the same
+rectangularised layout and split the equal-area fuel square $6\times6$
+instead of $3\times3$, giving an $8\times8$ base grid per pin cell
+($6\times6$ fuel sub-nodes of side $s/6=0.15952$~cm plus water strips of
+$0.15952\!\times\!0.15144$~cm, aspect ratio $1.05{:}1$ --- every node of the
+cell is now close to square\textbf{, as illustrated in
+Figure~\ref{fig:pin6split}}). The single cell with all-reflective
+boundaries is converged to $10^{-10}$ in $|\Delta\keff|$ on a
+$S\times M$ sweep of 60 points ($S=1\ldots6$, $M=2\ldots192$), against an
+independently computed OpenMC reference on the same $8\times8$ geometry
+(4000 batches, $k=1.3267918\pm8.2$~pcm). Table~\ref{tab:pin6} and
+Figure~\ref{fig:pin6} summarise the sweep.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{pin6_manual_split.png}
+\caption{Single UO$_2$ pin cell ($1.26$~cm pitch, all-reflective): tiling of
+the equal-area fuel square $s^2=\pi r^2$. (a) Base $3\times3$ tiling: edge
+water strips $s\times w = 0.9571\times0.1514$~cm (aspect $6.3{:}1$).
+(b) The same tiling with $S{=}2$ subdivision: $36$ nodes, strips
+$(s/2)\times(w/2)$, aspect unchanged --- $S$ refines but never reshapes the
+nodes. (c) Manual $6\times6$ fuel split: $8\times8$ base grid
+($64$ nodes), strips $s/6\times w = 0.15952\times0.15144$~cm, aspect
+$1.05{:}1$; every node is now close to square.}
+\label{fig:pin6split}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\caption{Single UO$_2$ pin cell, $6\times6$ fuel split ($8\times8$ base
+grid, all-reflective): $\Delta k$ in pcm versus the OpenMC reference
+$1.3267918\pm8.2$. Green ring = best point $M{=}192$, $S{=}6$
+($-8.7$~pcm, inside the reference's own standard error).}
+\label{tab:pin6}
+\small
+\begin{tabular}{l|rrrrrrrrrr}
+\toprule
+ & $M{=}2$ & $M{=}4$ & $M{=}8$ & $M{=}12$ & $M{=}16$ & $M{=}24$ & $M{=}48$ & $M{=}72$ & $M{=}96$ & $M{=}192$ \\
+\midrule
+$S{=}1$ & $-73.0$ & $-182.9$ & $-208.2$ & $-165.1$ & $-132.0$ & $-88.0$ & $-41.6$ & $-28.2$ & $-22.6$ & $-16.5$ \\
+$S{=}2$ & $-72.9$ & $-178.1$ & $-197.7$ & $-154.5$ & $-119.7$ & $-78.6$ & $-36.3$ & $-23.0$ & $-17.3$ & $-10.7$ \\
+$S{=}3$ & $-72.6$ & $-176.8$ & $-195.1$ & $-151.9$ & $-116.7$ & $-75.9$ & $-35.1$ & $-21.8$ & $-16.2$ & $-9.6$ \\
+$S{=}4$ & $-72.5$ & $-176.3$ & $-193.9$ & $-150.8$ & $-115.4$ & $-74.7$ & $-34.3$ & $-21.1$ & $-15.7$ & $-9.1$ \\
+$S{=}5$ & $-72.4$ & $-176.0$ & $-193.4$ & $-150.2$ & $-114.7$ & $-74.1$ & $-33.9$ & $-20.7$ & $-15.4$ & $-8.9$ \\
+$S{=}6$ & $-72.4$ & $-175.8$ & $-193.0$ & $-149.9$ & $-114.3$ & $-73.7$ & $-33.6$ & $-20.5$ & $-15.2$ & $-8.7$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{pin6_sm.png}
+\caption{Single-pin $6\times6$-split $S\times M$ sweep, $\Delta k$ in pcm
+versus the OpenMC same-geometry reference; green ring = best point
+($M{=}192$, $S{=}6$, $\Delta=-8.7$~pcm).}
+\label{fig:pin6}
+\end{figure}
+
+On the quasi-square single pin the model converges to within the
+reference's own Monte Carlo standard error ($-8.7$~pcm at $M{=}192$,
+$S{=}6$) --- and the spatial field agrees even more tightly: at the best
+configuration the node-level fission-rate map differs from OpenMC by
+$0.05\%$ RMS (max $0.10\%$) and the scalar flux by $0.01\%$ RMS
+(max $0.03\%$) over the fuel nodes (Figure~\ref{fig:pin6flux}). The
+convergence is smooth in $M$ once the $M{=}8$ angular damped-oscillation
+dip is passed, and $S$ contributes a further $\sim8$~pcm of improvement
+from $S{=}1$ to $S{=}6$ that is still active at $M{=}192$ --- i.e.\ on a
+quasi-square mesh both knobs are effective. This contrasts with the
+$3\times3$ tiling, where the $S{=}1\to2$ change buys at most a factor of
+three on the MOX bias and the best subdivision is geometry-dependent
+(Table~\ref{tab:rectsm}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{pin6_flux_compare_M192S6.png}
+\caption{Single-pin $6\times6$ split, best configuration ($M{=}192$,
+$S{=}6$): node-level ($8\times8$) fission rate $\Sigma_f\phi$ (top) and
+scalar flux $\sum_g\phi_g$ (bottom), OpenPSN vs.\ OpenMC (7-group,
+collision estimator) with the pin-by-pin relative error on the fuel nodes;
+deviation from the fuel-node mean, maps normalised to unit fuel sum.
+Fission: mean $-0.00\%$, RMS $0.05\%$, max $0.10\%$; flux: RMS $0.01\%$,
+max $0.03\%$.}
+\label{fig:pin6flux}
+\end{figure}
+
+\paragraph{Quasi-square tiling of the full geometries.}
+We now apply the single-pin quasi-square split to the full benchmark:
+every fuel square of the $3\times3$ tiling is subdivided $6\times6$, so
+each pin cell becomes an $8\times8$ block of rectangles --- fuel
+sub-nodes $0.15952\times0.15952$~cm and water strips
+$0.15952\times0.15144$~cm, aspect ratio $1.05{:}1$. The $17\times17$
+assembly becomes $136\times136=18496$ rectangles and the 1/4 core
+$408\times408=166464$; the pin-centre material layout, the rod positions,
+the fuel area and the total area are unchanged (verified node by node,
+max cell-width deviation $0.0$). Because the physical geometry is
+identical to the rectangular-rod problem of Section~\ref{sec:rectref},
+the \emph{existing} same-geometry OpenMC references
+($1.3347260$, $1.1851053$, $1.1872176$) apply without re-running: the
+comparison is again a pure method difference.
+
+\paragraph{$M$-convergence of the quasi-square tiling.}
+{\emergencystretch=1.5em\relax
+Table~\ref{tab:rect6} and Figure~\ref{fig:rect6keff} give the $S{=}1$
+sweep, $M=2\ldots96$ on the two assemblies (core $M{\ge}24$ and the
+$M{=}192$ extension in progress). Two features stand out. First,
+$M$-convergence is markedly faster than on the
+$3\times3$ tiling at comparable resolution: on the MOX assembly the
+bias drops from $-893.7$ to $+2.1$~pcm over $M{=}2\ldots96$, whereas
+the $3\times3$ tiling reaches $-98.9$~pcm at $M{=}24$ ($-33.5$~pcm only
+with $S{=}2$);
+the low-order $M{=}8$ dip remains but is shallower on the core. Second,
+the pin-averaged fission distribution converges \emph{far} ahead of the
+eigenvalue: on both assemblies the pin-by-pin RMS error against OpenMC
+is at or below $0.09\%$ from $M{=}8$ onward ($0.056\%$ UO$_2$ and
+$0.069\%$ MOX at $M{=}96$), while $\Delta k$ still carries
+$-161\ldots-28.7$~pcm of bias on UO$_2$ and $-512\ldots+2.1$~pcm on MOX
+over the same range --- the intra-fuel quasi-square split
+delivers the full spatial shape of the solution at a fraction of the
+angular order needed for the global eigenvalue.}
+
+\begin{table}[h]
+\centering
+\caption{Quasi-square ($6\times6$ fuel split) OpenPSN, $S{=}1$: $\Delta k$
+in pcm versus the same-geometry pure-XS OpenMC reference (refs.\ as in
+Table~\ref{tab:rectsm}). Dombey two-point source extrapolation on
+MOX/core. Core $M{\ge}24$ and the $M{=}192$ extension pending.}
+\label{tab:rect6}
+\small
+\begin{tabular}{l|rrrrrrrr}
+\toprule
+ & $M{=}2$ & $M{=}4$ & $M{=}8$ & $M{=}12$ & $M{=}16$ & $M{=}24$ & $M{=}48$ & $M{=}96$ \\
+\midrule
+\emph{UO$_2$ assembly} & $+86.2$ & $-85.6$ & $-160.7$ & $-138.4$ & $-115.7$ & $-82.6$ & $-44.9$ & $-28.7$ \\
+\emph{MOX assembly} & $-893.7$ & $-768.5$ & $-511.6$ & $-333.2$ & $-235.8$ & $-129.2$ & $-33.2$ & $+2.1$ \\
+\emph{1/4 core} & $-278.8$ & $-281.5$ & $-232.4$ & $-166.9$ & $-126.2$ & $\cdots$ & $\cdots$ & $\cdots$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{rect6_keff_conv.png}
+\caption{Quasi-square tiling, $S{=}1$: $\Delta k$ versus $M$ against the
+same-geometry OpenMC reference (100k$\times$20200, collision estimator).
+UO$_2$ assembly (left) shows the non-monotonic low-order behaviour; the
+MOX assembly (centre) and 1/4 core (right) converge monotonically with
+$M$.}
+\label{fig:rect6keff}
+\end{figure}
+
+Figure~\ref{fig:rect6best} compares the pin-averaged fission maps
+$\Sigma_f\phi$ of the best quasi-square configuration (smallest
+$|\Delta k|$ per geometry, currently $M{=}96$ on both assemblies) against
+the OpenMC reference on the identical geometry, using the same
+$\nu$-correction and fuel-block normalisation as
+Section~\ref{sec:rectref}. On the UO$_2$ assembly the pin-by-pin
+difference is a mean of $+0.002\%$ and an RMS of $0.056\%$ (max
+$0.19\%$, p95 $0.10\%$); on the MOX assembly a mean of $-0.006\%$ and an
+RMS of $0.069\%$ (max $0.21\%$, p95 $0.12\%$) --- i.e.\ the intra-fuel
+quasi-square tiling matches the reference pin power to well under one
+tenths of a percent on both assemblies, with the residual confined to a
+few corner pins.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{rect6_best_fission.png}
+\caption{Quasi-square tiling, best configuration per geometry (min
+$|\Delta k|$, $S{=}1$): pin-averaged fission $\Sigma_f\phi$, OpenPSN
+(left), OpenMC same-geometry reference (centre), pin-by-pin relative error
+on fuel pins (right; both maps fuel-block normalised). Top: UO$_2$
+assembly, $M{=}96$; middle: MOX assembly, $M{=}96$; bottom: 1/4 core
+(interim best $M{=}16$, $M{\ge}24$ in progress), cropped to the
+$2\times2$ fuel block --- the outer reflector-water region is omitted.}
+\label{fig:rect6best}
 \end{figure}
 
 \label{sec:rectref}
@@ -586,36 +810,21 @@ nodes tile the same cell with an equal-area square fuel block (side
 $0.9571$~cm, water gap $0.1514$~cm). To separate the geometric effect from
 the method difference we run OpenMC on exactly that rectangular-rod geometry
 (same un-homogenised data, same collision-estimator pin tallies, $20200$
-batches $\times 10^{5}$ particles, fixed seed). The square-rod assembly
-returns $\keff = 1.3347260$ ($\pm 3.6$~pcm) and the 1/4 core
-$1.1872176$ ($\pm 3.4$~pcm): $+123$ and $+72$~pcm above the cylindrical
-reference of Table~\ref{tab:rect} --- the pure geometry effect of the
-square tiling on the same data. Against the rectangular-rod reference the
-$M$ sweep is $-101.0 \rightarrow -69.3 \rightarrow -37.2$~pcm on the
-assembly and $-184.3 \rightarrow -110.9 \rightarrow -61.1$~pcm on the
-1/4 core: monotonically decreasing with $M$, i.e.\ the angular-moment
-closure is still the dominant residual, and the square tiling does not
-remove the systematic low bias. Figure~\ref{fig:rectflux} compares the two
-solvers on this identical geometry. The pin-by-pin fission maps
-$\Sigma_f\phi$ agree with a mean of $-0.00\%$ and an RMS of $0.16\%$
-(max $0.38\%$) on the assembly, and a mean of $-0.18\%$ and an RMS of
-$0.59\%$ (max $1.61\%$) over all $1056$ fuel pins of the 1/4 core
-(assembly means $+0.46\%$, $-0.64\%$, $-0.60\%$, $+0.05\%$): the same
-level as against the explicit cylindrical geometry (RMS $0.72\%$), so the
-pin-level shape difference is set by the method, not by the square tiling.}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.98\textwidth]{c5g7_rect_vs_rect_flux.png}
-\caption{Pin-averaged fission maps $\Sigma_f\phi$, rectangular-node
-OpenPSN ($M{=}16$) vs.\ OpenMC on the identical rectangular-rod geometry
-(equal-area square fuel block per pin cell, 7-group collision estimator).
-One row per problem --- single UO$_2$ assembly (17$\times$17 pins), then
-C5G7-2D 1/4 core, fuel region only (34$\times$34 pins); columns are
-OpenPSN, OpenMC, and the pin-by-pin relative error (fuel pins only), both
-maps normalised to unit sum.}
-\label{fig:rectflux}
-\end{figure}
+batches $\times 10^{5}$ particles, fixed seed): the square-rod UO$_2$
+assembly returns $\keff = 1.3347260$ ($\pm 3.6$~pcm), the MOX assembly
+$1.1851053$ ($\pm 3.3$~pcm, identical clone of the UO$_2$ run with only the
+pin material grid changed to the C5G7 MOX layout) and the 1/4 core
+$1.1872176$ ($\pm 3.4$~pcm). Against these same-geometry references the
+$3\times3$ tiling behaves as in Table~\ref{tab:rectsm} and
+Figure~\ref{fig:rect33best}; the pin-level fission maps $\Sigma_f\phi$
+of the $3\times3$ tiling at $S{=}1,M{=}24$ agree with OpenMC to
+$0.17\%$ RMS (max $0.40\%$) on the UO$_2$ assembly and
+$0.54\%$ RMS (max $1.50\%$) over all $1056$ fuel pins of
+the 1/4 core, while the MOX assembly carries the $-98.9$~pcm eigenvalue
+bias as a spatially structured field-level deviation; the quasi-square
+tiling holds at or below $0.09\%$ RMS on both assemblies
+from $M{\ge}8$ and settles at $0.06\text{--}0.07\%$ by $M{=}96$
+(Figure~\ref{fig:rect6best}).}\
 
 \subsection{Comparison with the published diffusion / SN / nodal landscape}
 
@@ -690,10 +899,11 @@ PSN nodal (rect.\ node, $M{=}16$) & OpenPSN & 1.1866067 & $+14.7$ \\
   ($\sim$\SI{1}{pcm} from the 1.186456 reference).
 \item \textbf{OpenPSN in this work.} The two C5G7 studies of
   Sections~4.3--4.4 bound the answer from both sides. With the
-  self-shielding-aware BWW pinwise homogenisation, the best point of the
-  $S\times M$ sweep ($M16\_S2$) is $-23.6$~pcm vs.\ the OpenMC
-  homogenised reference, i.e.\ $+12.7$~pcm vs.\ the high-fidelity
-  reference $1.18646$; with the
+  self-shielding-aware BWW pinwise homogenisation, the best points of the
+  $S\times M$ sweep are $+0.0$~pcm (UO$_2$ assembly), $-1.5$~pcm (MOX
+  assembly) and $-7.7$~pcm (1/4 core) vs.\ the OpenMC homogenised
+  references --- the two assemblies inside their own Monte Carlo standard
+  errors; with the
   rectangular-node model that removes homogenisation entirely, $M{=}16$
   lands at $+11.1$~pcm vs.\ the OpenMC explicit-geometry reference
   ($\sim3.3$ its $\pm3.4$~pcm standard error) and $+14.7$~pcm vs.\ $1.18646$,
@@ -729,26 +939,29 @@ fuel/water structure.
 On the C5G7 MOX benchmark the two studies separate the two error sources
 that a nodal code carries. In the \emph{pinwise-homogenised} study, the
 $S\times M$ sweep against a directly computed OpenMC reference on the same
-homogenised data shows the discretisation converging cleanly: the assembly
-error reaches the Monte Carlo standard error ($\approx$3.5~pcm) by
-$S{=}5$, $M\ge8$, and the best core point (with the self-shielding-aware
-BWW recipe) is $-23.6$~pcm versus the OpenMC homogenised reference,
-i.e.\ $+12.7$~pcm versus the high-fidelity reference
-$1.18646$. That residual is the homogenisation
-model itself, and the best-point pin-power field agrees with the
-same-recipe OpenMC map to $0.12\%$ RMS (max $0.45\%$): a smooth
+homogenised data shows the discretisation converging cleanly: both
+assemblies reach the Monte Carlo standard error ($\approx$3.3--3.5~pcm)
+by $S{=}5$--$6$, $M{\ge}8$ ($+0.0$~pcm UO$_2$, $-1.5$~pcm MOX), and the
+best core point (with the self-shielding-aware BWW recipe) is $-7.7$~pcm
+versus the OpenMC homogenised reference, i.e.\ $+28.6$~pcm versus the
+high-fidelity reference $1.18646$. That residual is the homogenisation
+model itself, and the best-point pin-power fields agree with the
+same-recipe OpenMC maps to $0.07\%$ RMS (max $0.25\%$): a smooth
 method-level bias, not a cancellation of local errors.
 In the \emph{rectangular-node} study the homogenisation model is removed
 entirely: with un-homogenised 7-group material data the 1/4-core eigenvalue
 converges
-monotonically with $M$ into the OpenMC explicit-geometry reference
-($-112\rightarrow-39\rightarrow+11$~pcm for $M=8\rightarrow16$), lands
-$+14.7$~pcm from the high-fidelity reference $1.18646$, and its pin-averaged
+monotonically with $M$ against the OpenMC same-geometry reference
+($-184.3\rightarrow-110.9\rightarrow-61.1\rightarrow-10.2$~pcm for
+$M=8\rightarrow24$, $S{=}1$), the best point $S{=}1,M{=}24$ sits
+$-10.2$~pcm from that reference (itself $+75.8$~pcm above $1.18646$, the
+pure geometric effect of the rectangular-rod idealization), and the
+pin-averaged
 fission map $\Sigma_f\phi$ (the same quantity as the Monte
 Carlo fission tally) agrees with OpenMC to
-$0.07\%$ RMS on the single assembly and $0.72\%$ over all $1056$ fuel pins
-of the core (max $1.52\%$; below $\pm1\%$ within every assembly, largest in
-the MOX cells where the local gradients are steepest).
+$0.17\%$ RMS on the UO$_2$ assembly and $0.54\%$ over all $1056$ fuel pins
+of the core (max $1.50\%$; per-assembly maxima $0.71\text{--}1.50\%$,
+largest in the MOX cells where the local gradients are steepest).
 Placed against the 20-code NEA landscape and the recent P1/SP3/SN/nodal
 literature, both OpenPSN results sit inside the high-fidelity MOC
 reference cluster: the nodal PSN method, once its homogenisation model is

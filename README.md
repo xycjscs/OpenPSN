@@ -81,8 +81,9 @@ python -m psn2d run examples/c5g7_2d_quarter_core.yaml --case M16_S2 --opt auto
 | 值 | 后端 | 说明 |
 |---|---|---|
 | `off`（默认） | 原始路径 | COLAMD SuperLU，位级可复现 |
-| `auto` | 共享 Cholesky → tile → 紧凑 MMD-LU → 原路径 | 内存感知：先按 `--mem-limit-gb` 估算共享 Cholesky 因子池；装得下就用它，装不下自动切 **tile**（Schur 分块，从不构造全系统因子）；tile 也不可行才落回紧凑 MMD-LU |
+| `auto` | 共享 Cholesky → 角度 Schur → tile → 紧凑 MMD-LU → 原路径 | 内存感知：先按 `--mem-limit-gb` 估算各后端因子池，选装得下且最小的；全部装不下才 fail-loud（不构造装不下的因子） |
 | `chol` | 紧凑组装 + SPD 行缩放 + xy 转置因子共享 + Eigen 稀疏 Cholesky（METIS） | 需编译 `psn2d/memopt_cxx/libeigen_chol.so`；C5G7 1/4 芯 M16 实测峰值 RSS ≈ 1/9，keff 不变（≤1e-15） |
+| `angschr` | 角度 Schur 剖分：系统按方位角方向块对角化（16/192 个 2D 网格 Cholesky）+ 镜反射行的小角度 Schur 分量（544² 级） | 因子池 ∝ M 线性（tile 缝合面是 ∝ M²）：M192 组件 21 系统全池 ~48GB，62GB 机器可行；keff 与共享 Cholesky 逐位一致（M16 实测 Δk=2.2×10⁻¹⁶）；S 形成 8 路并行（实测 6.5×）；池超预算或几何非方向块对角时 fail-loud 证书 |
 | `tile` | Schur 分块 + 每块 Eigen Cholesky（METIS）+ 稀疏多右端核 | 内存回退后端：按 `--mem-limit-gb` 自动选块大小，用户无需指定 tile 或 assembly；纯几何块划分，无 assembly 概念也能用（如棋盘基准）；keff 与原路径位级一致（实测 Δ=0.0000 pcm） |
 | `mmd` | 紧凑组装 + 对称型 MMD 排序 SuperLU | 无 C 依赖 |
 | `lu` | 紧凑组装 + COLAMD SuperLU | 无 C 依赖 |
@@ -195,6 +196,8 @@ OpenPSN/
 │   ├── node.py       #   节点内插/消元
 │   ├── node_rect.py  #   矩形节点闭式解
 │   ├── memopt.py     #   可选内存优化后端（紧凑组装/共享Cholesky, --opt）
+│   ├── angschr.py    #   角度 Schur 剖分后端（方向块对角化, --opt angschr）
+│   ├── tile.py       #   Schur 分块内存回退后端（--opt tile）
 │   └── memopt_cxx/   #   C++ Cholesky 桥（eigen_chol.cpp + build.py, 按需编译）
 ├── docs/             # 在线演示站（GitHub Pages → openpsn-ai.com）
 │   ├── index.html    #   产品页 + 浏览器内求解器
