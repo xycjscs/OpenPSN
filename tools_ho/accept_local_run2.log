@@ -1,0 +1,20 @@
+mox87  ty3     M24_A3       A=3 keff=1.173271425014  golden=1.173271425072  |dk|=5.84e-11  (-0.0000 pcm)  iter=154  conv=True  13.0s  PASS
+mox87  ty3     M24_A4       A=4 keff=1.173287965614  golden=1.173287965672  |dk|=5.85e-11  (-0.0000 pcm)  iter=154  conv=True  15.4s  PASS
+mox87  ty3     M48_A3       A=3 keff=1.173295267587  golden=1.173295267646  |dk|=5.85e-11  (-0.0000 pcm)  iter=154  conv=True  26.2s  PASS
+mox87  generic M24_A3       A=3 keff=1.173304161817  golden=1.173304161876  |dk|=5.85e-11  (-0.0000 pcm)  iter=154  conv=True  137.9s  PASS
+mox87  generic M24_A4       A=4 keff=1.173320704334  golden=1.173320704392  |dk|=5.85e-11  (-0.0000 pcm)  iter=154  conv=True  162.0s  PASS
+mox87  generic M48_A3       A=3 keff=1.173327991785  golden=1.173327991844  |dk|=5.85e-11  (-0.0000 pcm)  iter=154  conv=True  282.4s  PASS
+mox87  generic I128_M24_A3  A=3 keff=1.173325661397  golden=1.173325661456  |dk|=5.85e-11  (-0.0000 pcm)  iter=154  conv=True  273.9s  PASS
+mox87  ty3     M24_A0_orig  A=0 keff=1.172165354777  golden=1.172165354834  |dk|=5.71e-11  (-0.0000 pcm)  iter=154  conv=True  8.8s  PASS
+mox87  generic M24_A0_orig  A=0 keff=1.172267543192  golden=1.172267543250  |dk|=5.75e-11  (-0.0000 pcm)  iter=154  conv=True  91.0s  PASS
+uo2    ty3     M24_A3       A=3 keff=1.326760728572  golden=1.326760728669  |dk|=9.72e-11  (-0.0000 pcm)  iter=216  conv=True  16.0s  PASS
+uo2    ty3     M24_A4       A=4 keff=1.326770017520  golden=1.326770017618  |dk|=9.72e-11  (-0.0000 pcm)  iter=216  conv=True  18.8s  PASS
+uo2    ty3     M48_A3       A=3 keff=1.326774119303  golden=1.326774119400  |dk|=9.72e-11  (-0.0000 pcm)  iter=216  conv=True  32.0s  PASS
+uo2    generic M24_A3       A=3 keff=1.326792286148  golden=1.326792286245  |dk|=9.70e-11  (-0.0000 pcm)  iter=216  conv=True  167.3s  PASS
+uo2    generic M24_A4       A=4 keff=1.326801577400  golden=1.326801577498  |dk|=9.70e-11  (-0.0000 pcm)  iter=216  conv=True  195.4s  PASS
+uo2    generic M48_A3       A=3 keff=1.326805668351  golden=1.326805668448  |dk|=9.70e-11  (-0.0000 pcm)  iter=216  conv=True  338.7s  PASS
+uo2    generic I128_M24_A3  A=3 keff=1.326795110934  golden=1.326795111031  |dk|=9.71e-11  (-0.0000 pcm)  iter=216  conv=True  333.6s  PASS
+uo2    ty3     M24_A0_orig  A=0 keff=1.326146499486  golden=1.326146499584  |dk|=9.78e-11  (-0.0000 pcm)  iter=216  conv=True  10.9s  PASS
+uo2    generic M24_A0_orig  A=0 keff=1.326137416845  golden=1.326137416944  |dk|=9.89e-11  (-0.0000 pcm)  iter=216  conv=True  115.8s  PASS
+
+=== 18 passed, 0 failed (port gate |dk|<=1e-7) ===

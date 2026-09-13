@@ -71,32 +71,79 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None):
 def run_case(spec, case, verbose=True, opt="off", threads=None,
              mem_limit_gb=None):
     t0 = time.time()
+    closure = case.get("closure", "legacy")
+    A = int(case.get("A", 0))
+    if closure != "legacy":
+        bnd = spec["boundaries"]
+        if any(v not in ("reflect", "vacuum") for v in bnd.values()):
+            raise ValueError(
+                "high-order closure is validated for reflect and vacuum "
+                "boundaries only; use closure=legacy for other types")
+        if opt != "off":
+            raise ValueError(
+                "high-order closure requires --opt off (plain sparse LU); "
+                "the scalar Cholesky/Schur/tile backends are not "
+                "applicable for A > 0")
     psn = build_solver(spec, case, threads=threads,
                        mem_limit_gb=mem_limit_gb)
-    if opt != "off":
-        from . import memopt
-        report = memopt.install_optimized(psn, backend=opt,
-                                          mem_limit_gb=mem_limit_gb)
+    if closure != "legacy":
+        from . import highorder
+        branch = ("directional" if closure == "directional_matrix"
+                  else "original")
+        sol = spec["solver"]
+        k, phi, qim, hinfo = highorder.keff_highorder(
+            psn, A=A, branch=branch,
+            max_outer=int(sol["max_outer"]),
+            outer_tol=float(sol["keff_tol"]), verbose=verbose and -1)
+        dt = time.time() - t0
+        out = {
+            "name": case["name"],
+            "model": case["model"],
+            "I": int(case["I"]),
+            "M": int(case["M"]),
+            "A": A,
+            "K": A + 1,
+            "closure": closure,
+            "subdivide": int(case["subdivide"]),
+            "keff": float(k),
+            "time_s": round(dt, 2),
+            "nodes": psn.nodes,
+            "converged": hinfo["converged"],
+            "outer_iterations": hinfo["outer_iterations"],
+            "keff_residual": hinfo["keff_residual"],
+            "source_residual": hinfo["source_residual"],
+            "max_local_kernel_residual": hinfo["max_local_kernel_residual"],
+            "max_face_system_residual": hinfo["max_face_system_residual"],
+            "face_unknowns_per_system": psn.ncol * (A + 1),
+        }
+        if not hinfo["converged"]:
+            out["warning"] = hinfo["warning"]
     else:
-        psn._memopt_backend = "plain"
-        report = None
-    sol = spec["solver"]
-    k, phi, qnode = psn.keff(max_outer=int(sol["max_outer"]),
-                             outer_tol=float(sol["keff_tol"]),
-                             verbose=verbose and -1)
-    dt = time.time() - t0
-    out = {
-        "name": case["name"],
-        "model": case["model"],
-        "I": int(case["I"]),
-        "M": int(case["M"]),
-        "subdivide": int(case["subdivide"]),
-        "keff": float(k),
-        "time_s": round(dt, 2),
-        "nodes": psn.nodes,
-    }
-    if report is not None:
-        out["memopt"] = report
+        if opt != "off":
+            from . import memopt
+            report = memopt.install_optimized(psn, backend=opt,
+                                              mem_limit_gb=mem_limit_gb)
+        else:
+            psn._memopt_backend = "plain"
+            report = None
+        sol = spec["solver"]
+        k, phi, qnode = psn.keff(max_outer=int(sol["max_outer"]),
+                                 outer_tol=float(sol["keff_tol"]),
+                                 verbose=verbose and -1)
+        dt = time.time() - t0
+        out = {
+            "name": case["name"],
+            "model": case["model"],
+            "I": int(case["I"]),
+            "M": int(case["M"]),
+            "closure": "legacy",
+            "subdivide": int(case["subdivide"]),
+            "keff": float(k),
+            "time_s": round(dt, 2),
+            "nodes": psn.nodes,
+        }
+        if report is not None:
+            out["memopt"] = report
     kref = case.get("kref")
     if kref is not None:
         out["kref"] = float(kref)
@@ -119,12 +166,18 @@ def cmd_run(args):
                      threads=args.threads, mem_limit_gb=args.mem_limit_gb)
         results.append(r)
         if args.quiet:
-            line = f"[{r['name']}] {r['model']} I={r['I']} M={r['M']} " \
-                   f"S={r['subdivide']}: keff={r['keff']:.6f} ({r['time_s']} s)"
+            closure = r.get("closure", "legacy")
+            extra = (f" A={r['A']} K={r['K']} [{closure}]"
+                     if closure != "legacy" else "")
+            line = (f"[{r['name']}] {r['model']} I={r['I']} M={r['M']} "
+                    f"S={r['subdivide']}{extra}: "
+                    f"keff={r['keff']:.6f} ({r['time_s']} s)")
             if "pcm" in r:
                 line += f"  ref={r['kref']:.5f}  Δ={r['pcm']:+.1f} pcm"
             if "memopt" in r:
                 line += f"  [{r['memopt']['backend']}]"
+            if not r.get("converged", True):
+                line += "  NOT_CONVERGED"
             print(line, flush=True)
     if args.json:
         print(json.dumps(results, indent=1, ensure_ascii=False))

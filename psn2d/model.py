@@ -67,6 +67,23 @@ def load_spec(path):
         raise ValueError("angular.I must be even (0..pi partition)")
     if int(ang.get("M", 24)) % 2:
         raise ValueError("angular.M must be even (mirror pairs need paired segments)")
+    # high-order directional closure (OpenPSN A3 upgrade, Yuchao Xu
+    # 2026-09-13): A = azimuthal Legendre degree inside each segment
+    # (K=A+1 angular unknowns), closure selects the method identity.
+    # Absent fields keep the legacy default behavior untouched.
+    if "A" in ang:
+        A = ang["A"]
+        if isinstance(A, bool) or not isinstance(A, int) or A < 0:
+            raise ValueError("angular.A must be a nonnegative integer")
+    else:
+        A = 0
+    closure = ang.get("closure", "legacy")
+    if closure not in ("legacy", "directional_matrix", "original_azimuth"):
+        raise ValueError(
+            f"angular.closure must be one of 'legacy', "
+            f"'directional_matrix', 'original_azimuth', got {closure!r}")
+    ang["A"] = A
+    ang["closure"] = closure
 
     geom = spec["geometry"]
     if bool(geom.get("rect", False)):
@@ -139,6 +156,8 @@ def expand_cases(spec):
         c.setdefault("model", ang.get("model", "generic"))
         c.setdefault("I", int(ang.get("I", 30)))
         c.setdefault("M", int(ang.get("M", 24)))
+        c.setdefault("A", int(ang.get("A", 0)))
+        c.setdefault("closure", ang.get("closure", "legacy"))
         c.setdefault("subdivide", int(geom.get("subdivide", 1)))
         c["kref"] = c.get("kref", spec.get("kref"))
         out.append(c)
