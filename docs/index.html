@@ -610,10 +610,10 @@ footer .mono { font-family: var(--mono); font-size: 12px; margin-top: 8px; }
     sparse) carries the same node model into real reactor problems.
   </p>
   <div class="fig">
-    <div class="imgbox"><img src="img/c5g7.jpg" alt="C5G7 pin power" loading="lazy"></div>
+    <div class="imgbox"><img src="img/c5g7_bww_best_fission.png" alt="C5G7 BWW best-config fission comparison" loading="lazy"></div>
     <div class="cap">
-      <div class="t">C5G7 MOX 1/4 core, 7 energy groups — pin power and error vs reference</div>
-      <div class="d">10404 nodes, 17×17 pin assemblies, 7-group C5G7 benchmark. Left: OpenPSN pin power; right: relative error vs the multi-group transport reference. The method's multi-group capability is exercised end to end — scattering between groups, pin-wise fission peaks, power shape.</div>
+      <div class="t">C5G7, 7 energy groups — pin-wise homogenised core, best point per geometry vs same-geometry OpenMC reference</div>
+      <div class="d">Pin-averaged fission source νΣ<sub>f</sub>φ at the best S×M point of each geometry: UO₂ assembly (S=5, M=12, Δk = +0.0 pcm), MOX assembly (S=6, M=24, Δk = −1.5 pcm), 1/4 core (S=6, M=24, Δk = −7.7 pcm, cropped to the 2×2 fuel block). OpenPSN (left), OpenMC on the identical pinwise-homogenised geometry (centre), pin-by-pin relative error on the fuel pins (right): 0.03% RMS on the UO₂ assembly, 0.04% on the MOX assembly and 0.07% RMS (max 0.25%) over the 1056 fuel pins of the 1/4 core — at the best configuration the full 51×51 core sits inside the Monte-Carlo statistical band.</div>
       <div class="src"><a href="https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark">OpenPSN preprint (2026)</a>, our computation</div>
     </div>
   </div>
