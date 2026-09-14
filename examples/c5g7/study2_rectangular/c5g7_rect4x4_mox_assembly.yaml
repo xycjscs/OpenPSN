@@ -1,0 +1,96 @@
+# PSN2D — C5G7 rect4x4 MOX assembly, 4x4 rectangular nodes, PURE XS
+# Topology (user-confirmed 2026-09-14): centre 2x2 nodes = MOX FUEL
+# (mat index 2, same material as the rect3x3 MOX main pins), outer
+# ONE ring of water (NO water between fuel nodes).
+#
+# Cartesian node grid (node-method requirement: shared interfaces):
+#   x-widths depend on COLUMN only  -> every row of widths_x =
+#     [w, f, f, w]
+#   y-widths depend on ROW only     -> widths_y rows =
+#     [w,w,w,w] / [f,f,f,f] / [f,f,f,f] / [w,w,w,w]
+#   with w = 0.1514375 cm (water half-gap, rect3x3 convention) and
+#   f = 0.9571251 cm (fuel diameter).
+#   => 4 water corner nodes w x w, 4 water edge strips (f x w or
+#      w x f), 4 fuel nodes f x f.  Side = 2*f + 2*w = 2.2171251 cm.
+# S=1: 4x4 nodes.  S=2: uniform 2x2 subdivision -> 8x8 (fuel 2x2 ->
+# 4x4 sub-nodes, each edge water node -> 2 segments).
+# All four faces reflective.
+# XS: c5g7_materials_pure.yaml (unhomogenized, c5g7-mgxs.h5)
+problem: c5g7_rect4x4_mox_assembly
+description: C5G7 rect4x4 MOX assembly, 4x4 nodes (2x2 fuel + one water ring),
+  PURE material XS, all-reflective
+geometry:
+  rect: true
+  mat_grid:
+  - - 0
+    - 0
+    - 0
+    - 0
+  - - 0
+    - 2
+    - 2
+    - 0
+  - - 0
+    - 2
+    - 2
+    - 0
+  - - 0
+    - 0
+    - 0
+    - 0
+  widths_x:
+  - - 0.15143746025551064
+    - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.15143746025551064
+  - - 0.15143746025551064
+    - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.15143746025551064
+  - - 0.15143746025551064
+    - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.15143746025551064
+  - - 0.15143746025551064
+    - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.15143746025551064
+  widths_y:
+  - - 0.15143746025551064
+    - 0.15143746025551064
+    - 0.15143746025551064
+    - 0.15143746025551064
+  - - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.9571250794889787
+  - - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.9571250794889787
+  - - 0.15143746025551064
+    - 0.15143746025551064
+    - 0.15143746025551064
+    - 0.15143746025551064
+boundaries:
+  left: reflect
+  bottom: reflect
+  right: reflect
+  top: reflect
+materials_file: c5g7_materials_pure.yaml
+angular:
+  model: ty3
+  I: 30
+  A: 3
+  M: 24
+  closure: directional_matrix
+solver:
+  keff_tol: 1.0e-10
+  max_outer: 6000
+cases:
+- name: rect4x4_mox_S1_M24
+  M: 24
+  subdivide: 1
+- name: rect4x4_mox_S2_M24
+  M: 24
+  subdivide: 2

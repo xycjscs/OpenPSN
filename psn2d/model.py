@@ -103,6 +103,21 @@ def load_spec(path):
                 raise ValueError(f"{wname} shape {w.shape} != mat_grid {mg.shape}")
             if (w <= 0).any():
                 raise ValueError(f"{wname} must be positive")
+            # Cartesian consistency (no T-junctions at shared interfaces):
+            #   widths_x must vary by COLUMN only  (every row identical),
+            #   widths_y must vary by ROW only     (every column identical).
+            # Violation = staggered vertical/horizontal interfaces, i.e.
+            # the node method's corner-meet-corner contract is broken.
+            if wname == "widths_x" and not np.allclose(w, w[0:1, :], rtol=1e-12):
+                raise ValueError(
+                    "widths_x must be column-defined: every row identical "
+                    f"(row0 sum {w[0].sum():.6g} vs row-1 sum "
+                    f"{w[1].sum():.6g} differ -> T-junction interfaces)")
+            if wname == "widths_y" and not np.allclose(w, w[:, 0:1], rtol=1e-12):
+                raise ValueError(
+                    "widths_y must be row-defined: every column identical "
+                    f"(col0 sum {w[:, 0].sum():.6g} vs col-1 sum "
+                    f"{w[:, 1].sum():.6g} differ -> T-junction interfaces)")
         spec["geometry"]["mat_grid"] = mg.tolist()
     else:
         grid = np.array(geom["grid"], dtype=int)
