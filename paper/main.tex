@@ -176,7 +176,7 @@ accepting any number of energy groups, an arbitrary material grid with
 independent per-edge reflect/vacuum boundary conditions, and a user-set
 angular order $M$, spatial sub-division $S$, angular model, and
 convergence tolerance.
-The three optimisations that make the method practical are:
+The four optimisations that make the method practical are:
 
 \begin{enumerate}[label=\textbf{(\roman*)}, leftmargin=2.2em]
 \item \textbf{Sparse assembly (fixes the memory blow-up).}
@@ -223,6 +223,32 @@ The three optimisations that make the method practical are:
   parabolic/phase-space forms as the square case evaluated on the actual
   node widths; they are verified node-by-node against the square-node path
   (which they reduce to exactly when all widths are equal).
+
+\item \textbf{High-order directional moment closure with a GMRES
+  process-pool inner sweep (makes the high-order method memory-safe).}
+  The nodal moment closure is generalised to an arbitrary polynomial
+  order $A$ ($K{=}A{+}1$ face modes per direction): the $A{=}0$ closure
+  reproduces the original state matrix element-for-element (verified
+  by a dedicated regression), and $A{=}1,2,3$ extend it to higher
+  angular fidelity without changing any other part of the solver. Each
+  $(i,g)$ node system is then a fixed sparse linear system in the
+  $4K$ face-mode unknowns per face; instead of iterating it with a
+  plain sweep (spectral radius ${\approx}0.995$ per sweep on the slow
+  group of the 51$\times$51 C5G7 assembly --- $3312$ sweeps to
+  $10^{-11}$) we solve it with GMRES whose matrix--vector product is a
+  single red-black node sweep with exact node-level direct solves, and
+  parallelise the $I\!\times\!ng{=}21$ systems across a fork process
+  pool (one worker per system; each worker pins BLAS to one thread).
+  Threads were measured, not assumed: the matrix--vector product is
+  ${\approx}87\%$ GIL-holding NumPy glue, so 24 threads run at ${\approx}2\%$
+  efficiency (slower than serial), whereas the 21-process pool reaches
+  bit-identical keffs to the direct-LU path to ${\le}2\times10^{-14}$ for
+  $A{=}1,2,3$ at full convergence. The payoff is memory: the direct-LU
+  path keeps $21$ full-mesh SuperLU factors resident ($53.8$~GB at
+  $M{=}8$, ${\sim}187$~GB at core size), while the GMRES pool keeps only
+  per-node factor tables ($3.65$~GB at $M{=}8$, $6.41$~GB at $M{=}12$)
+  --- the high-order closure becomes runnable at the $M\ge12$
+  subdivisions that the dense path cannot address on this machine.
 \end{enumerate}
 
 These are the ``optimisations'' the title refers to: not a change to the

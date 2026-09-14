@@ -116,6 +116,29 @@ python psn2d/memopt_cxx/build.py \
     --metis-include /path/to/include --metis-lib /path/to/lib/libmetis.so
 ```
 
+**高序方向闭合的内层求解器（`solver.inner`，YAML `solver:` 段，默认 `lu`）**
+
+A>0 的方向矩闭合（`closure: directional_matrix`）下，每个 (i,g) 系统可以
+LU 直解，也可以 GMRES + 红黑节点扫描 matvec + fork 进程池并行（21 个系统
+各一个 worker，worker 内 BLAS 钉死 1 线程）：
+
+```yaml
+solver:
+  inner: gmres          # lu（默认）| gmres
+  gmres_rtol: 1.0e-11   # 可选，系统残差判据
+  gmres_maxiter: 800    # 可选
+  gmres_workers: 21     # 可选，默认 = 系统数
+```
+
+| 值 | 说明 |
+|---|---|
+| `lu`（默认） | 每系统一张 SuperLU 因子常驻：M8 峰值 ~54 GB（21 因子），小 M 最快（0.7 s/外迭代） |
+| `gmres` | 仅驻留 KB 级节点因子表：M8 3.65 GB、M12 6.41 GB（~15× 内存削减），keff 与 LU 路径全收敛位级一致（A=1/2/3 实测 Δ≤2e-14）；M≥12 或 S≥2 时是 62 GB 机器上唯一可行路径 |
+
+几何约束：矩形节点、半平面偶数 M、整网格统一 A、reflect/vacuum 边界；
+线程不可用（实测 GIL：matvec 87% 持锁，24 线程效率 ~2% 比串行慢），
+并行只能走进程池。
+
 ## 4. 输入格式（YAML）
 
 ```yaml
@@ -225,6 +248,9 @@ OpenPSN（矩形节点 M=16）  1.1866067  +14.7   ← 落在高保真 MOC 集�
 - 空间细化 S=1→2（2601→10404 节点）k 仅动 ~4 pcm → 离散已收敛。
 - 独立代数 k∞ = 1.32936 与 SPHINCS/nTRACER 无自屏蔽值**逐位一致**（数据接线铁证）。
 - 与 20 个确定性代码的完整对照见论文 §4.5（NEA/NSC/DOC(2003)16 Table 17）。
+- 高序方向闭合（A>0）的内存瓶颈已由 `solver.inner: gmres` 进程池路径解决：
+  M8 峰值 3.65 GB（LU 直解 54 GB）、M12 6.41 GB，keff 位级一致（A=1/2/3，Δ≤2e-14），
+  S≥2 / M≥12 的扫表点因此可在 62 GB 机器上跑通（`tools_ho/dir_table3_sweep_gmres.py`）。
 
 论文：[OpenPSN: a multi-group Phase Space Nodal solver with rectangular nodes, validated on the C5G7 MOX benchmark](https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark)（ResearchGate 预印本，2026）
 
@@ -238,6 +264,8 @@ OpenPSN/
 │   ├── solver.py     #   多群 PSN 节点求解器（稀疏+向量化，fork 扫算池）
 │   ├── node.py       #   方形节点闭式解（generic / ty3 两模型）
 │   ├── node_rect.py  #   矩形节点闭式解（任意 x/y 宽度）
+│   ├── highorder.py  #   高序方向矩闭合（A=0..3，directional/original 分支，LU 内层）
+│   ├── highsweep.py  #   GMRES 内层 + fork 进程池（solver.inner: gmres，静态分片 warm-start）
 │   ├── runtime.py    #   线程/内存预算（用户输入，进程树恒 ≤ N）
 │   ├── memopt.py     #   内存优化后端 auto 分派（--opt auto）
 │   ├── angschr.py    #   角度 Schur 剖分后端（方向块对角化, --opt angschr）
