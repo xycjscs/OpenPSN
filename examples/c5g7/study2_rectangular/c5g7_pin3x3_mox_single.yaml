@@ -1,0 +1,53 @@
+# Control: ONE rect3x3 pin cell, fuel as a SINGLE block (3x3 nodes,
+# [w, f, w]), MOX (mat 2 = mox43).  Must agree with the 4-block-split
+# rect4x4 S1 (identical material regions) -> validates the split does
+# not change physics.
+problem: c5g7_pin3x3_mox_single
+description: C5G7 single MOX pin cell (rect3x3 unit), 3x3 nodes, all-reflective
+geometry:
+  rect: true
+  mat_grid:
+  - - 0
+    - 0
+    - 0
+  - - 0
+    - 2
+    - 0
+  - - 0
+    - 0
+    - 0
+  widths_x:
+  - - 0.15143746025551064
+    - 0.9571250794889787
+    - 0.15143746025551064
+  - - 0.15143746025551064
+    - 0.9571250794889787
+    - 0.15143746025551064
+  - - 0.15143746025551064
+    - 0.9571250794889787
+    - 0.15143746025551064
+  widths_y:
+  - - 0.15143746025551064
+    - 0.15143746025551064
+    - 0.15143746025551064
+  - - 0.9571250794889787
+    - 0.9571250794889787
+    - 0.9571250794889787
+  - - 0.15143746025551064
+    - 0.15143746025551064
+    - 0.15143746025551064
+boundaries:
+  left: reflect
+  bottom: reflect
+  right: reflect
+  top: reflect
+materials_file: c5g7_materials_pure.yaml
+angular:
+  model: ty3
+  I: 30
+  A: 3
+  M: 24
+  closure: directional_matrix
+solver:
+  keff_tol: 1.0e-10
+  max_outer: 6000

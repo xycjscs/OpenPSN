@@ -41,7 +41,7 @@ POINT_TIMEOUT_S = 12 * 3600
 MM = 24          # face modes (fixed for this 4-point run)
 S_LIST = [1, 2]  # S1=4x4, S2=8x8
 A_DEG = 3
-RTOL = 1e-11
+RTOL = 1e-7       # keff tolerance, uniform 1e-7 (user, 2026-09-14)
 MAXITER = 800
 
 # inner-solver lever combo (set after combo bench lands)
@@ -96,7 +96,7 @@ def run_point(key, S):
     spec = model.load_spec(P['spec'])
     case = {'name': f'M{MM}_S{S}', 'model': 'ty3', 'I': 30, 'M': MM,
             'subdivide': S, 'A': A_DEG, 'closure': 'directional_matrix'}
-    spec['solver'].update({'keff_tol': 1e-10, 'max_outer': 6000,
+    spec['solver'].update({'keff_tol': 1e-7, 'max_outer': 6000,
                            'threads': 1})
     soft, hard = resource.getrlimit(resource.RLIMIT_AS)
     try:
@@ -109,7 +109,7 @@ def run_point(key, S):
         psn = M.build_solver(spec, case, threads=1, mem_limit_gb=120)
         k, phi, qim, h = highsweep.keff_highorder_gmres(
             psn, A=A_DEG, branch='directional', max_outer=6000,
-            outer_tol=1e-10, rtol=RTOL, maxiter=MAXITER,
+            outer_tol=1e-7, rtol=RTOL, maxiter=MAXITER,
             pairs=PAIRS, nworkers=NWORKERS, verbose=False)
         if capped:
             resource.setrlimit(resource.RLIMIT_AS, (soft, hard))

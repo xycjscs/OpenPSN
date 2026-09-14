@@ -45,7 +45,7 @@ POINT_TIMEOUT_S = 12 * 3600
 M_LIST = [2, 4, 8, 12, 16, 24]
 S_LIST = [1, 2, 3, 4, 5, 6]
 A_DEG = 3
-RTOL = 1e-11
+RTOL = 1e-7     # keff tolerance, uniform 1e-7 (user, 2026-09-14)
 MAXITER = 800
 
 PROBS = {
@@ -89,17 +89,24 @@ def _child_rss_gb(pid):
 
 
 def run_point(key, MM, S):
-    """Single point, executed in this (fresh) process, GMRES pool."""
+    """Single point, executed in this (fresh) process, GMRES pool.
+
+    Lever config D (measured best, dbg_bench_combo24, 24-thread budget,
+    2026-09-14): angle-pair sharding + numba kernels, 24 workers x 1T.
+    M8: 3.83x vs serial; M2: numba on, 21 workers (pairs is a no-op at
+    M=2: 1 block per (i,g))."""
     from psn2d import model
     from psn2d import __main__ as M
     from psn2d import highsweep
+    from psn2d import mckern
+    mckern.ENABLED = True
     P = PROBS[key]
     t0 = time.time()
     spec = model.load_spec(P['spec'])
     case = {'name': f'M{MM}_S{S}', 'model': 'ty3', 'I': 30, 'M': MM,
             'subdivide': S, 'kref': P['kref'], 'A': A_DEG,
             'closure': 'directional_matrix'}
-    spec['solver'].update({'keff_tol': 1e-10, 'max_outer': 6000,
+    spec['solver'].update({'keff_tol': 1e-7, 'max_outer': 6000,
                            'threads': 1})
     soft, hard = resource.getrlimit(resource.RLIMIT_AS)
     try:
@@ -110,10 +117,12 @@ def run_point(key, MM, S):
         capped = False
     try:
         psn = M.build_solver(spec, case, threads=1, mem_limit_gb=120)
+        nworkers = min(21 * (MM // 2) if MM > 2 else 21, 24)
         k, phi, qim, hinfo = highsweep.keff_highorder_gmres(
             psn, A=A_DEG, branch='directional',
-            max_outer=6000, outer_tol=1e-10,
-            rtol=RTOL, maxiter=MAXITER, verbose=False)
+            max_outer=6000, outer_tol=1e-7,
+            rtol=RTOL, maxiter=MAXITER, verbose=False,
+            pairs=True, nworkers=nworkers)
         if capped:
             resource.setrlimit(resource.RLIMIT_AS, (soft, hard))
         dt = time.time() - t0
@@ -198,8 +207,9 @@ _CORES = 24     # thread budget (host has 48 cores; convention: 24, 2026-09-14)
 class CoreBudget:
     """Counted core budget: a point acquires its worker count before
     forking and releases it afterwards, so concurrent points never
-    oversubscribe the physical core count (e.g. two M2 points = 21+21
-    fit 48 cores; a second M4 point = 42+42 does not)."""
+    oversubscribe the thread budget (24, 2026-09-14 convention).  At
+    24 only a single M2 point (21 workers) fits alongside nothing
+    else; all M>=4 points take the whole budget and run exclusive."""
 
     def __init__(self, total):
         self.total = total

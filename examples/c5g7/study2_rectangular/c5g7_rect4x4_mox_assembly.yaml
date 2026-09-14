@@ -1,23 +1,26 @@
-# PSN2D — C5G7 rect4x4 MOX assembly, 4x4 rectangular nodes, PURE XS
-# Topology (user-confirmed 2026-09-14): centre 2x2 nodes = MOX FUEL
-# (mat index 2, same material as the rect3x3 MOX main pins), outer
-# ONE ring of water (NO water between fuel nodes).
+# PSN2D — C5G7 rect4x4 MOX: ONE rect3x3 PIN CELL with the fuel square
+# split into 2x2 = 4 blocks (user decision 2026-09-14: "rect4 应该是
+# 完全相同的几何只是 pin 中间分成 4 块").  Fuel = mat index 2 (mox43,
+# same material as the rect3x3 MOX main pins).
 #
-# Cartesian node grid (node-method requirement: shared interfaces):
-#   x-widths depend on COLUMN only  -> every row of widths_x =
-#     [w, f, f, w]
-#   y-widths depend on ROW only     -> widths_y rows =
-#     [w,w,w,w] / [f,f,f,f] / [f,f,f,f] / [w,w,w,w]
-#   with w = 0.1514375 cm (water half-gap, rect3x3 convention) and
-#   f = 0.9571251 cm (fuel diameter).
-#   => 4 water corner nodes w x w, 4 water edge strips (f x w or
-#      w x f), 4 fuel nodes f x f.  Side = 2*f + 2*w = 2.2171251 cm.
-# S=1: 4x4 nodes.  S=2: uniform 2x2 subdivision -> 8x8 (fuel 2x2 ->
-# 4x4 sub-nodes, each edge water node -> 2 segments).
-# All four faces reflective.
-# XS: c5g7_materials_pure.yaml (unhomogenized, c5g7-mgxs.h5)
+# Geometry = rect3x3 pin cell (pitch 1.26 cm, all-reflective):
+#   side = f + 2w = 0.9571251 + 2*0.1514375 = 1.26 cm
+#   fuel: one 0.9571251-cm square in the centre, split into 2x2 blocks
+#         of f/2 = 0.4785625 cm (blocks touch, no water between ->
+#         material regions identical to the rect3x3 cell)
+#   water: ring of w = 0.1514375 cm on all four sides (the full
+#         0.3029-cm gap between adjacent cells, as in rect3x3)
+#   water area fraction = 1 - (f/side)^2 = 42.3% (same as rect3x3)
+# A single reflective pin cell is one unit cell of the 17x17 assembly,
+# so keff is expected within a few pcm of the assembly anchors
+# (UO2 1.3347260 / MOX 1.1851053, OpenMC).
+#
+# S1 = 4x4 nodes: widths [w, f/2, f/2, w] (x = y)
+# S2 = 8x8: subdivide=2 -> fuel 2x2 -> 4x4 sub-nodes (f/4),
+#      each water node -> 2 (w/2)
+# All four faces reflective. XS: c5g7_materials_pure.yaml.
 problem: c5g7_rect4x4_mox_assembly
-description: C5G7 rect4x4 MOX assembly, 4x4 nodes (2x2 fuel + one water ring),
+description: C5G7 rect4x4 MOX = rect3x3 pin cell, fuel split 2x2,
   PURE material XS, all-reflective
 geometry:
   rect: true
@@ -40,34 +43,34 @@ geometry:
     - 0
   widths_x:
   - - 0.15143746025551064
-    - 0.9571250794889787
-    - 0.9571250794889787
+    - 0.47856253974448935
+    - 0.47856253974448935
     - 0.15143746025551064
   - - 0.15143746025551064
-    - 0.9571250794889787
-    - 0.9571250794889787
+    - 0.47856253974448935
+    - 0.47856253974448935
     - 0.15143746025551064
   - - 0.15143746025551064
-    - 0.9571250794889787
-    - 0.9571250794889787
+    - 0.47856253974448935
+    - 0.47856253974448935
     - 0.15143746025551064
   - - 0.15143746025551064
-    - 0.9571250794889787
-    - 0.9571250794889787
+    - 0.47856253974448935
+    - 0.47856253974448935
     - 0.15143746025551064
   widths_y:
   - - 0.15143746025551064
     - 0.15143746025551064
     - 0.15143746025551064
     - 0.15143746025551064
-  - - 0.9571250794889787
-    - 0.9571250794889787
-    - 0.9571250794889787
-    - 0.9571250794889787
-  - - 0.9571250794889787
-    - 0.9571250794889787
-    - 0.9571250794889787
-    - 0.9571250794889787
+  - - 0.47856253974448935
+    - 0.47856253974448935
+    - 0.47856253974448935
+    - 0.47856253974448935
+  - - 0.47856253974448935
+    - 0.47856253974448935
+    - 0.47856253974448935
+    - 0.47856253974448935
   - - 0.15143746025551064
     - 0.15143746025551064
     - 0.15143746025551064
