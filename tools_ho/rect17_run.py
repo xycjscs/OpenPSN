@@ -35,8 +35,27 @@ os.environ.setdefault('PSN_CORE_BUDGET', '24')
 
 EX = '/opt/data/workspace/OpenPSN/examples/c5g7/study2_rectangular'
 LOG = '/opt/data/workspace/OpenPSN/tools_ho/rect17_run.log'
-VSZ_BACKSTOP_GB = 128.0
-WATCHDOG_GB = 50.0
+VSZ_BACKSTOP_GB = 32.0   # HARD limit (user 2026-09-14)
+WATCHDOG_GB = 32.0
+
+def _pin_24():
+    """Hard 24-core protection (2026-09-14 user rule): pin this process
+    to CPUs 0-23 via sched_setaffinity — every thread created later
+    (pool workers, numba/OpenMP) inherits the mask, so total CPU
+    throughput is kernel-capped at 24 cores regardless of what any
+    library spawns.  cgroups are read-only in this container, so
+    affinity is the hard guard."""
+    import os as _os
+    _os.sched_setaffinity(0, set(range(24)))
+
+
+def _mem_guard_32g():
+    """Hard 32 GB memory protection: RLIMIT_AS = 32 GiB virtual
+    backstop (kernel-enforced; RSS <= VSZ always).  Replaces the old
+    128 GB backstop."""
+    import resource as _resource
+    _resource.setrlimit(_resource.RLIMIT_AS,
+                        (int(32 * 2 ** 30), -1))
 POINT_TIMEOUT_S = 12 * 3600
 
 MM = 24          # face modes
@@ -96,21 +115,14 @@ def run_point(key, S):
             'subdivide': S, 'A': A_DEG, 'closure': 'directional_matrix'}
     spec['solver'].update({'keff_tol': 1e-7, 'max_outer': 6000,
                            'threads': 1})
-    soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+    _pin_24()          # hard: 24-core affinity (inherited by children)
+    _mem_guard_32g()   # hard: RLIMIT_AS 32 GiB backstop
     try:
-        resource.setrlimit(resource.RLIMIT_AS,
-                           (int(VSZ_BACKSTOP_GB * 1e9), hard))
-        capped = True
-    except (ValueError, OSError):
-        capped = False
-    try:
-        psn = M.build_solver(spec, case, threads=1, mem_limit_gb=120)
+        psn = M.build_solver(spec, case, threads=1, mem_limit_gb=32)
         k, phi, qim, h = highsweep.keff_highorder_gmres(
             psn, A=A_DEG, branch='directional', max_outer=6000,
             outer_tol=1e-7, rtol=RTOL, maxiter=MAXITER,
             pairs=PAIRS, nworkers=NWORKERS, verbose=False)
-        if capped:
-            resource.setrlimit(resource.RLIMIT_AS, (soft, hard))
         dt = time.time() - t0
         peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6
         dref = (k - P['kref']) * 1e5
@@ -121,13 +133,9 @@ def run_point(key, S):
               f"dref={dref:+.1f}pcm wall={dt:.0f}s "
               f"peak={peak:.2f}GB{tagline}", flush=True)
     except MemoryError:
-        if capped:
-            resource.setrlimit(resource.RLIMIT_AS, (soft, hard))
         print(f"{P['tag']} M{MM}_S{S} OOM at {time.time()-t0:.0f}s",
               flush=True)
     except Exception as e:
-        if capped:
-            resource.setrlimit(resource.RLIMIT_AS, (soft, hard))
         print(f"{P['tag']} M{MM}_S{S} ERROR {type(e).__name__} "
               f"{str(e)[:80]} at {time.time()-t0:.0f}s", flush=True)
 
@@ -172,6 +180,7 @@ def run_point_child_log(key, S, t0):
 
 
 if __name__ == '__main__':
+    _pin_24()
     if len(sys.argv) >= 4 and sys.argv[1] == 'point':
         run_point(sys.argv[2], int(sys.argv[3]))
         sys.exit(0)

@@ -117,8 +117,10 @@ def convert(src, dst, problem, desc):
     assert len(wy) == N and all(len(r) == N for r in wy)
     assert all(v == r[0] for r in wy for v in r), \
         'widths_y rows not constant'
-    wy_col = [r[0] for r in wy]          # the 51-pattern, same for all j
-    new_wy = [split_widths(wy_col)] * N4
+    # y-width pattern down the rows; each new ROW is constant, the 51
+    # row-pattern expands to 68 (fuel row -> two half-height rows)
+    wy_new = split_widths([float(r[0]) for r in wy])
+    new_wy = [[v] * N4 for v in wy_new]
     txt = txt[:s] + emit_rows(new_wy) + txt[e:]
 
     # --- header / problem / description / tolerance ---
@@ -142,7 +144,7 @@ def convert(src, dst, problem, desc):
 
     # verification report
     rowsum_x = sum(float(v) for v in new_wx[0])
-    rowsum_y = sum(float(v) for v in new_wy[0])
+    rowsum_y = sum(float(r[0]) for r in new_wy)  # rows are constant -> col 0
     mats = {}
     for r in new:
         for v in r:
