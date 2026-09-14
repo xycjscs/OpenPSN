@@ -127,8 +127,19 @@ solver:
   inner: gmres          # lu（默认）| gmres
   gmres_rtol: 1.0e-11   # 可选，系统残差判据
   gmres_maxiter: 800    # 可选
-  gmres_workers: 21     # 可选，默认 = 系统数
+  gmres_workers: 21     # 可选，默认 = 块数（system 模式=系统数，pair 模式=系统数×M/2）
+  gmres_pairs: on       # 可选，off|on，默认 auto（M=2 走 system，M≥4 走 pair）
 ```
+
+`gmres_pairs`（2026-09-14，杠杆 1）：把每个 (i,g) 系统按**镜像角度对**
+{p, M-1-p} 再劈成 M/2 个独立块——(i,g) 的面方程矩阵 H 对这些对严格块
+对角（internal/vacuum 行只在同一 m 内、reflect 行只耦合镜像对），每个块
+各跑自己的 GMRES（对子局部维度，Krylov 空间减半），矩汇总 Σ_块 精确还原
+全角度求和。M8 实测 system→pair 提速 1.53×（1056s→691s，keff 差
+5.7e-14）；M 越大收益越大（48 核从 21 用到满，最慢系统被劈散）。
+matvec 的 b-assembly（占 matvec ~87%）另有 numba prange 内核（杠杆 3，
+自动启用，`OPSN_NO_NUMBA=1` 可关）：去 GIL 后 worker 内可用
+T=核数/worker数 线程（BLAS 仍钉 1）。
 
 | 值 | 说明 |
 |---|---|
@@ -136,8 +147,9 @@ solver:
 | `gmres` | 仅驻留 KB 级节点因子表：M8 3.65 GB、M12 6.41 GB（~15× 内存削减），keff 与 LU 路径全收敛位级一致（A=1/2/3 实测 Δ≤2e-14）；M≥12 或 S≥2 时是 62 GB 机器上唯一可行路径 |
 
 几何约束：矩形节点、半平面偶数 M、整网格统一 A、reflect/vacuum 边界；
-线程不可用（实测 GIL：matvec 87% 持锁，24 线程效率 ~2% 比串行慢），
-并行只能走进程池。
+纯 Python matvec 的线程路线不可用（实测 GIL：b-assembly 持锁，24 线程
+效率 ~2% 比串行慢），并行走进程池 + 块分片，worker 内 b-assembly 走
+numba prange。
 
 ## 4. 输入格式（YAML）
 

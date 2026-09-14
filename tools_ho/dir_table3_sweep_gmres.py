@@ -29,7 +29,7 @@ Usage:
   dir_table3_sweep_gmres.py [uo2|mox|all]        # coordinator
   dir_table3_sweep_gmres.py point <key> M S      # single point (child)
 """
-import os, re, sys, time, resource, subprocess
+import os, re, sys, time, resource, subprocess, threading
 
 sys.path.insert(0, '/opt/data/workspace/OpenPSN')
 os.environ.setdefault('OPENBLAS_NUM_THREADS', '1')
@@ -172,6 +172,68 @@ def run_child(key, MM, S, t0):
     return tail
 
 
+def channels_for(cpu, MM):
+    """Concurrent point channels under the 24-thread budget, M-aware.
+
+    A sweep point forks I*ng = 3*7 = 21 workers (one per (i,g) system)
+    in the serial era.  With lever-1 angle-pair sharding each (i,g)
+    splits into M/2 blocks, so a point wants 21*(M/2) workers, capped
+    at the thread budget.
+
+      M=2 : 21 workers/point  -> 1 point (21 <= 24)
+      M=4 : 42 -> capped 24   -> only 1 fits
+      M>=8: 24 (capped)       -> only 1 fits
+
+    Each point peaks <1.3 GB RSS (M24_S1 measured 1.20 GB), so the
+    constraint is threads, not memory."""
+    per_point = 21 if MM <= 2 else 21 * (MM // 2)
+    per_point = min(per_point, cpu)
+    return max(1, min(2, cpu // per_point))
+
+
+_BUDGET = None  # set in __main__: core-count budget for point channels
+_CORES = 24     # thread budget (host has 48 cores; convention: 24, 2026-09-14)
+
+
+class CoreBudget:
+    """Counted core budget: a point acquires its worker count before
+    forking and releases it afterwards, so concurrent points never
+    oversubscribe the physical core count (e.g. two M2 points = 21+21
+    fit 48 cores; a second M4 point = 42+42 does not)."""
+
+    def __init__(self, total):
+        self.total = total
+        self.free = total
+        self.cv = threading.Condition()
+
+    def acquire(self, n):
+        with self.cv:
+            while self.free < n:
+                self.cv.wait()
+            self.free -= n
+
+    def release(self, n):
+        with self.cv:
+            self.free += n
+            self.cv.notify_all()
+
+
+def run_point_child_log(key, MM, S, t0):
+    """Start line + run + result line, thread-safe (log() is
+    append+fsync; print order between channels may interleave)."""
+    budget = min(21 * (MM // 2) if MM > 2 else 21, _CORES)
+    if _BUDGET is not None:
+        _BUDGET.acquire(budget)
+    try:
+        log(f'--- {PROBS[key]["tag"]} M{MM}_S{S} start (fresh subprocess, '
+            f'gmres pool, budget={budget}) t={time.time()-t0:.0f}s')
+        return (run_child(key, MM, S, t0)
+                + f" elapsed={time.time()-t0:.0f}s")
+    finally:
+        if _BUDGET is not None:
+            _BUDGET.release(budget)
+
+
 if __name__ == '__main__':
     if len(sys.argv) >= 5 and sys.argv[1] == 'point':
         run_point(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
@@ -179,9 +241,11 @@ if __name__ == '__main__':
 
     MODE = sys.argv[1] if len(sys.argv) > 1 else 'all'
     keys = [MODE] if MODE in PROBS else ['uo2', 'mox']
+    CPU = _CORES  # thread budget (48-core host, 24-thread convention)
+    _BUDGET = CoreBudget(CPU)
     log(f'--- DIR TABLE3 GMRES SWEEP start (A={A_DEG}, closure='
         f'directional_matrix, inner=gmres static-shard pool, '
-        f'rtol={RTOL}, maxiter={MAXITER}) ---')
+        f'rtol={RTOL}, maxiter={MAXITER}, channels=budget-{CPU}) ---')
     log('NOTE: core points blocked (vacuum boundary not validated for '
         'A>0); legacy LU points (S1 M2/M4/M8) inherited from '
         'dir_table3_sweep.log (keff path-independent to ~1e-14)')
@@ -189,14 +253,29 @@ if __name__ == '__main__':
     for key in keys:
         P = PROBS[key]
         done = done_set(P['tag'])
+        pending = []
         for S in S_LIST:
             for MM in M_LIST:
                 if (MM, S) in done:
                     log(f"{P['tag']} M{MM}_S{S} INHERITED (legacy LU "
                         f'keff, not re-run)')
-                    continue
-                log(f'--- {P["tag"]} M{MM}_S{S} start (fresh subprocess, '
-                    f'gmres pool) t={time.time()-t0:.0f}s')
-                log(run_child(key, MM, S, t0)
-                    + f" elapsed={time.time()-t0:.0f}s")
+                else:
+                    pending.append((MM, S))
+        if not pending:
+            continue
+        # multi-channel with core-budget semaphore: two M2 points run
+        # at once (21+21=42 workers <= 48 cores); larger-M points take
+        # the whole budget so they stay exclusive.  Channel count is
+        # generous (max points per key); the semaphore serializes
+        # anything that does not fit.
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        max_workers = max(1, min(len(pending), 2 * len(M_LIST)))
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            fut = {}
+            for MM, S in pending:
+                fut[ex.submit(run_point_child_log, key, MM, S, t0)] \
+                    = (MM, S)
+            for f in as_completed(fut):
+                MM, S = fut[f]
+                log(f.result())
     log(f'DIR TABLE3 GMRES SWEEP DONE in {time.time()-t0:.0f}s')

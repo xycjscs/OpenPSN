@@ -152,6 +152,7 @@ class HoNodeLocal:
         self.u = None
         self._cls_cache = {}
         self._mc_cache = {}
+        self._pmc_cache = {}
 
     # ------------------------------------------------------------------ #
     def _build_tables(self):
@@ -501,11 +502,23 @@ class HoNodeLocal:
                     J4_sgn[ii, m, lf * K:(lf + 1) * K] = self.sg[n, m, lf]
         Vj = self.Vm[grp, :, :, :4 * K].transpose(0, 2, 1).copy()  # (M, 4K, 5)
         Vs = self.Vm[grp, :, :, 4 * K:4 * K + 5].sum(axis=0)  # (5, 5)
-        self._mc_cache[ck] = dict(nodes=nlist, wb=wb, A=A, fac=fac,
-                                  SRC=SRC, nb=nb, d=d, grp=grp, rowg=rowg,
-                                  J4_idx=J4_idx, J4_sgn=J4_sgn,
-                                  Vj=Vj, Vs=Vs, rep=rep)
-        return self._mc_cache[ck]
+        out = dict(nodes=nlist, wb=wb, A=A, fac=fac,
+                   SRC=SRC, nb=nb, d=d, grp=grp, rowg=rowg,
+                   J4_idx=J4_idx, J4_sgn=J4_sgn,
+                   Vj=Vj, Vs=Vs, rep=rep)
+        # numba flat pack for _mc_b (lever 3); None when unavailable or
+        # disabled via OPSN_NO_NUMBA=1 (A/B isolation).  Built once here
+        # (parent, pre-fork) and COW-shared by workers.
+        try:
+            from . import mckern
+            if mckern.HAVE_NUMBA and mckern.ENABLED:
+                out["pack"] = mckern.pack_microclass(out)
+            else:
+                out["pack"] = None
+        except Exception:
+            out["pack"] = None
+        self._mc_cache[ck] = out
+        return out
 
     # ------------------------------------------------------------------ #
     def _mc_order(self):
@@ -526,7 +539,16 @@ class HoNodeLocal:
         return orders
 
     def _mc_b(self, data, qn):
-        """b = Src q + neighbour contributions (u and q)."""
+        """b = Src q + neighbour contributions (u and q).
+
+        Numba path (lever 3): when the microclass carries a pre-packed
+        flat form, the b-assembly runs as one prange kernel that
+        releases the GIL (T threads set by the worker init).  Falls
+        back to the NumPy path when numba is unavailable."""
+        pack = data.get("pack")
+        if pack is not None:
+            from . import mckern
+            return mckern.mc_b(pack, self.u, qn)
         u = self.u
         nlist = data["nodes"]
         b = qn[nlist] @ data["SRC"].T
@@ -706,6 +728,244 @@ class HoNodeLocal:
             out[nlist] = acc
         out *= p.W[self.i] / p.M
         return out
+
+    # ------------------------------------------------------------------ #
+    # Angle-pair block GMRES (2026-09-14, "lever 1").
+    #
+    # The (i,g) face system H is STRICTLY block-diagonal over the M/2
+    # azimuth mirror pairs {p, M-1-p} (verified probe dbg_pair_diag.py:
+    # off-pair-block max|A| = 0 for every class and microclass, and
+    # memopt.mirror_pair_columns partitions ncol).  Each pair is
+    # therefore an independent system: its own Krylov GMRES, its own
+    # warm start (disjoint global columns), identical contraction.
+    # A pair's five-moment contribution is W/M * sum_{m in pair} ...;
+    # the driver accumulates over pairs -> exact same flux.
+    # ------------------------------------------------------------------ #
+    def _pair_cols(self, pp):
+        """Flat global indices of mirror pair {pp, M-1-pp} in u.
+
+        Reuses memopt.mirror_pair_columns (probe-verified to partition
+        ncol): the pair's master columns c map to flat slice
+        c*K .. c*K+K-1 in u."""
+        from .memopt import mirror_pair_columns
+        p, K = self.psn, self.K
+        if not hasattr(self, "_pmc_pcols"):
+            self._pmc_pcols = mirror_pair_columns(p)
+        cols = np.sort(self._pmc_pcols[pp]).astype(np.int64)
+        idx = (cols[:, None] * K + np.arange(K)[None, :]).ravel()
+        return idx
+
+    def _pair_sel(self, rep, pp):
+        """Local row/col indices of mirror pair {pp, M-1-pp} in the
+        class layout (rows == cols).  blockoff is in BLOCK units
+        (each block = K indices), so the block at (lf, pos) occupies
+        flat indices (blockoff[lf]+pos)*K .. (blockoff[lf]+pos+1)*K-1.
+        Reflect faces: the pair's single K-block sits at position pp
+        (face_pairs are ordered (0,M-1),(1,M-2),...).  Internal/vacuum:
+        the two modes of the pair sit at positions pp and M-1-pp."""
+        M, K = self.M, self.K
+        ms = (pp, M - 1 - pp)
+        sel = []
+        for lf in range(4):
+            t = self.nf[rep][lf][0]
+            off = int(self.blockoff[rep, lf])        # block units
+            if t == "r":
+                sel += list(range((off + pp) * K, (off + pp + 1) * K))
+            else:
+                for m2 in ms:
+                    sel += list(range((off + m2) * K, (off + m2 + 1) * K))
+        return np.array(sorted(sel), dtype=np.int64)
+
+    def _pair_microclass(self, key, pp):
+        """Pair-restricted microclass data.  Reuses the full
+        _microclass (COW-shared coefficient tables) and extracts the
+        {pp, M-1-pp} sub-system: block diagonal A_p (probe-verified
+        zero off-blocks), its LU, pair source rows, pair writeback,
+        pair-restricted neighbour parts and pair reduce data."""
+        ck = ("pmc",) + key + (pp,)
+        if ck in self._pmc_cache:
+            return self._pmc_cache[ck]
+        p, M, K = self.psn, self.M, self.K
+        ms = (pp, M - 1 - pp)
+        data = self._microclass(key)
+        rep = data["rep"]
+        sel = self._pair_sel(rep, pp)
+        A = data["A"]
+        Ap = A[np.ix_(sel, sel)].copy()
+        offmask = np.zeros_like(A, bool)
+        offmask[sel, :] = True
+        offmask[:, sel] = False
+        if float(np.abs(A[offmask]).max()) > 0.0:
+            raise AssertionError(
+                f"pair block {pp} of class {key} is not block-diagonal")
+        nlist = data["nodes"]
+        Nn = len(nlist)
+        # neighbour parts, restricted to pair rows / pair columns.
+        # The neighbour gath order must match the full version:
+        # (node s, lf2, m) -> here (s, lf2, m') with m' in ms, so the
+        # reshape (s, 4, 2, K) aligns with C0[ms] (2, K, 4, K) and
+        # sgn_nb[:, ms] (s, 2, 4, K).
+        nb = {}
+        for lf, parts in data["nb"].items():
+            pl = []
+            for part in parts:
+                idxs = part["idxs"]
+                # pair row indices RELATIVE TO the pair layout (sel):
+                abs_rows = np.add(int(self.blockoff[rep, lf]) * K
+                                  + np.array(ms)[:, None] * K,
+                                  np.arange(K)[None, :]).ravel()
+                row1d = np.searchsorted(sel, abs_rows)
+                # (neighbour node, 4 lf2 x 2 pair modes x K) gather
+                gath = np.empty((len(idxs), 8 * K), dtype=np.int64)
+                for s2, n_nb in enumerate(part["nodes_nb"]):
+                    j = 0
+                    for lf2 in range(4):
+                        for m2 in ms:
+                            c = self.colg[n_nb, lf2, m2]
+                            gath[s2, j:j + K] = c * K + np.arange(K)
+                            j += K
+                pl.append(dict(idxs=idxs,
+                               C0=part["C0"][list(ms)],
+                               src5=part["src5"][list(ms)],
+                               sigma=part["sigma"],
+                               sgn_nb=part["sgn_nb"][:, list(ms), :, :],
+                               gath=gath, rowidx=row1d,
+                               nodes_nb=part["nodes_nb"]))
+            nb[lf] = pl
+        # writeback / reduce restricted to the pair
+        grp = key[0]
+        # Vm[grp, m] is (5, 4K+5); select pair modes + current cols,
+        # then transpose to (2, 4K, 5) to match the full _reduce layout
+        Vj = self.Vm[grp, list(ms), :, :4 * K].transpose(0, 2, 1)
+        Vs = self.Vm[grp, list(ms), :, 4 * K:4 * K + 5].sum(axis=0)
+        out = dict(nodes=nlist, wb=data["wb"][:, sel],
+                   A=Ap, fac=lu_factor(Ap), SRC=data["SRC"][sel],
+                   nb=nb, rep=rep, sel=sel, ms=ms,
+                   J4_idx=data["J4_idx"][:, list(ms), :],
+                   J4_sgn=data["J4_sgn"][:, list(ms), :],
+                   Vj=Vj, Vs=Vs)
+        # numba pack (lever 3): pair nb parts have the same flat layout
+        try:
+            from . import mckern
+            if mckern.HAVE_NUMBA and mckern.ENABLED:
+                out["pack"] = mckern.pack_microclass(out)
+            else:
+                out["pack"] = None
+        except Exception:
+            out["pack"] = None
+        self._pmc_cache[ck] = out
+        return out
+
+    def _mc_b_pair(self, pdata, qn):
+        """Pair-restricted b = SRC q + neighbour contributions."""
+        pack = pdata.get("pack")
+        if pack is not None:
+            from . import mckern
+            return mckern.mc_b(pack, self.u, qn)
+        u = self.u
+        nlist = pdata["nodes"]
+        b = qn[nlist] @ pdata["SRC"].T
+        for lf, parts in pdata["nb"].items():
+            for part in parts:
+                idxs = part["idxs"]
+                row1d = part["rowidx"]
+                un = u[part["gath"]].reshape(
+                    len(idxs), 4, 2, self.K).transpose(0, 2, 1, 3)
+                prod = part["sgn_nb"] * un
+                contrib = np.einsum("mafs,nmfs->nma", part["C0"], prod)
+                tmp = b[idxs]
+                tmp[:, row1d] += contrib.reshape(len(idxs), -1)
+                src = np.einsum("nq,maq->nma", qn[part["nodes_nb"]],
+                                part["src5"]).reshape(len(idxs), -1)
+                tmp[:, row1d] += part["sigma"] * src
+                b[idxs] = tmp
+        return b
+
+    def _mc_pass_pair(self, pdata, qn):
+        b = self._mc_b_pair(pdata, qn)
+        x = lu_solve(pdata["fac"], b.T).T
+        self.u[pdata["wb"]] = x
+        return x
+
+    def _reduce_pair(self, qn, pp):
+        """Pair share of the five-moment flux: W/M * sum_{m in pair}.
+        Driver accumulates over pp -> identical to _reduce."""
+        p = self.psn
+        out = np.zeros((p.nodes, 5))
+        for key in self.mc_nodes:
+            data = self._pair_microclass(key, pp)
+            nlist = data["nodes"]
+            J4 = self.u[data["J4_idx"]] * data["J4_sgn"]
+            acc = np.einsum("nmd, mde -> ne", J4, data["Vj"])
+            acc += qn[nlist] @ data["Vs"].T
+            out[nlist] = acc
+        out *= p.W[self.i] / p.M
+        return out
+
+    def sweep_gmres_pair(self, qn, pp, rtol=1e-11, maxiter=800,
+                         verbose=False):
+        """GMRES on ONE mirror-pair block of the fixed-source (i,g)
+        system.  Krylov runs on the LOCAL pair vector (d = ncol_pair*K);
+        the matvec scatters into the global u, runs the pair-restricted
+        red-black pass, and gathers back.  Same contract as
+        sweep_gmres but returns the pair's five-moment share."""
+        p, K = self.psn, self.K
+        if self.u is None:
+            self.u = np.zeros(p.ncol * K)
+        orders = self._mc_order()
+        seen = []
+        for pty in (0, 1):
+            for key in orders[pty][0] + orders[pty][1]:
+                if key not in seen:
+                    seen.append(key)
+        data_cache = {k: self._pair_microclass(k, pp) for k in seen}
+        u_work = self.u
+        # global indices of this pair's unknowns (flat u layout)
+        if not hasattr(self, "_pmc_cols"):
+            self._pmc_cols = {}
+        if pp not in self._pmc_cols:
+            self._pmc_cols[pp] = self._pair_cols(pp)
+        idx = self._pmc_cols[pp]
+
+        def one_pass():
+            for direction in (0, 1):          # 行列交替
+                for pty in (0, 1):
+                    for key in orders[pty][direction]:
+                        self._mc_pass_pair(data_cache[key], qn)
+
+        x0 = u_work[idx].copy()                # warm start: pair only
+        u_work[idx] = 0.0
+        one_pass()
+        cvec = u_work[idx].copy()              # c = F(0), pair rows
+        u_work[idx] = x0
+
+        def matvec(v):
+            u_work[idx] = v
+            one_pass()
+            return v - u_work[idx] + cvec      # (I - G) v + c, pair
+
+        from scipy.sparse.linalg import LinearOperator, gmres
+        niter = [0]
+
+        def _cb(*args):
+            niter[0] += 1
+
+        t0 = time.time()
+        op = LinearOperator((len(idx), len(idx)), matvec, dtype=float)
+        u_sol, info = gmres(op, cvec, x0=x0, rtol=rtol, atol=0.0,
+                            maxiter=maxiter, callback=_cb,
+                            callback_type='pr_norm')
+        dt = time.time() - t0
+        u_work[idx] = u_sol
+        one_pass()                             # F(u_sol), pair rows
+        r = u_work[idx] - u_sol
+        res = float(np.abs(r).max() / max(np.abs(cvec).max(), 1e-300))
+        u_work[idx] = u_sol
+        if verbose:
+            print(f"    gmres pair{pp} matvecs={niter[0]} info={info} "
+                  f"relres={res:.2e} ({dt:.2f}s)")
+        out = self._reduce_pair(qn, pp)
+        return self.u.reshape(p.ncol, self.K), niter[0], res, out
 
 
 # --------------------------------------------------------------------- #
@@ -932,19 +1192,48 @@ def keff_highorder_gs(psn, A=3, branch="directional", max_outer=12000,
 # the pool is created; inherited through fork, not pickled)
 _POOL = None
 _IDX = None
+_BLK = None
 _RTOL = 1e-11
 _MAXIT = 800
+_NUM_THREADS = 1
 _GMRES_POOL_LIM = None
 
 
 def _gmres_pool_init():
-    """Worker initializer: pin BLAS to one thread per worker."""
+    """Worker initializer: pin BLAS to one thread per worker and set
+    the numba prange thread count for the b-assembly kernel."""
     global _GMRES_POOL_LIM
     try:
         from threadpoolctl import threadpool_limits
         _GMRES_POOL_LIM = threadpool_limits(limits=1, user_api="blas")
     except ImportError:
         _GMRES_POOL_LIM = None
+    try:
+        from . import mckern
+        if mckern.HAVE_NUMBA and mckern.ENABLED:
+            mckern.set_num_threads(_NUM_THREADS)
+            # JIT warm-up HERE (worker = leaf, post-fork): the first
+            # parallel call initialises this worker's own OpenMP pool,
+            # which is safe because the worker never forks again.
+            # Running it in the PARENT before the fork instead aborts
+            # every child (libgomp fork guard, 2026-09-14 bench C).
+            _u = np.zeros(16)
+            _qn = np.zeros((2, 5))
+            _pack = mckern.pack_microclass(
+                {"nodes": np.array([0, 1]),
+                 "SRC": np.zeros((8, 5)),
+                 "A": np.zeros((8, 8)),
+                 "nb": {0: [dict(idxs=np.array([0, 1]),
+                                 gath=np.zeros((2, 32), np.int64),
+                                 sgn_nb=np.zeros((2, 2, 4, 4)),
+                                 C0=np.zeros((2, 4, 4, 4)),
+                                 src5=np.zeros((2, 4, 5)),
+                                 rowidx=np.zeros((2, 8), np.int64),
+                                 sigma=1.0,
+                                 nodes_nb=np.array([0, 1]))]}})
+            mckern.mc_b(_pack, _u, _qn)
+    except Exception:
+        pass
 
 
 def _gmres_pool_task(arg):
@@ -954,13 +1243,28 @@ def _gmres_pool_task(arg):
                            "state (fork start method required)")
     i, g = _IDX[idx]
     nl = _POOL[(i, g)]
+    t = time.time()
     _, nv, res, out = nl.sweep_gmres(qg, rtol=_RTOL, maxiter=_MAXIT)
-    return out, nv, res
+    return out, nv, res, time.time() - t
+
+
+def _gmres_pool_task_pair(arg):
+    """One (i, g, pair) block task: solve the mirror-pair sub-system."""
+    idx, qg = arg
+    if _POOL is None:
+        raise RuntimeError("GMRES pool worker started without forked "
+                           "state (fork start method required)")
+    i, g, pp = _BLK[idx]
+    nl = _POOL[(i, g)]
+    t = time.time()
+    _, nv, res, out = nl.sweep_gmres_pair(qg, pp, rtol=_RTOL,
+                                          maxiter=_MAXIT)
+    return out, nv, res, time.time() - t
 
 
 def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
                          outer_tol=1e-10, rtol=1e-11, maxiter=800,
-                         nworkers=None, verbose=False):
+                         nworkers=None, verbose=False, pairs=None):
     """Power iteration, GMRES inner sweep, cross-(i,g) process pool.
 
     Why a PROCESS pool (not a thread pool, measured 2026-09-15 M2):
@@ -983,6 +1287,16 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
     critical path either way — and the parent accumulates in the
     exact serial (i, g) order -> deterministic bit-wise.
 
+    ``pairs`` (lever 1, 2026-09-14): split each (i, g) system into
+    its M/2 mirror-pair blocks {p, M-1-p} (the face system is
+    strictly block-diagonal over pairs, probe-verified) and run one
+    GMRES per block as an independent pool task.  Block count =
+    I*ng*(M/2); each (i, g) still has ONE worker that owns all its
+    pairs in a nested single-worker map, so the warm start u stays
+    worker-private and the flux accumulation order (i, g, pair) is
+    deterministic.  ``pairs=None`` auto-enables for M >= 4
+    (no benefit at M=2: a single pair is the whole system).
+
     Convergence contract is IDENTICAL to highorder.keff_highorder:
     dlam < outer_tol AND five-moment source residual < 1e-9; reaching
     max_outer without both is reported as non-converged, never
@@ -1000,6 +1314,14 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
         raise ValueError("high-order closure requires rectangular nodes")
     ctx = mp.get_context("fork")
     t0 = time.time()
+    # Thread budget: the host has 48 cores but the convention is to
+    # use at most 24 (user rule 2026-09-14).  Override with
+    # PSN_CORE_BUDGET.  NW2 workers x T numba threads <= BUDGET.
+    try:
+        BUDGET = int(os.environ.get('PSN_CORE_BUDGET', '24'))
+    except ValueError:
+        BUDGET = 24
+    BUDGET = max(1, min(BUDGET, os.cpu_count() or 1))
     matidx = psn.mat[psn.j_idx, psn.i_idx]
     ng = psn.ng
     area_w = psn.area.ravel()
@@ -1007,6 +1329,8 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
         psn._vectorize_setup()
 
     IDX = [(i, g) for i in range(psn.I) for g in range(ng)]
+    npair = psn.M // 2
+    use_pairs = (npair >= 2) if pairs is None else bool(pairs)
     # parent-side build: factor tables are KB-scale per (i, g) and
     # COW-shared after the fork (vs 21x multi-GB SuperLU pool)
     locals_ = {}
@@ -1017,9 +1341,10 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
     NW = len(IDX) if nworkers is None else int(nworkers)
     NW = max(1, min(NW, len(IDX), os.cpu_count()))
 
-    global _POOL, _IDX, _RTOL, _MAXIT
+    global _POOL, _IDX, _RTOL, _MAXIT, _BLK, _NUM_THREADS
     _POOL, _IDX = locals_, IDX
     _RTOL, _MAXIT = float(rtol), int(maxiter)
+    _BLK = None
 
     def fission_rate(phi):
         fr = np.zeros(psn.nodes)
@@ -1040,33 +1365,71 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
     max_res = 0.0
     matvec_total = 0
     outer = 0
-    # static sharding: pool w runs forever on systems w, w+NW, ...
+    # ---- block sharding (lever 1) ------------------------------------
+    # system mode: one block per (i, g);  pair mode: one block per
+    # (i, g, mirror-pair pp).  Static shards over single-worker pools:
+    # worker w forever owns blocks w, w+NW2, ... -> warm start u stays
+    # worker-private (COW), no cold-start migration.  Pair blocks are
+    # independent (strict block-diagonal H, probe-verified) and touch
+    # disjoint columns of u, so several workers may share one (i, g)
+    # HoNodeLocal safely (COW-private u copies hold their pair slice).
+    if use_pairs:
+        BLOCKS = [(i, g, pp) for (i, g) in IDX for pp in range(npair)]
+    else:
+        BLOCKS = [(i, g, -1) for (i, g) in IDX]
+    _BLK = BLOCKS
+    B = len(BLOCKS)
+    NW2 = B if nworkers is None else int(nworkers)
+    NW2 = max(1, min(NW2, B, BUDGET if nworkers is None else (os.cpu_count() or 1)))
+    # lever 3: per-worker numba threads for the b-assembly prange.
+    # T = budget / workers keeps NW2*T <= BUDGET (BLAS stays pinned to 1).
+    _NUM_THREADS = max(1, BUDGET // NW2)
+    task = _gmres_pool_task_pair if use_pairs else _gmres_pool_task
+    # NOTE: no numba execution in the PARENT.  The first parallel
+    # numba call initialises the OpenMP runtime in the calling
+    # process; fork() from a process with an active OpenMP pool
+    # makes libgomp abort every child ("fork() called from a
+    # process already using GNU OpenMP, this is unsafe", 2026-09-14
+    # combo bench C).  Warm-up therefore runs in each worker's
+    # initializer (post-fork, leaf processes) instead.
     pools = [ctx.Pool(1, initializer=_gmres_pool_init)
-             for _ in range(NW)]
+             for _ in range(NW2)]
     try:
         for outer in range(max_outer):
             t1 = time.time()
             phi = np.zeros((ng, psn.nodes))
             qim = np.zeros((ng, psn.nodes, 5))
-            args_w = [[] for _ in range(NW)]
-            for idx, (i, g) in enumerate(IDX):
-                args_w[idx % NW].append((idx, qnode[g]))
+            args_w = [[] for _ in range(NW2)]
+            for bidx, (i, g, pp) in enumerate(BLOCKS):
+                args_w[bidx % NW2].append((bidx, qnode[g]))
             # all shards independent: map_async, then gather in order
-            futs = [p.map_async(_gmres_pool_task, a)
-                    for p, a in zip(pools, args_w)]
-            results = [None] * len(IDX)
-            for w in range(NW):
-                for idx, res in zip((idx for idx in range(w, len(IDX), NW)),
-                                    futs[w].get()):
-                    results[idx] = res
+            futs = [p.map_async(task, a) for p, a in zip(pools, args_w)]
+            results = [None] * B
+            for w in range(NW2):
+                for bidx, res in zip(range(w, B, NW2), futs[w].get()):
+                    results[bidx] = res
             dt = time.time() - t1
+            # load-balance diagnostics: per-worker makespan this outer
+            makespan_w = np.zeros(NW2)
+            for w in range(NW2):
+                makespan_w[w] = max(t for _, _, _, t in
+                                    (results[b] for b in
+                                     range(w, B, NW2)))
+            wb_max = float(makespan_w.max())
+            wb_min = float(makespan_w.min())
+            wb_idle = dt - wb_max
             outer_mat = 0
-            for (i, g), (out, nv, r) in zip(IDX, results):
+            for (i, g, pp), (out, nv, r, t) in zip(BLOCKS, results):
                 phi[g] += out[:, 0]
                 qim[g] += out
                 outer_mat = max(outer_mat, nv)
             matvec_total += sum(r[1] for r in results)
             max_res = max(max_res, max(r[2] for r in results))
+            if verbose and (outer % 20 == 0 or outer < 3):
+                print(f"    [lb] dt={dt:.1f}s worker makespan "
+                      f"max={wb_max:.1f}s min={wb_min:.1f}s "
+                      f"ratio={wb_max/max(wb_min,1e-9):.2f} "
+                      f"prepool={wb_idle:.1f}s", flush=True)
             F_new = float(fission_rate(phi).sum())
             lam_new = lam * F_new / F_old
             dlam = abs(lam_new - lam) / lam_new
@@ -1089,12 +1452,14 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
             p.join()
         del pools
     _POOL = _IDX = None
-    info = dict(A=int(A), K=A + 1, branch=branch, inner="gmres",
+    info = dict(A=int(A), K=A + 1, branch=branch,
+                inner="gmres" + ("_pairs" if use_pairs else ""),
                 converged=converged, outer_iterations=outer + 1,
                 keff_residual=dlam, source_residual=float(src_res),
                 max_face_system_residual=float(max_res),
                 gmres_matvecs_total=int(matvec_total),
-                nworkers=int(NW), nsystems=len(IDX),
+                nworkers=int(NW2), nsystems=len(IDX),
+                nblocks=int(B), npairs=int(npair),
                 seconds=round(time.time() - t0, 2))
     if not converged:
         info["warning"] = (f"NOT converged after {max_outer} outer "

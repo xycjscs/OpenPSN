@@ -94,13 +94,17 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
         inner = str(sol.get("inner", "lu"))
         if inner == "gmres":
             from .highsweep import keff_highorder_gmres
+            _gp = sol.get("gmres_pairs", None)
+            if _gp is not None:
+                _gp = str(_gp) == "on"
             k, phi, qim, hinfo = keff_highorder_gmres(
                 psn, A=A, branch=branch,
                 max_outer=int(sol["max_outer"]),
                 outer_tol=float(sol["keff_tol"]),
                 rtol=float(sol.get("gmres_rtol", 1e-11)),
                 maxiter=int(sol.get("gmres_maxiter", 800)),
-                nworkers=sol.get("gmres_workers"), verbose=verbose and -1)
+                nworkers=sol.get("gmres_workers"), verbose=verbose and -1,
+                pairs=_gp)
         elif inner == "lu":
             k, phi, qim, hinfo = highorder.keff_highorder(
                 psn, A=A, branch=branch,
