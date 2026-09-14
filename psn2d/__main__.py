@@ -91,10 +91,24 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
         branch = ("directional" if closure == "directional_matrix"
                   else "original")
         sol = spec["solver"]
-        k, phi, qim, hinfo = highorder.keff_highorder(
-            psn, A=A, branch=branch,
-            max_outer=int(sol["max_outer"]),
-            outer_tol=float(sol["keff_tol"]), verbose=verbose and -1)
+        inner = str(sol.get("inner", "lu"))
+        if inner == "gmres":
+            from .highsweep import keff_highorder_gmres
+            k, phi, qim, hinfo = keff_highorder_gmres(
+                psn, A=A, branch=branch,
+                max_outer=int(sol["max_outer"]),
+                outer_tol=float(sol["keff_tol"]),
+                rtol=float(sol.get("gmres_rtol", 1e-11)),
+                maxiter=int(sol.get("gmres_maxiter", 800)),
+                nworkers=sol.get("gmres_workers"), verbose=verbose and -1)
+        elif inner == "lu":
+            k, phi, qim, hinfo = highorder.keff_highorder(
+                psn, A=A, branch=branch,
+                max_outer=int(sol["max_outer"]),
+                outer_tol=float(sol["keff_tol"]), verbose=verbose and -1)
+        else:
+            raise ValueError(f"solver.inner must be lu or gmres "
+                             f"(got {inner!r})")
         dt = time.time() - t0
         out = {
             "name": case["name"],
@@ -112,10 +126,16 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
             "outer_iterations": hinfo["outer_iterations"],
             "keff_residual": hinfo["keff_residual"],
             "source_residual": hinfo["source_residual"],
-            "max_local_kernel_residual": hinfo["max_local_kernel_residual"],
-            "max_face_system_residual": hinfo["max_face_system_residual"],
+            "max_local_kernel_residual": hinfo.get(
+                "max_local_kernel_residual"),
+            "max_face_system_residual": hinfo.get(
+                "max_face_system_residual"),
             "face_unknowns_per_system": psn.ncol * (A + 1),
         }
+        if inner == "gmres":
+            out["inner"] = "gmres"
+            out["gmres_matvecs_total"] = hinfo["gmres_matvecs_total"]
+            out["gmres_nworkers"] = hinfo["nworkers"]
         if not hinfo["converged"]:
             out["warning"] = hinfo["warning"]
     else:
