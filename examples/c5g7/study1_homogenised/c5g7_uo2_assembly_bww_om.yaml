@@ -46,8 +46,43 @@ angular:
 solver:
   keff_tol: 1e-10
   max_outer: 6000
-
+# Study I (paper Tab: bww): S=1..6 x M=2..24, 36 points each geometry.
+# kref = OpenMC run on the identical pinwise-homogenised XS
+# (1.3336285, +/-3.3--3.5 pcm standard error).
 cases:
-  - {"name": "M8_S2", "M": 8, "subdivide": 2, "kref": 1.33367}
-  - {"name": "M12_S4", "M": 12, "subdivide": 4, "kref": 1.33367}
-  - {"name": "M16_S4", "M": 16, "subdivide": 4, "kref": 1.33367}
+  - { name: M2_S1, M: 2, subdivide: 1, kref: 1.3336285 }
+  - { name: M4_S1, M: 4, subdivide: 1, kref: 1.3336285 }
+  - { name: M8_S1, M: 8, subdivide: 1, kref: 1.3336285 }
+  - { name: M12_S1, M: 12, subdivide: 1, kref: 1.3336285 }
+  - { name: M16_S1, M: 16, subdivide: 1, kref: 1.3336285 }
+  - { name: M24_S1, M: 24, subdivide: 1, kref: 1.3336285 }
+  - { name: M2_S2, M: 2, subdivide: 2, kref: 1.3336285 }
+  - { name: M4_S2, M: 4, subdivide: 2, kref: 1.3336285 }
+  - { name: M8_S2, M: 8, subdivide: 2, kref: 1.3336285 }
+  - { name: M12_S2, M: 12, subdivide: 2, kref: 1.3336285 }
+  - { name: M16_S2, M: 16, subdivide: 2, kref: 1.3336285 }
+  - { name: M24_S2, M: 24, subdivide: 2, kref: 1.3336285 }
+  - { name: M2_S3, M: 2, subdivide: 3, kref: 1.3336285 }
+  - { name: M4_S3, M: 4, subdivide: 3, kref: 1.3336285 }
+  - { name: M8_S3, M: 8, subdivide: 3, kref: 1.3336285 }
+  - { name: M12_S3, M: 12, subdivide: 3, kref: 1.3336285 }
+  - { name: M16_S3, M: 16, subdivide: 3, kref: 1.3336285 }
+  - { name: M24_S3, M: 24, subdivide: 3, kref: 1.3336285 }
+  - { name: M2_S4, M: 2, subdivide: 4, kref: 1.3336285 }
+  - { name: M4_S4, M: 4, subdivide: 4, kref: 1.3336285 }
+  - { name: M8_S4, M: 8, subdivide: 4, kref: 1.3336285 }
+  - { name: M12_S4, M: 12, subdivide: 4, kref: 1.3336285 }
+  - { name: M16_S4, M: 16, subdivide: 4, kref: 1.3336285 }
+  - { name: M24_S4, M: 24, subdivide: 4, kref: 1.3336285 }
+  - { name: M2_S5, M: 2, subdivide: 5, kref: 1.3336285 }
+  - { name: M4_S5, M: 4, subdivide: 5, kref: 1.3336285 }
+  - { name: M8_S5, M: 8, subdivide: 5, kref: 1.3336285 }
+  - { name: M12_S5, M: 12, subdivide: 5, kref: 1.3336285 }
+  - { name: M16_S5, M: 16, subdivide: 5, kref: 1.3336285 }
+  - { name: M24_S5, M: 24, subdivide: 5, kref: 1.3336285 }
+  - { name: M2_S6, M: 2, subdivide: 6, kref: 1.3336285 }
+  - { name: M4_S6, M: 4, subdivide: 6, kref: 1.3336285 }
+  - { name: M8_S6, M: 8, subdivide: 6, kref: 1.3336285 }
+  - { name: M12_S6, M: 12, subdivide: 6, kref: 1.3336285 }
+  - { name: M16_S6, M: 16, subdivide: 6, kref: 1.3336285 }
+  - { name: M24_S6, M: 24, subdivide: 6, kref: 1.3336285 }

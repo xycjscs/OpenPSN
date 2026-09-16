@@ -70251,13 +70251,61 @@ angular:
 solver:
   keff_tol: 1.0e-10
   max_outer: 6000
+# Study II (paper Tab: rectsm): 1/4 core, rectangular nodes.
+# S=1,2 x M=2..24; S=3 only M=2,4,8 (grid grows 9x). kref = 1.1872176.
+# Legacy names M8/M12/M16 = S=1 points (regression baseline).
 cases:
+- name: M2
+  M: 2
+  kref: 1.1872176
+- name: M4
+  M: 4
+  kref: 1.1872176
 - name: M8
   M: 8
-  kref: 1.18646
+  kref: 1.1872176
 - name: M12
   M: 12
-  kref: 1.18646
+  kref: 1.1872176
 - name: M16
   M: 16
-  kref: 1.18646
+  kref: 1.1872176
+- name: M24
+  M: 24
+  kref: 1.1872176
+- name: M2_S2
+  M: 2
+  subdivide: 2
+  kref: 1.1872176
+- name: M4_S2
+  M: 4
+  subdivide: 2
+  kref: 1.1872176
+- name: M8_S2
+  M: 8
+  subdivide: 2
+  kref: 1.1872176
+- name: M12_S2
+  M: 12
+  subdivide: 2
+  kref: 1.1872176
+- name: M16_S2
+  M: 16
+  subdivide: 2
+  kref: 1.1872176
+- name: M24_S2
+  M: 24
+  subdivide: 2
+  kref: 1.1872176
+- name: M2_S3
+  M: 2
+  subdivide: 3
+  kref: 1.1872176
+- name: M4_S3
+  M: 4
+  subdivide: 3
+  kref: 1.1872176
+- name: M8_S3
+  M: 8
+  subdivide: 3
+  kref: 1.1872176

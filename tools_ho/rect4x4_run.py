@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""rect4x4 4-point run — UO2/MOX x S1/S2 x M24, A=3, directional.
+"""rect4x4 S x M sweep — UO2/MOX x S1/S2 x M=2..24, A=3, directional.
 
 New geometry (2x2 fuel pins + 1 water ring), all-reflect, pure XS.
   S1 = 4x4 nodes   (subdivide=1, base grid 4x4)
@@ -20,9 +20,12 @@ closure=directional_matrix, A=3.
 Config (inner solver) chosen from the 24-thread combo bench once it
 lands; P/NB below are set to the winning lever combination.
 
+Sweep: S=1..2 x M=2,4,8,12,16,24 x UO2/MOX (24 points; the four
+M24 points from the 2026-09-14 4-point run are inherited from log).
+
 Usage:
-  rect4x4_run.py            # coordinator (4 points)
-  rect4x4_run.py point <key> <S>   # single point (child)
+  rect4x4_run.py                    # coordinator (full S x M sweep)
+  rect4x4_run.py point <key> <M> <S>   # single point (child)
 """
 import os, re, sys, time, resource, subprocess, threading
 
@@ -57,7 +60,7 @@ def _mem_guard_32g():
                         (int(32 * 2 ** 30), -1))
 POINT_TIMEOUT_S = 12 * 3600
 
-MM = 24          # face modes (fixed for this 4-point run)
+M_LIST = [2, 4, 8, 12, 16, 24]  # face modes
 S_LIST = [1, 2]  # S1=4x4, S2=8x8
 A_DEG = 3
 RTOL = 1e-7       # keff tolerance, uniform 1e-7 (user, 2026-09-14)
@@ -83,8 +86,7 @@ def log(line):
 
 
 def done_set():
-    """(key, S) already reported a CONVERGED keff in this log (fresh
-    smoke runs are not re-computed by the coordinator)."""
+    """(key, M, S) already reported a CONVERGED keff in this log."""
     s = set()
     pat = re.compile(r'(R4UO2|R4MOX) M(\d+)_S(\d+) keff=')
     if os.path.exists(LOG):
@@ -92,7 +94,7 @@ def done_set():
             m = pat.search(ln)
             if m and 'NOT_CONVERGED' not in ln:
                 s.add(('uo2' if m.group(1) == 'R4UO2' else 'mox',
-                       int(m.group(3))))
+                       int(m.group(2)), int(m.group(3))))
     return s
 
 
@@ -106,7 +108,7 @@ def _child_rss_gb(pid):
     return None
 
 
-def run_point(key, S):
+def run_point(key, MM, S):
     """Single point in this fresh process, GMRES pool."""
     from psn2d import model, __main__ as M, highsweep, mckern
     mckern.ENABLED = bool(NUMBA)
@@ -121,10 +123,11 @@ def run_point(key, S):
     _mem_guard_32g()   # hard: RLIMIT_AS 32 GiB backstop
     try:
         psn = M.build_solver(spec, case, threads=1, mem_limit_gb=32)
+        nworkers = min(21 * (MM // 2) if MM > 2 else 21, NWORKERS)
         k, phi, qim, h = highsweep.keff_highorder_gmres(
             psn, A=A_DEG, branch='directional', max_outer=6000,
             outer_tol=1e-7, rtol=RTOL, maxiter=MAXITER,
-            pairs=PAIRS, nworkers=NWORKERS, verbose=False)
+            pairs=PAIRS, nworkers=nworkers, verbose=False)
         dt = time.time() - t0
         peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e6
         dref = (k - P['kref']) * 1e5
@@ -141,9 +144,9 @@ def run_point(key, S):
               f"{str(e)[:80]} at {time.time()-t0:.0f}s", flush=True)
 
 
-def run_child(key, S, t0):
+def run_child(key, MM, S, t0):
     p = subprocess.Popen([sys.executable, '-u', os.path.abspath(__file__),
-                          'point', key, str(S)],
+                          'point', key, str(MM), str(S)],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          text=True)
     killed = None
@@ -171,41 +174,47 @@ def run_child(key, S, t0):
     return tail
 
 
-def run_point_child_log(key, S, t0):
-    budget = min(NWORKERS, 24)
+def run_point_child_log(key, MM, S, t0):
+    budget = min(21 * (MM // 2) if MM > 2 else 21, NWORKERS)
     log(f'--- {PROBS[key]["tag"]} M{MM}_S{S} start (fresh subprocess, '
-        f'gmres pool, pairs={PAIRS} numba={NUMBA} w={NWORKERS}) '
+        f'gmres pool, pairs={PAIRS} numba={NUMBA} w={budget}) '
         f't={time.time()-t0:.0f}s')
-    return run_child(key, S, t0) + f" elapsed={time.time()-t0:.0f}s"
+    return run_child(key, MM, S, t0) + f" elapsed={time.time()-t0:.0f}s"
 
 
 if __name__ == '__main__':
     _pin_24()
-    if len(sys.argv) >= 4 and sys.argv[1] == 'point':
-        run_point(sys.argv[2], int(sys.argv[3]))
+    if len(sys.argv) >= 5 and sys.argv[1] == 'point':
+        run_point(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
         sys.exit(0)
 
-    log(f'--- RECT4X4 4-POINT start (A={A_DEG}, M={MM}, '
-        f'closure=directional_matrix, inner=gmres pool, pairs={PAIRS} '
-        f'numba={NUMBA} w={NWORKERS}, budget=24) ---')
+    log(f'--- RECT4X4 SxM SWEEP start (A={A_DEG}, M={M_LIST}, '
+        f'S={S_LIST}, closure=directional_matrix, inner=gmres pool, '
+        f'pairs={PAIRS} numba={NUMBA} w<={NWORKERS}, budget=24) ---')
     t0 = time.time()
     results = {}
     done = done_set()
     for key in ['uo2', 'mox']:
         for S in S_LIST:
-            if (key, S) in done:
-                results[(key, S)] = f'{PROBS[key]["tag"]} M{MM}_S{S} ' \
-                                    f'INHERITED (converged keff in log)'
-                log(results[(key, S)])
-                continue
-            r = run_point_child_log(key, S, t0)
-            results[(key, S)] = r
-            log(r)
-    # cross-consistency: S2 vs S1 per material
+            for MM in M_LIST:
+                if (key, MM, S) in done:
+                    results[(key, MM, S)] = \
+                        f'{PROBS[key]["tag"]} M{MM}_S{S} ' \
+                        f'INHERITED (converged keff in log)'
+                    log(results[(key, MM, S)])
+                    continue
+                r = run_point_child_log(key, MM, S, t0)
+                results[(key, MM, S)] = r
+                log(r)
+    # cross-consistency: S2 vs S1 per (material, M)
     for key in ['uo2', 'mox']:
-        m1 = re.search(r'keff=([0-9.]+)', results.get((key, 1), ''))
-        m2 = re.search(r'keff=([0-9.]+)', results.get((key, 2), ''))
-        if m1 and m2:
-            d = (float(m2.group(1)) - float(m1.group(1))) * 1e5
-            log(f"{PROBS[key]['tag']} S2-S1 consistency: {d:+.1f} pcm")
-    log(f'RECT4X4 4-POINT DONE in {time.time()-t0:.0f}s')
+        for MM in M_LIST:
+            m1 = re.search(r'keff=([0-9.]+)',
+                           results.get((key, MM, 1), ''))
+            m2 = re.search(r'keff=([0-9.]+)',
+                           results.get((key, MM, 2), ''))
+            if m1 and m2:
+                d = (float(m2.group(1)) - float(m1.group(1))) * 1e5
+                log(f"{PROBS[key]['tag']} M{MM} S2-S1 consistency: "
+                    f"{d:+.1f} pcm")
+    log(f'RECT4X4 SxM SWEEP DONE in {time.time()-t0:.0f}s')

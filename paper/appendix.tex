@@ -3,7 +3,7 @@
 
 \section{Full point-by-point reproduction of the published PSN results}
 
-Table~\ref{tab:repro} summarised the maxima. Tables~\ref{tab:appA}--\ref{tab:appD} give the complete 240-cell comparison for the three printed eigenvalue grids (checkerboard weak/strong, BWR without Gd) plus the with-Gd valley, in the same ``this work / paper ($\Delta$) cell format used in the reproduction notes shipped in \texttt{snapshot/}. Row labels: $S$ = spatial subdivision of the checkerboard grid, $N$ = spatial grid of the BWR bundle. The remaining 8 points (restricted $M=24$, $S=1,2,4,8$, weak/strong) agree with the printed Figs.~4--5 within the plot-reading uncertainty and are listed in \texttt{snapshot/data/report\_data.json}.
+Table~\ref{tab:repro} summarised the maxima. Tables~\ref{tab:appA}--\ref{tab:appD} give the complete 240-cell comparison for the three printed eigenvalue grids (checkerboard weak/strong, BWR without Gd) plus the with-Gd case, in the same ``this work / paper ($\Delta$)'' cell format. Row labels: $S$ = spatial subdivision of the checkerboard grid, $N$ = spatial grid of the BWR bundle. The remaining 8 points (restricted $M=24$, $S=1,2,4,8$, weak/strong) agree with the printed Figs.~4--5 within the plot-reading uncertainty; the full per-point data are shipped with the code.
 
 \begin{table}[h]
 \centering
@@ -79,7 +79,8 @@ Table~\ref{tab:repro} summarised the maxima. Tables~\ref{tab:appA}--\ref{tab:app
 
 \begin{table}[h]
 \centering
-\caption{Fig.~12, BWR 12-pin bundle with Gd (2-group): this work only (the printed figure is a contour plot). $N$ = spatial grid. Bold = best $M$ in the row (min $|\Delta|$); the valley shifts to lower $M$ as $N$ grows, exactly the Sec.~4.4 effect of the source paper. Best point overall: $N=9$, $M=20$, $+1.1$~pcm.}
+\caption{Fig.~12, BWR 12-pin bundle with Gd (2-group): this work only (the printed figure is a contour plot). $N$ = spatial grid. Bold = best $M$ in the row (min $|\Delta|$); the value of $M$ at which
+$|\Delta|$ is smallest shifts to lower $M$ as $N$ grows, exactly the Sec.~4.4 effect of the source paper. Best point overall: $N=9$, $M=20$, $+1.1$~pcm.}
 \label{tab:appD}
 \footnotesize
 \begin{tabular}{lcccccc}

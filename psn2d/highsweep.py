@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Inner-iteration node sweep (Gauss-Seidel, row/column alternating,
-行列交替扫描) + CMFD outer acceleration for the A>0 face system.
+行列交替扫描) for the A>0 face system.
 Added 2026-09-14.
 
 INDEPENDENT RE-DERIVATION (checked row-by-row against
@@ -67,28 +67,6 @@ Sweep pattern (行列交替): odd passes walk the micro-classes in
 row-major centroid order (row sweep), even passes in column-major
 centroid order (column sweep), alternating every pass.
 
-CMFD (INNER-iteration flux-update, consistent coarse node grid):
-  * coarse grid = c x c fine-node blocks (c = cmfd_collapse, must
-    divide nx and ny; the 3x3 pin tiling uses c = 3 -> pin level),
-    coarse material = area-weighted homogenization of each distinct
-    block signature, coarse operator = the SAME A3 directional closure
-    solved EXACTLY with one small SuperLU per (i, g) (the coarse node
-    count is tiny: M2/M4 assembly 9 nodes -> ~1300 unknowns, M12
-    assembly 9 nodes, core 324 nodes -> ~48000 unknowns; all cheap);
-  * the inner source q is frozen for the duration of one (i, g) sweep,
-    so the coarse solve is needed only ONCE per outer iteration;
-  * every 2nd GS pass (after a cmfd_warm warm-up) the fine face
-    currents and the fine source moments are corrected multiplicatively
-    by R = phi_c / phi_f (clipped to [0.25, 4], damped by cmfd_omega);
-  * the correction is SWITCHED OFF once
-    max|R-1| < cmfd_switch: at the exact fixed point phi_c == phi_f
-    (the coarse and fine problems share the frozen source q), so
-    R -> 1 exactly and the final pure-GS phase converges to the
-    UNACCELERATED fixed point.  The homogenization-commutator error
-    of the coarse mesh only biases the transient, never the answer
-    (the acceptance trajectory ends on the plain GS fixed point,
-    verified against the direct SuperLU solution to 1e-11).
-
 Verified scope: same as highorder.py (axis-aligned conforming
 rectangular nodes, uniform A, half-plane even M, isotropic sources,
 reflect + vacuum boundaries only).
@@ -111,24 +89,13 @@ class HoNodeLocal:
     """Node-local factor table + GS sweep for one (i, g) of one A."""
 
     def __init__(self, psn, i, g, A, branch="directional", gs_tol=1e-12,
-                 max_gs=500, omega=1.0, verbose=False, cmfd_collapse=0,
-                 cmfd_switch=1e-8, cmfd_omega=0.6, cmfd_warm=4):
+                 max_gs=500, omega=1.0, verbose=False):
         if branch not in ("directional", "original"):
             raise ValueError("branch must be directional or original")
         self.psn, self.i, self.g, self.A = psn, i, g, A
         self.K, self.branch = A + 1, branch
         self.gs_tol, self.max_gs, self.omega = gs_tol, max_gs, omega
         self.verbose = verbose
-        # inner-iteration CMFD (flux-update): coarse c x c node blocks,
-        # exact coarse LU per (i, g), flux-ratio correction every 2nd
-        # pass, auto-switch off below cmfd_switch (R -> 1 at the exact
-        # fixed point, so the final GS phase is untouched)
-        self.cmfd_collapse = int(cmfd_collapse or 0)
-        self.cmfd_switch = float(cmfd_switch)
-        self.cmfd_omega = float(cmfd_omega)
-        self.cmfd_warm = int(cmfd_warm)
-        self._coarse = None
-        self._coarse_fail = False
         self.kernel = (local_directional_response
                        if branch == "directional" else local_response)
         p = psn
@@ -596,7 +563,7 @@ class HoNodeLocal:
         """GS inner sweep on the (i, g) system.
         Returns (u (ncol, K), iters, relres, out (nodes, 5) W/M-weighted
         5-moment reduce -- same contract as BlockAngleSystem.apply).
-        ``sweeps`` overrides max_gs (used for the cheap coarse solves)."""
+        ``sweeps`` overrides max_gs."""
         p = self.psn
         if self.u is None:
             self.u = np.zeros(p.ncol * self.K)
@@ -968,98 +935,12 @@ class HoNodeLocal:
         return self.u.reshape(p.ncol, self.K), niter[0], res, out
 
 
-# --------------------------------------------------------------------- #
-# CMFD coarse mesh
-# --------------------------------------------------------------------- #
-def build_coarse_psn(psn, c=3):
-    """Coarse pin-cell PSN2D: c x c fine-node blocks homogenized by
-    area-weighted XS over each distinct block signature.  Returns
-    (coarse, node_map, areaw) or None if c does not divide the grid."""
-    from .solver import PSN2D
-    p = psn
-    nx, ny = p.nx, p.ny
-    if nx % c or ny % c:
-        return None
-    hx, hy = p.hx, p.hy
-    mat = p.mat
-    nxc, nyc = nx // c, ny // c
-    mat_map = np.zeros((nyc, nxc), dtype=int)
-    hx_c = np.zeros((nyc, nxc))
-    hy_c = np.zeros((nyc, nxc))
-    node_map = np.zeros(p.nodes, dtype=np.int64)
-    areaw = np.zeros(p.nodes)
-    sigs = {}
-    for jc in range(nyc):
-        for ic in range(nxc):
-            j0, i0 = jc * c, ic * c
-            a_tot = 0.0
-            sig = []
-            for dj in range(c):
-                for di in range(c):
-                    j, i = j0 + dj, i0 + di
-                    a = float(hx[j, i] * hy[j, i])
-                    a_tot += a
-                    sig.append((int(mat[j, i]), round(float(hx[j, i]), 9),
-                                round(float(hy[j, i]), 9)))
-            sigt = tuple(sig)
-            if sigt not in sigs:
-                sigs[sigt] = len(sigs)
-            mat_map[jc, ic] = sigs[sigt]
-            hx_c[jc, ic] = float(hx[j0:j0 + c, i0:i0 + c].sum())
-            hy_c[jc, ic] = float(hy[j0:j0 + c, i0:i0 + c].sum())
-            for dj in range(c):
-                for di in range(c):
-                    n = (j0 + dj) * nx + (i0 + di)
-                    node_map[n] = jc * nxc + ic
-                    areaw[n] = float(hx[j0 + dj, i0 + di]
-                                     * hy[j0 + dj, i0 + di])
-    nmc = len(sigs)
-    ng = p.ng
-    St_c = np.zeros((ng, nmc))
-    Sgg_c = np.zeros((ng, ng, nmc))
-    nuSf_c = np.zeros((ng, nmc))
-    for mc, sigt in ((v, k) for k, v in sigs.items()):
-        a_tot = 0.0
-        acc_t = np.zeros(ng)
-        acc_sgg = np.zeros((ng, ng))
-        acc_f = np.zeros(ng)
-        for jc in range(nyc):
-            for ic in range(nxc):
-                if mat_map[jc, ic] != mc:
-                    continue
-                j0, i0 = jc * c, ic * c
-                for dj in range(c):
-                    for di in range(c):
-                        j, i = j0 + dj, i0 + di
-                        a = float(hx[j, i] * hy[j, i])
-                        mf = int(mat[j, i])
-                        a_tot += a
-                        acc_t += p.St[:, mf] * a
-                        acc_sgg += p.Sgg[:, :, mf] * a
-                        acc_f += p.nuSf[:, mf] * a
-        St_c[:, mc] = acc_t / a_tot
-        Sgg_c[:, :, mc] = acc_sgg / a_tot
-        nuSf_c[:, mc] = acc_f / a_tot
-    kw = dict(boundary=p.bnd, widths=(hx_c, hy_c), threads=p.threads,
-              mem_limit_gb=p.mem_limit_gb)
-    if p.generic:
-        coarse = PSN2D(mat_map, 1.0, St_c, Sgg_c, nuSf_c, chi=p.chi,
-                       generic=True, I=p.I, M=p.M, **kw)
-    else:
-        coarse = PSN2D(mat_map, 1.0, St_c, Sgg_c, nuSf_c, chi=p.chi,
-                       generic=False, M=p.M, **kw)
-    return coarse, node_map, areaw
-
-
-# --------------------------------------------------------------------- #
-# GS + CMFD keff driver
+# GS keff driver
 # --------------------------------------------------------------------- #
 def keff_highorder_gs(psn, A=3, branch="directional", max_outer=12000,
                       outer_tol=1e-10, gs_tol=1e-12, max_gs=500,
-                      omega=1.0, cmfd=False, cmfd_omega=0.5,
-                      cmfd_collapse=3, cmfd_switch=1e-8,
-                      cmfd_coarse_sweeps=4, verbose=False):
-    """Power iteration with the node-GS inner sweep (+ optional CMFD).
+                      omega=1.0, verbose=False):
+    """Power iteration with the node-GS inner sweep.
 
     Returns (lam, phi, qim, info) -- same contract as
     highorder.keff_highorder."""
@@ -1081,23 +962,6 @@ def keff_highorder_gs(psn, A=3, branch="directional", max_outer=12000,
             locals_[(i, g)] = HoNodeLocal(psn, i, g, A, branch,
                                           gs_tol=gs_tol, max_gs=max_gs,
                                           omega=omega)
-    coarse = node_map = areaw = coarse_gs = None
-    if cmfd:
-        built = build_coarse_psn(psn, c=cmfd_collapse)
-        if built is None:
-            if verbose:
-                print("cmfd: collapse inapplicable -> off")
-        else:
-            coarse, node_map, areaw = built
-            coarse_gs = {}
-            for i in range(coarse.I):
-                for g in range(ng):
-                    coarse_gs[(i, g)] = HoNodeLocal(
-                        coarse, i, g, A, branch, gs_tol=1e-9,
-                        max_gs=cmfd_coarse_sweeps)
-    else:
-        coarse = node_map = areaw = coarse_gs = None
-
     def fission_rate(phi):
         fr = np.zeros(psn.nodes)
         for g in range(ng):
@@ -1129,8 +993,6 @@ def keff_highorder_gs(psn, A=3, branch="directional", max_outer=12000,
     converged = False
     dlam = 1.0
     src_res = None
-    cmfd_active = cmfd and coarse is not None
-    cmfd_iters = 0
     total_gs = 0
     outer = 0
     for outer in range(max_outer):
@@ -1140,43 +1002,21 @@ def keff_highorder_gs(psn, A=3, branch="directional", max_outer=12000,
         lam_new = lam * F_new / F_old
         dlam = abs(lam_new - lam) / lam_new
         lam = lam_new
-        if cmfd_active and outer > 0:
-            s_c = np.zeros((ng, coarse.nodes, 5))
-            for g in range(ng):
-                for nf in range(psn.nodes):
-                    s_c[g, node_map[nf]] += areaw[nf] * qnode[g, nf]
-            phi_c = np.zeros((ng, coarse.nodes))
-            for g in range(ng):
-                for i in range(coarse.I):
-                    _, _, _, out_c = coarse_gs[(i, g)].sweep(s_c[g])
-                    phi_c[g] += out_c[:, 0]
-            r = np.empty_like(qim)
-            for g in range(ng):
-                r[g] = np.clip(
-                    phi_c[g][node_map] / np.maximum(qim[g, :, 0], 1e-12),
-                    0.25, 4.0)
-            qim *= 1.0 + cmfd_omega * (r - 1.0)
-            cmfd_iters += 1
         s_next = psn._source_update(qim, lam, matidx)
         src_res = float(np.linalg.norm(s_next - qnode)
                         / max(1.0, np.linalg.norm(qnode)))
         qnode = s_next
         F_old = F_new
-        if cmfd_active and dlam < cmfd_switch and src_res < cmfd_switch:
-            cmfd_active = False
         if verbose and (outer % 5 == 0 or dlam < outer_tol):
             print(f"gs it {outer:4d}  keff={lam:.7f}  dkeff={dlam:.2e}  "
-                  f"src_res={src_res:.2e}  gs={git}  "
-                  f"cmfd={'on' if cmfd_active else 'off'}")
-        if dlam < outer_tol and src_res < 1e-9:
+                  f"src_res={src_res:.2e}  gs={git}")
+        if dlam < outer_tol and src_res < outer_tol:
             converged = True
             break
     info = dict(A=int(A), K=A + 1, branch=branch, inner="gs",
                 converged=converged, outer_iterations=outer + 1,
                 keff_residual=dlam, source_residual=float(src_res),
                 gs_inner_iterations_total=int(total_gs),
-                cmfd=cmfd, cmfd_iterations=int(cmfd_iters),
-                cmfd_active_at_end=bool(cmfd_active),
                 seconds=round(time.time() - t0, 2))
     if not converged:
         info["warning"] = (f"NOT converged after {max_outer} outer "
@@ -1298,9 +1138,10 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
     (no benefit at M=2: a single pair is the whole system).
 
     Convergence contract is IDENTICAL to highorder.keff_highorder:
-    dlam < outer_tol AND five-moment source residual < 1e-9; reaching
-    max_outer without both is reported as non-converged, never
-    returned silently.
+    dlam < outer_tol AND five-moment source residual < outer_tol
+    (equal gates, user decision 2026-09-15: src and keff tolerance
+    同等化, production outer_tol=1e-7); reaching max_outer without both
+    is reported as non-converged, never returned silently.
 
     Returns (lam, phi, qim, info).
     """
@@ -1330,7 +1171,11 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
 
     IDX = [(i, g) for i in range(psn.I) for g in range(ng)]
     npair = psn.M // 2
-    use_pairs = (npair >= 2) if pairs is None else bool(pairs)
+    # M=2: the single pair {0,1} spans ALL modes -> zero work splitting
+    # and an empty off-block mask in _pair_microclass (crash, fixed
+    # 2026-09-14).  Fall back to full-class blocks; pairs buy nothing
+    # at npair < 2.
+    use_pairs = npair >= 2 and (pairs if pairs is not None else True)
     # parent-side build: factor tables are KB-scale per (i, g) and
     # COW-shared after the fork (vs 21x multi-GB SuperLU pool)
     locals_ = {}
@@ -1338,6 +1183,34 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
         for g in range(ng):
             locals_[(i, g)] = HoNodeLocal(psn, i, g, A, branch,
                                           gs_tol=rtol, max_gs=1)
+    # ---- pre-fork table prebuild (2026-09-14 OOM fix) -----------------
+    # OOM root cause (measured, tools_ho/dbg_memprobe.py): the worker-side
+    # LAZY _microclass/_pair_microclass build accumulates forever in
+    # _mc_cache/_pmc_cache.  Static shards give each worker 10-11 distinct
+    # (i, g) systems; per (i, g) that is ~406 MB full tables + ~25 MB per
+    # pair table -> ~4.5 GB/worker, x24 workers = ~108 GB > 62 GB host
+    # (host kernel OOM log matched 24 python procs @ 4.4-4.6 GiB).
+    # Fix: build ALL tables in the PARENT before the fork.  They are pure
+    # numpy data, COW-inherited read-only by every worker (workers write
+    # only their own u slice and Krylov basis), so physical memory drops
+    # from 24x per-worker copies to ONE shared copy.  pack_microclass is
+    # pure numpy (no numba execution), safe in the parent; the numba
+    # kernel itself still first-runs in the worker initializer (post-fork
+    # OpenMP rule, unchanged).
+    if os.environ.get("OPSN_NO_PREBUILD", "") != "1":
+        t_pb = time.time()
+        for (i, g), nl in locals_.items():
+            for key in nl.mc_nodes:
+                nl._microclass(key)
+            if use_pairs:
+                for pp in range(npair):
+                    for key in nl.mc_nodes:
+                        nl._pair_microclass(key, pp)
+        if verbose:
+            print(f"    prebuild {len(locals_)} (i,g) x "
+                  f"{'(full+all pairs)' if use_pairs else 'full'} "
+                  f"tables: {time.time() - t_pb:.0f}s (COW pre-fork)",
+                  flush=True)
     NW = len(IDX) if nworkers is None else int(nworkers)
     NW = max(1, min(NW, len(IDX), os.cpu_count()))
 
@@ -1443,7 +1316,7 @@ def keff_highorder_gmres(psn, A=3, branch="directional", max_outer=4000,
                 print(f"gmres it {outer:4d}  keff={lam:.7f}  "
                       f"dkeff={dlam:.2e}  src_res={src_res:.2e}  "
                       f"dt={dt:.1f}s  matvecs={outer_mat}")
-            if dlam < outer_tol and src_res < 1e-9:
+            if dlam < outer_tol and src_res < outer_tol:
                 converged = True
                 break
     finally:

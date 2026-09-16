@@ -1,0 +1,78 @@
+=== env (checkerboard A3 weak) ===
+b10r3n21
+32
+              total        used        free      shared  buff/cache   available
+Mem:           1007          56         790           2         160         945
+CBW M2_S1 keff=1.1341944 A=3 K=4 inner=gmres nodes=4 iters=121 matvecs=408 dref=+445.4pcm wall=2s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M2_S1.npz pin=(2, 2) flux=(1, 4)
+CBW M4_S1 keff=1.1343471 A=3 K=4 inner=gmres nodes=4 iters=121 matvecs=843 dref=+460.7pcm wall=1s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M4_S1.npz pin=(2, 2) flux=(1, 4)
+CBW M8_S1 keff=1.1343641 A=3 K=4 inner=gmres nodes=4 iters=121 matvecs=1665 dref=+462.4pcm wall=1s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M8_S1.npz pin=(2, 2) flux=(1, 4)
+CBW M12_S1 keff=1.1343673 A=3 K=4 inner=gmres nodes=4 iters=121 matvecs=2462 dref=+462.7pcm wall=2s peak=0.09GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M12_S1.npz pin=(2, 2) flux=(1, 4)
+CBW M16_S1 keff=1.1343684 A=3 K=4 inner=gmres nodes=4 iters=121 matvecs=3272 dref=+462.8pcm wall=3s peak=0.09GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M16_S1.npz pin=(2, 2) flux=(1, 4)
+CBW M24_S1 keff=1.1343692 A=3 K=4 inner=gmres nodes=4 iters=121 matvecs=4887 dref=+462.9pcm wall=4s peak=0.12GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M24_S1.npz pin=(2, 2) flux=(1, 4)
+CBW M2_S2 keff=1.1310305 A=3 K=4 inner=gmres nodes=16 iters=121 matvecs=640 dref=+129.0pcm wall=2s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M2_S2.npz pin=(2, 2) flux=(1, 16)
+CBW M4_S2 keff=1.1312904 A=3 K=4 inner=gmres nodes=16 iters=121 matvecs=1376 dref=+155.0pcm wall=2s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M4_S2.npz pin=(2, 2) flux=(1, 16)
+CBW M8_S2 keff=1.1313089 A=3 K=4 inner=gmres nodes=16 iters=121 matvecs=2605 dref=+156.9pcm wall=2s peak=0.10GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M8_S2.npz pin=(2, 2) flux=(1, 16)
+CBW M12_S2 keff=1.1313118 A=3 K=4 inner=gmres nodes=16 iters=121 matvecs=3855 dref=+157.2pcm wall=3s peak=0.13GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M12_S2.npz pin=(2, 2) flux=(1, 16)
+CBW M16_S2 keff=1.1313128 A=3 K=4 inner=gmres nodes=16 iters=121 matvecs=5084 dref=+157.3pcm wall=3s peak=0.17GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M16_S2.npz pin=(2, 2) flux=(1, 16)
+CBW M24_S2 keff=1.1313134 A=3 K=4 inner=gmres nodes=16 iters=121 matvecs=7564 dref=+157.3pcm wall=4s peak=0.27GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M24_S2.npz pin=(2, 2) flux=(1, 16)
+CBW M2_S3 keff=1.1301506 A=3 K=4 inner=gmres nodes=36 iters=122 matvecs=830 dref=+41.1pcm wall=3s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M2_S3.npz pin=(2, 2) flux=(1, 36)
+CBW M4_S3 keff=1.1304803 A=3 K=4 inner=gmres nodes=36 iters=121 matvecs=1836 dref=+74.0pcm wall=4s peak=0.10GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M4_S3.npz pin=(2, 2) flux=(1, 36)
+CBW M8_S3 keff=1.1305019 A=3 K=4 inner=gmres nodes=36 iters=121 matvecs=3454 dref=+76.2pcm wall=4s peak=0.13GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M8_S3.npz pin=(2, 2) flux=(1, 36)
+CBW M12_S3 keff=1.1305046 A=3 K=4 inner=gmres nodes=36 iters=121 matvecs=5077 dref=+76.5pcm wall=4s peak=0.18GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M12_S3.npz pin=(2, 2) flux=(1, 36)
+CBW M16_S3 keff=1.1305054 A=3 K=4 inner=gmres nodes=36 iters=121 matvecs=6678 dref=+76.5pcm wall=5s peak=0.25GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M16_S3.npz pin=(2, 2) flux=(1, 36)
+CBW M24_S3 keff=1.1305060 A=3 K=4 inner=gmres nodes=36 iters=121 matvecs=9928 dref=+76.6pcm wall=7s peak=0.42GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M24_S3.npz pin=(2, 2) flux=(1, 36)
+CBW M2_S4 keff=1.1297928 A=3 K=4 inner=gmres nodes=64 iters=121 matvecs=1034 dref=+5.3pcm wall=5s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M2_S4.npz pin=(2, 2) flux=(1, 64)
+CBW M4_S4 keff=1.1301568 A=3 K=4 inner=gmres nodes=64 iters=121 matvecs=2313 dref=+41.7pcm wall=5s peak=0.11GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M4_S4.npz pin=(2, 2) flux=(1, 64)
+CBW M8_S4 keff=1.1301837 A=3 K=4 inner=gmres nodes=64 iters=121 matvecs=4360 dref=+44.4pcm wall=5s peak=0.16GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M8_S4.npz pin=(2, 2) flux=(1, 64)
+CBW M12_S4 keff=1.1301867 A=3 K=4 inner=gmres nodes=64 iters=122 matvecs=6402 dref=+44.7pcm wall=6s peak=0.23GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M12_S4.npz pin=(2, 2) flux=(1, 64)
+CBW M16_S4 keff=1.1301874 A=3 K=4 inner=gmres nodes=64 iters=121 matvecs=8391 dref=+44.7pcm wall=6s peak=0.33GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M16_S4.npz pin=(2, 2) flux=(1, 64)
+CBW M24_S4 keff=1.1301880 A=3 K=4 inner=gmres nodes=64 iters=121 matvecs=12389 dref=+44.8pcm wall=10s peak=0.58GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M24_S4.npz pin=(2, 2) flux=(1, 64)
+CBW M2_S5 keff=1.1296103 A=3 K=4 inner=gmres nodes=100 iters=121 matvecs=1283 dref=-13.0pcm wall=5s peak=0.08GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M2_S5.npz pin=(2, 2) flux=(1, 100)
+CBW M4_S5 keff=1.1299943 A=3 K=4 inner=gmres nodes=100 iters=121 matvecs=2905 dref=+25.4pcm wall=6s peak=0.11GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M4_S5.npz pin=(2, 2) flux=(1, 100)
+CBW M8_S5 keff=1.1300258 A=3 K=4 inner=gmres nodes=100 iters=121 matvecs=5442 dref=+28.6pcm wall=6s peak=0.16GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M8_S5.npz pin=(2, 2) flux=(1, 100)
+CBW M12_S5 keff=1.1300289 A=3 K=4 inner=gmres nodes=100 iters=121 matvecs=7978 dref=+28.9pcm wall=7s peak=0.24GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M12_S5.npz pin=(2, 2) flux=(1, 100)
+CBW M16_S5 keff=1.1300298 A=3 K=4 inner=gmres nodes=100 iters=121 matvecs=10483 dref=+29.0pcm wall=8s peak=0.34GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M16_S5.npz pin=(2, 2) flux=(1, 100)
+CBW M24_S5 keff=1.1300304 A=3 K=4 inner=gmres nodes=100 iters=121 matvecs=15497 dref=+29.0pcm wall=11s peak=0.59GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M24_S5.npz pin=(2, 2) flux=(1, 100)
+CBW M2_S6 keff=1.1295042 A=3 K=4 inner=gmres nodes=144 iters=121 matvecs=1556 dref=-23.6pcm wall=6s peak=0.09GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M2_S6.npz pin=(2, 2) flux=(1, 144)
+CBW M4_S6 keff=1.1299002 A=3 K=4 inner=gmres nodes=144 iters=121 matvecs=3479 dref=+16.0pcm wall=7s peak=0.11GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M4_S6.npz pin=(2, 2) flux=(1, 144)
+CBW M8_S6 keff=1.1299358 A=3 K=4 inner=gmres nodes=144 iters=121 matvecs=6507 dref=+19.6pcm wall=8s peak=0.17GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M8_S6.npz pin=(2, 2) flux=(1, 144)
+CBW M12_S6 keff=1.1299394 A=3 K=4 inner=gmres nodes=144 iters=121 matvecs=9594 dref=+19.9pcm wall=8s peak=0.25GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M12_S6.npz pin=(2, 2) flux=(1, 144)
+CBW M16_S6 keff=1.1299403 A=3 K=4 inner=gmres nodes=144 iters=121 matvecs=12594 dref=+20.0pcm wall=9s peak=0.35GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M16_S6.npz pin=(2, 2) flux=(1, 144)
+CBW M24_S6 keff=1.1299409 A=3 K=4 inner=gmres nodes=144 iters=121 matvecs=18594 dref=+20.1pcm wall=13s peak=0.61GB threads=32
+DUMP saved /work/home/xycjscs/psn_runs/CBW_M24_S6.npz pin=(2, 2) flux=(1, 144)
+=== CB weak ALL DONE ===

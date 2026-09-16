@@ -51,11 +51,66 @@ angular:
 solver:
   keff_tol: 1e-10
   max_outer: 4000
-
+# Fig.10 (Tab: appC): N=1..10 x M=4..24, 60 points, TY restricted polar set.
+# N = subdivide (each 1.5 cm cell -> N x N sub-nodes). kref = 1.18797 (OpenMC, no Gd).
 cases:
-  - name: N2_M8
-    kref: 1.18797
-  - name: N4_M12
-    subdivide: 4
-    M: 12
-    kref: 1.18797
+  - { name: N1_M4, M: 4, subdivide: 1, kref: 1.18797 }
+  - { name: N1_M8, M: 8, subdivide: 1, kref: 1.18797 }
+  - { name: N1_M12, M: 12, subdivide: 1, kref: 1.18797 }
+  - { name: N1_M16, M: 16, subdivide: 1, kref: 1.18797 }
+  - { name: N1_M20, M: 20, subdivide: 1, kref: 1.18797 }
+  - { name: N1_M24, M: 24, subdivide: 1, kref: 1.18797 }
+  - { name: N2_M4, M: 4, subdivide: 2, kref: 1.18797 }
+  - { name: N2_M8, M: 8, subdivide: 2, kref: 1.18797 }
+  - { name: N2_M12, M: 12, subdivide: 2, kref: 1.18797 }
+  - { name: N2_M16, M: 16, subdivide: 2, kref: 1.18797 }
+  - { name: N2_M20, M: 20, subdivide: 2, kref: 1.18797 }
+  - { name: N2_M24, M: 24, subdivide: 2, kref: 1.18797 }
+  - { name: N3_M4, M: 4, subdivide: 3, kref: 1.18797 }
+  - { name: N3_M8, M: 8, subdivide: 3, kref: 1.18797 }
+  - { name: N3_M12, M: 12, subdivide: 3, kref: 1.18797 }
+  - { name: N3_M16, M: 16, subdivide: 3, kref: 1.18797 }
+  - { name: N3_M20, M: 20, subdivide: 3, kref: 1.18797 }
+  - { name: N3_M24, M: 24, subdivide: 3, kref: 1.18797 }
+  - { name: N4_M4, M: 4, subdivide: 4, kref: 1.18797 }
+  - { name: N4_M8, M: 8, subdivide: 4, kref: 1.18797 }
+  - { name: N4_M12, M: 12, subdivide: 4, kref: 1.18797 }
+  - { name: N4_M16, M: 16, subdivide: 4, kref: 1.18797 }
+  - { name: N4_M20, M: 20, subdivide: 4, kref: 1.18797 }
+  - { name: N4_M24, M: 24, subdivide: 4, kref: 1.18797 }
+  - { name: N5_M4, M: 4, subdivide: 5, kref: 1.18797 }
+  - { name: N5_M8, M: 8, subdivide: 5, kref: 1.18797 }
+  - { name: N5_M12, M: 12, subdivide: 5, kref: 1.18797 }
+  - { name: N5_M16, M: 16, subdivide: 5, kref: 1.18797 }
+  - { name: N5_M20, M: 20, subdivide: 5, kref: 1.18797 }
+  - { name: N5_M24, M: 24, subdivide: 5, kref: 1.18797 }
+  - { name: N6_M4, M: 4, subdivide: 6, kref: 1.18797 }
+  - { name: N6_M8, M: 8, subdivide: 6, kref: 1.18797 }
+  - { name: N6_M12, M: 12, subdivide: 6, kref: 1.18797 }
+  - { name: N6_M16, M: 16, subdivide: 6, kref: 1.18797 }
+  - { name: N6_M20, M: 20, subdivide: 6, kref: 1.18797 }
+  - { name: N6_M24, M: 24, subdivide: 6, kref: 1.18797 }
+  - { name: N7_M4, M: 4, subdivide: 7, kref: 1.18797 }
+  - { name: N7_M8, M: 8, subdivide: 7, kref: 1.18797 }
+  - { name: N7_M12, M: 12, subdivide: 7, kref: 1.18797 }
+  - { name: N7_M16, M: 16, subdivide: 7, kref: 1.18797 }
+  - { name: N7_M20, M: 20, subdivide: 7, kref: 1.18797 }
+  - { name: N7_M24, M: 24, subdivide: 7, kref: 1.18797 }
+  - { name: N8_M4, M: 4, subdivide: 8, kref: 1.18797 }
+  - { name: N8_M8, M: 8, subdivide: 8, kref: 1.18797 }
+  - { name: N8_M12, M: 12, subdivide: 8, kref: 1.18797 }
+  - { name: N8_M16, M: 16, subdivide: 8, kref: 1.18797 }
+  - { name: N8_M20, M: 20, subdivide: 8, kref: 1.18797 }
+  - { name: N8_M24, M: 24, subdivide: 8, kref: 1.18797 }
+  - { name: N9_M4, M: 4, subdivide: 9, kref: 1.18797 }
+  - { name: N9_M8, M: 8, subdivide: 9, kref: 1.18797 }
+  - { name: N9_M12, M: 12, subdivide: 9, kref: 1.18797 }
+  - { name: N9_M16, M: 16, subdivide: 9, kref: 1.18797 }
+  - { name: N9_M20, M: 20, subdivide: 9, kref: 1.18797 }
+  - { name: N9_M24, M: 24, subdivide: 9, kref: 1.18797 }
+  - { name: N10_M4, M: 4, subdivide: 10, kref: 1.18797 }
+  - { name: N10_M8, M: 8, subdivide: 10, kref: 1.18797 }
+  - { name: N10_M12, M: 12, subdivide: 10, kref: 1.18797 }
+  - { name: N10_M16, M: 16, subdivide: 10, kref: 1.18797 }
+  - { name: N10_M20, M: 20, subdivide: 10, kref: 1.18797 }
+  - { name: N10_M24, M: 24, subdivide: 10, kref: 1.18797 }

@@ -1,0 +1,10 @@
+=== env (checkerboard A3 weak I60/I120 S20 M24) ===
+b10r3n20
+40
+              total        used        free      shared  buff/cache   available
+Mem:           1007          95         342           1         569         907
+CBW60 M24_S20 keff=1.1297315 A=3 K=4 inner=gmres nodes=1600 iters=121 matvecs=776380 dref=-0.9pcm wall=774s peak=11.28GB threads=40
+DUMP saved /work/home/xycjscs/psn_runs/CBW60_M24_S20.npz pin=(2, 2) flux=(1, 1600)
+CBW120 M24_S20 keff=1.1297389 A=3 K=4 inner=gmres nodes=1600 iters=121 matvecs=1550929 dref=-0.1pcm wall=1473s peak=22.46GB threads=40
+DUMP saved /work/home/xycjscs/psn_runs/CBW120_M24_S20.npz pin=(2, 2) flux=(1, 1600)
+=== CB weak I60/I120 ALL DONE ===

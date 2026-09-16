@@ -1,0 +1,78 @@
+--- RECT4 (17x17 split-2x2) A3 SWEEP start (A=3, M=[2, 4, 8, 12, 16, 24], S=[1, 2], closure=directional_matrix, inner=gmres pool, pairs=True numba=True w=24, budget=24, tol=1e-7, 24 points) ---
+--- R17UO2 M2_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=0s
+R17UO2 M2_S1 keff=1.3335347 A=3 K=4 inner=gmres nodes=4624 iters=6000 matvecs=45905 dref=-119.1pcm wall=508s peak=0.96GB NOT_CONVERGED elapsed=510s
+--- R17UO2 M4_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=510s
+R17UO2 M4_S1 keff=1.3343773 A=3 K=4 inner=gmres nodes=4624 iters=521 matvecs=60068 dref=-34.9pcm wall=193s peak=2.69GB elapsed=705s
+--- R17UO2 M8_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=705s
+R17UO2 M8_S1 keff=1.3346992 A=3 K=4 inner=gmres nodes=4624 iters=309 matvecs=104803 dref=-2.7pcm wall=305s peak=5.26GB elapsed=1015s
+--- R17UO2 M12_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=1015s
+R17UO2 M12_S1 keff=1.3347801 A=3 K=4 inner=gmres nodes=4624 iters=213 matvecs=151015 dref=+5.4pcm wall=402s peak=8.03GB elapsed=1420s
+--- R17UO2 M16_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=1420s
+R17UO2 M16_S1 keff=1.3348100 A=3 K=4 inner=gmres nodes=4624 iters=216 matvecs=197994 dref=+8.4pcm wall=561s peak=10.96GB elapsed=1985s
+--- R17UO2 M24_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=1985s
+R17UO2 M24_S1 keff=1.3348298 A=3 K=4 inner=gmres nodes=4624 iters=212 matvecs=292205 dref=+10.4pcm wall=836s peak=17.42GB elapsed=2825s
+--- R17UO2 M2_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=2825s
+R17UO2 M2_S2 keff=1.3334399 A=3 K=4 inner=gmres nodes=18496 iters=6000 matvecs=79261 dref=-128.6pcm wall=2481s peak=3.40GB NOT_CONVERGED elapsed=5311s
+--- R17UO2 M4_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=5311s
+R17UO2 M4_S2 keff=1.3342252 A=3 K=4 inner=gmres nodes=18496 iters=6000 matvecs=135090 dref=-50.1pcm wall=5091s peak=10.07GB NOT_CONVERGED elapsed=10406s
+--- R17UO2 M8_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=10406s
+R17UO2 M8_S2 keff=1.3345802 A=3 K=4 inner=gmres nodes=18496 iters=1087 matvecs=203231 dref=-14.6pcm wall=3366s peak=19.72GB elapsed=13776s
+--- R17UO2 M12_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=13776s
+child rc=0 (no result) elapsed=14451s
+--- R17UO2 M16_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=14451s
+R17UO2 M16_S2 INFEASIBLE (RSS 32.1GB > 32GB) at 15005s elapsed=15005s
+--- R17UO2 M24_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=15005s
+R17UO2 M24_S2 INFEASIBLE (RSS 32.2GB > 32GB) at 15503s elapsed=15503s
+--- R17MOX M2_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=15503s
+R17MOX M2_S1 keff=1.1823571 A=3 K=4 inner=gmres nodes=4624 iters=6000 matvecs=40582 dref=-274.8pcm wall=568s peak=0.98GB NOT_CONVERGED elapsed=16073s
+--- R17MOX M4_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=16073s
+R17MOX M4_S1 keff=1.1843644 A=3 K=4 inner=gmres nodes=4624 iters=1349 matvecs=52230 dref=-74.1pcm wall=329s peak=2.79GB elapsed=16403s
+--- R17MOX M8_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=16403s
+R17MOX M8_S1 keff=1.1849601 A=3 K=4 inner=gmres nodes=4624 iters=547 matvecs=86655 dref=-14.5pcm wall=391s peak=5.52GB elapsed=16798s
+--- R17MOX M12_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=16798s
+R17MOX M12_S1 keff=1.1850961 A=3 K=4 inner=gmres nodes=4624 iters=180 matvecs=122720 dref=-0.9pcm wall=390s peak=8.52GB elapsed=17193s
+--- R17MOX M16_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=17193s
+R17MOX M16_S1 keff=1.1851463 A=3 K=4 inner=gmres nodes=4624 iters=176 matvecs=161181 dref=+4.1pcm wall=532s peak=11.76GB elapsed=17728s
+--- R17MOX M24_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=17728s
+R17MOX M24_S1 keff=1.1851799 A=3 K=4 inner=gmres nodes=4624 iters=171 matvecs=238104 dref=+7.5pcm wall=797s peak=19.03GB elapsed=18528s
+--- R17MOX M2_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=18528s
+R17MOX M2_S2 keff=1.1820730 A=3 K=4 inner=gmres nodes=18496 iters=6000 matvecs=71114 dref=-303.2pcm wall=2623s peak=3.45GB NOT_CONVERGED elapsed=21153s
+--- R17MOX M4_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=21153s
+R17MOX M4_S2 keff=1.1840733 A=3 K=4 inner=gmres nodes=18496 iters=6000 matvecs=125091 dref=-103.2pcm wall=5498s peak=10.31GB NOT_CONVERGED elapsed=26654s
+--- R17MOX M8_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=26654s
+R17MOX M8_S2 keff=1.1847668 A=3 K=4 inner=gmres nodes=18496 iters=190 matvecs=167644 dref=-33.8pcm wall=2010s peak=20.35GB elapsed=28669s
+--- R17MOX M12_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=28669s
+R17MOX M12_S2 ERROR RuntimeError can't start new thread at 535s elapsed=29209s
+--- R17MOX M16_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=29209s
+R17MOX M16_S2 INFEASIBLE (RSS 32.0GB > 32GB) at 30119s elapsed=30119s
+--- R17MOX M24_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=30119s
+R17MOX M24_S2 INFEASIBLE (RSS 32.2GB > 32GB) at 30592s elapsed=30592s
+R17UO2 S1: M2=1.3335347  M4=1.3343773  M8=1.3346992  M12=1.3347801  M16=1.3348100  M24=1.3348298
+R17UO2 S2: M2=1.3334399  M4=1.3342252  M8=1.3345802  M12=-  M16=-  M24=-
+R17UO2 M2 S2-S1: -9.5 pcm
+R17UO2 M4 S2-S1: -15.2 pcm
+R17UO2 M8 S2-S1: -11.9 pcm
+R17MOX S1: M2=1.1823571  M4=1.1843644  M8=1.1849601  M12=1.1850961  M16=1.1851463  M24=1.1851799
+R17MOX S2: M2=1.1820730  M4=1.1840733  M8=1.1847668  M12=-  M16=-  M24=-
+R17MOX M2 S2-S1: -28.4 pcm
+R17MOX M4 S2-S1: -29.1 pcm
+R17MOX M8 S2-S1: -19.3 pcm
+RECT4 A3 SWEEP DONE in 30592s
+--- RECT4 (17x17 split-2x2) A3 SWEEP start (A=3, M=[2, 4, 8, 12, 16, 24], S=[1, 2], closure=directional_matrix, inner=gmres pool, pairs=True numba=True w=24, budget=24, tol=1e-7, 24 points) ---
+--- R17UO2 M2_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=0s
+R17UO2 M2_S1 keff=1.3335338 A=3 K=4 inner=gmres nodes=4624 iters=152 matvecs=26340 dref=-119.2pcm wall=75s peak=0.96GB dump=/opt/data/workspace/c5g7/psn_r17_uo2_M2_S1.npz elapsed=80s
+--- R17UO2 M4_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=80s
+R17UO2 M4_S1 keff=1.3343764 A=3 K=4 inner=gmres nodes=4624 iters=152 matvecs=57581 dref=-35.0pcm wall=140s peak=2.69GB dump=/opt/data/workspace/c5g7/psn_r17_uo2_M4_S1.npz elapsed=225s
+--- R17UO2 M8_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=225s
+R17UO2 M8_S1 ERROR AttributeError module 'psn2d.highsweep' has no attribute 'dump_fields' at 260s elapsed=490s
+--- R17UO2 M12_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=490s
+R17UO2 M12_S1 keff=1.3347793 A=3 K=4 inner=gmres nodes=4624 iters=153 matvecs=148930 dref=+5.3pcm wall=377s peak=8.03GB dump=/opt/data/workspace/c5g7/psn_r17_uo2_M12_S1.npz elapsed=870s
+--- R17UO2 M16_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=870s
+R17UO2 M16_S1 keff=1.3348092 A=3 K=4 inner=gmres nodes=4624 iters=153 matvecs=195152 dref=+8.3pcm wall=529s peak=10.97GB dump=/opt/data/workspace/c5g7/psn_r17_uo2_M16_S1.npz elapsed=1405s
+--- R17UO2 M24_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=1405s
+R17UO2 M24_S1 keff=1.3348290 A=3 K=4 inner=gmres nodes=4624 iters=153 matvecs=288053 dref=+10.3pcm wall=768s peak=17.42GB dump=/opt/data/workspace/c5g7/psn_r17_uo2_M24_S1.npz elapsed=2175s
+--- R17UO2 M2_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=2175s
+R17UO2 M2_S2 keff=1.3334390 A=3 K=4 inner=gmres nodes=18496 iters=152 matvecs=49469 dref=-128.7pcm wall=503s peak=3.40GB dump=/opt/data/workspace/c5g7/psn_r17_uo2_M2_S2.npz elapsed=2680s
+--- R17UO2 M4_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=2680s
+R17UO2 M4_S2 keff=1.3342244 A=3 K=4 inner=gmres nodes=18496 iters=153 matvecs=106755 dref=-50.2pcm wall=973s peak=10.07GB dump=/opt/data/workspace/c5g7/psn_r17_uo2_M4_S2.npz elapsed=3655s
+--- R17UO2 M8_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=3655s

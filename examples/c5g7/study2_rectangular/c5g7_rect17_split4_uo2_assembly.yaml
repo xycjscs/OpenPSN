@@ -13890,16 +13890,32 @@ materials_file: c5g7_materials_pure.yaml
 angular:
   model: ty3
   M: 12
+  A: 3
+  closure: directional_matrix
+# --- Study III (paper Sec 5): A=3 directional closure sweep -------------
+# Angular defaults below apply to every case: A=3 (K=4 angular unknowns),
+# directional_matrix closure, TY3 polar protocol.  Inner solve: GMRES pool
+# with relative linear-residual tolerance 1e-7 (== outer gate), restart
+# 20, max 800 internal Krylov iterations (see studyIII.tex).
+# kref = same-geometry pure-XS OpenMC reference (assembly, rect rods).
 solver:
   keff_tol: 1.0e-07
   max_outer: 6000
+  inner: gmres
+  gmres_rtol: 1.0e-07
+  gmres_maxiter: 800
+  gmres_pairs: on
+
 cases:
-- name: M8
-  M: 8
-  kref: 1.341178
-- name: M12
-  M: 12
-  kref: 1.341178
-- name: M16
-  M: 16
-  kref: 1.341178
+  - { name: M2_S1, M: 2, subdivide: 1, kref: 1.3347260 }
+  - { name: M4_S1, M: 4, subdivide: 1, kref: 1.3347260 }
+  - { name: M8_S1, M: 8, subdivide: 1, kref: 1.3347260 }
+  - { name: M12_S1, M: 12, subdivide: 1, kref: 1.3347260 }
+  - { name: M16_S1, M: 16, subdivide: 1, kref: 1.3347260 }
+  - { name: M24_S1, M: 24, subdivide: 1, kref: 1.3347260 }
+  - { name: M2_S2, M: 2, subdivide: 2, kref: 1.3347260 }
+  - { name: M4_S2, M: 4, subdivide: 2, kref: 1.3347260 }
+  - { name: M8_S2, M: 8, subdivide: 2, kref: 1.3347260 }
+  - { name: M12_S2, M: 12, subdivide: 2, kref: 1.3347260 }
+  - { name: M16_S2, M: 16, subdivide: 2, kref: 1.3347260 }
+  - { name: M24_S2, M: 24, subdivide: 2, kref: 1.3347260 }

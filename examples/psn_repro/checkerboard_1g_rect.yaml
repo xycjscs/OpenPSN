@@ -1,0 +1,257 @@
+# PSN2D example — checkerboard benchmark (paper Sec 4.1, Fig.3), WEAK absorber
+# RECT version (uniform 1 cm nodes) for the high-order (A=3) closure path,
+# which requires rectangular nodes.  Geometrically identical to
+# checkerboard_1g.yaml (square path): 2x2 base cells, unit_size 1.0 cm.
+#
+# fuel/absorber checkerboard, reflective on all four sides. 1 energy group.
+# OpenMC reference: weak=1.12974 (paper pcm = ABSOLUTE (k-kref)*1e5).
+problem: checkerboard
+description: >
+  PSN Fig.3 checkerboard (rect formulation), 1 group, fuel (St=1.5,
+  Sa=0.15, nuSf=0.24) / absorber (St=1.0, Sa=weak 0.07), 2x2 base cells
+  subdivided S x S.
+
+geometry:
+  rect: true
+  mat_grid:   # bottom row first; columns left->right  (0=fuel, 1=absorber)
+    - [1, 0]
+    - [0, 1]
+  widths_x: 1.0
+  widths_y: 1.0
+  subdivide: 4
+
+boundaries:
+  left: reflect
+  bottom: reflect
+  right: reflect
+  top: reflect
+
+materials:
+  - name: fuel
+    total: [1.5]
+    scatter: [[1.35]]
+    nu_fission: [0.24]
+  - name: absorber_weak
+    total: [1.0]
+    scatter: [[0.93]]
+    nu_fission: [0.0]
+
+fission_spectrum: [1.0]
+
+angular:
+  model: ty3
+  M: 12
+  A: 3
+  closure: directional_matrix
+
+# --- Study III (paper Sec 5): A=3 checkerboard sweeps ----------------------
+# "S" in case names = paper S (2x2 base grid subdivided S x S -> 2S x 2S
+# nodes, subdivide = S, matching the production sweep hpc_point.py).
+# ty3_* : three-polar (TY3) protocol, S=1..12, 72 points
+# i30_* : generic even polar set I=30, S=1..20, 120 points
+# i60_* : I=60 repeat at S=20 M=24 (polar-sector sensitivity)
+# kref = OpenMC value from the source paper (five decimals).
+# weak_M12 / strong_M12: legacy (A=0) path quick checks, S=4 default.
+solver:
+  keff_tol: 1.0e-07
+  max_outer: 6000
+  inner: gmres
+  gmres_rtol: 1.0e-07
+  gmres_maxiter: 800
+  gmres_pairs: on
+
+cases:
+  - { name: weak_M12, M: 12, subdivide: 4, kref: 1.12974, A: 0, closure: legacy }
+  - { name: ty3_M2_S1, M: 2, subdivide: 1, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S1, M: 4, subdivide: 1, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S1, M: 8, subdivide: 1, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S1, M: 12, subdivide: 1, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S1, M: 16, subdivide: 1, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S1, M: 24, subdivide: 1, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S2, M: 2, subdivide: 2, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S2, M: 4, subdivide: 2, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S2, M: 8, subdivide: 2, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S2, M: 12, subdivide: 2, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S2, M: 16, subdivide: 2, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S2, M: 24, subdivide: 2, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S3, M: 2, subdivide: 3, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S3, M: 4, subdivide: 3, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S3, M: 8, subdivide: 3, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S3, M: 12, subdivide: 3, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S3, M: 16, subdivide: 3, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S3, M: 24, subdivide: 3, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S4, M: 2, subdivide: 4, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S4, M: 4, subdivide: 4, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S4, M: 8, subdivide: 4, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S4, M: 12, subdivide: 4, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S4, M: 16, subdivide: 4, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S4, M: 24, subdivide: 4, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S5, M: 2, subdivide: 5, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S5, M: 4, subdivide: 5, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S5, M: 8, subdivide: 5, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S5, M: 12, subdivide: 5, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S5, M: 16, subdivide: 5, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S5, M: 24, subdivide: 5, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S6, M: 2, subdivide: 6, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S6, M: 4, subdivide: 6, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S6, M: 8, subdivide: 6, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S6, M: 12, subdivide: 6, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S6, M: 16, subdivide: 6, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S6, M: 24, subdivide: 6, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S7, M: 2, subdivide: 7, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S7, M: 4, subdivide: 7, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S7, M: 8, subdivide: 7, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S7, M: 12, subdivide: 7, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S7, M: 16, subdivide: 7, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S7, M: 24, subdivide: 7, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S8, M: 2, subdivide: 8, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S8, M: 4, subdivide: 8, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S8, M: 8, subdivide: 8, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S8, M: 12, subdivide: 8, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S8, M: 16, subdivide: 8, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S8, M: 24, subdivide: 8, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S9, M: 2, subdivide: 9, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S9, M: 4, subdivide: 9, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S9, M: 8, subdivide: 9, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S9, M: 12, subdivide: 9, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S9, M: 16, subdivide: 9, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S9, M: 24, subdivide: 9, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S10, M: 2, subdivide: 10, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S10, M: 4, subdivide: 10, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S10, M: 8, subdivide: 10, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S10, M: 12, subdivide: 10, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S10, M: 16, subdivide: 10, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S10, M: 24, subdivide: 10, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S11, M: 2, subdivide: 11, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S11, M: 4, subdivide: 11, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S11, M: 8, subdivide: 11, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S11, M: 12, subdivide: 11, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S11, M: 16, subdivide: 11, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S11, M: 24, subdivide: 11, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M2_S12, M: 2, subdivide: 12, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M4_S12, M: 4, subdivide: 12, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M8_S12, M: 8, subdivide: 12, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M12_S12, M: 12, subdivide: 12, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M16_S12, M: 16, subdivide: 12, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: ty3_M24_S12, M: 24, subdivide: 12, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S1, M: 2, subdivide: 1, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S1, M: 4, subdivide: 1, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S1, M: 8, subdivide: 1, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S1, M: 12, subdivide: 1, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S1, M: 16, subdivide: 1, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S1, M: 24, subdivide: 1, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S2, M: 2, subdivide: 2, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S2, M: 4, subdivide: 2, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S2, M: 8, subdivide: 2, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S2, M: 12, subdivide: 2, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S2, M: 16, subdivide: 2, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S2, M: 24, subdivide: 2, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S3, M: 2, subdivide: 3, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S3, M: 4, subdivide: 3, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S3, M: 8, subdivide: 3, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S3, M: 12, subdivide: 3, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S3, M: 16, subdivide: 3, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S3, M: 24, subdivide: 3, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S4, M: 2, subdivide: 4, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S4, M: 4, subdivide: 4, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S4, M: 8, subdivide: 4, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S4, M: 12, subdivide: 4, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S4, M: 16, subdivide: 4, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S4, M: 24, subdivide: 4, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S5, M: 2, subdivide: 5, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S5, M: 4, subdivide: 5, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S5, M: 8, subdivide: 5, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S5, M: 12, subdivide: 5, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S5, M: 16, subdivide: 5, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S5, M: 24, subdivide: 5, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S6, M: 2, subdivide: 6, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S6, M: 4, subdivide: 6, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S6, M: 8, subdivide: 6, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S6, M: 12, subdivide: 6, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S6, M: 16, subdivide: 6, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S6, M: 24, subdivide: 6, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S7, M: 2, subdivide: 7, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S7, M: 4, subdivide: 7, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S7, M: 8, subdivide: 7, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S7, M: 12, subdivide: 7, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S7, M: 16, subdivide: 7, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S7, M: 24, subdivide: 7, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S8, M: 2, subdivide: 8, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S8, M: 4, subdivide: 8, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S8, M: 8, subdivide: 8, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S8, M: 12, subdivide: 8, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S8, M: 16, subdivide: 8, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S8, M: 24, subdivide: 8, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S9, M: 2, subdivide: 9, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S9, M: 4, subdivide: 9, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S9, M: 8, subdivide: 9, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S9, M: 12, subdivide: 9, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S9, M: 16, subdivide: 9, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S9, M: 24, subdivide: 9, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S10, M: 2, subdivide: 10, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S10, M: 4, subdivide: 10, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S10, M: 8, subdivide: 10, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S10, M: 12, subdivide: 10, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S10, M: 16, subdivide: 10, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S10, M: 24, subdivide: 10, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S11, M: 2, subdivide: 11, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S11, M: 4, subdivide: 11, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S11, M: 8, subdivide: 11, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S11, M: 12, subdivide: 11, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S11, M: 16, subdivide: 11, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S11, M: 24, subdivide: 11, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S12, M: 2, subdivide: 12, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S12, M: 4, subdivide: 12, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S12, M: 8, subdivide: 12, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S12, M: 12, subdivide: 12, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S12, M: 16, subdivide: 12, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S12, M: 24, subdivide: 12, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S13, M: 2, subdivide: 13, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S13, M: 4, subdivide: 13, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S13, M: 8, subdivide: 13, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S13, M: 12, subdivide: 13, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S13, M: 16, subdivide: 13, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S13, M: 24, subdivide: 13, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S14, M: 2, subdivide: 14, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S14, M: 4, subdivide: 14, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S14, M: 8, subdivide: 14, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S14, M: 12, subdivide: 14, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S14, M: 16, subdivide: 14, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S14, M: 24, subdivide: 14, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S15, M: 2, subdivide: 15, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S15, M: 4, subdivide: 15, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S15, M: 8, subdivide: 15, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S15, M: 12, subdivide: 15, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S15, M: 16, subdivide: 15, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S15, M: 24, subdivide: 15, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S16, M: 2, subdivide: 16, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S16, M: 4, subdivide: 16, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S16, M: 8, subdivide: 16, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S16, M: 12, subdivide: 16, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S16, M: 16, subdivide: 16, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S16, M: 24, subdivide: 16, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S17, M: 2, subdivide: 17, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S17, M: 4, subdivide: 17, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S17, M: 8, subdivide: 17, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S17, M: 12, subdivide: 17, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S17, M: 16, subdivide: 17, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S17, M: 24, subdivide: 17, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S18, M: 2, subdivide: 18, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S18, M: 4, subdivide: 18, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S18, M: 8, subdivide: 18, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S18, M: 12, subdivide: 18, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S18, M: 16, subdivide: 18, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S18, M: 24, subdivide: 18, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S19, M: 2, subdivide: 19, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S19, M: 4, subdivide: 19, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S19, M: 8, subdivide: 19, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S19, M: 12, subdivide: 19, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S19, M: 16, subdivide: 19, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S19, M: 24, subdivide: 19, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M2_S20, M: 2, subdivide: 20, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M4_S20, M: 4, subdivide: 20, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M8_S20, M: 8, subdivide: 20, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M12_S20, M: 12, subdivide: 20, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M16_S20, M: 16, subdivide: 20, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i30_M24_S20, M: 24, subdivide: 20, model: generic, I: 30, kref: 1.12974, A: 3, closure: directional_matrix }
+  - { name: i60_M24_S20, M: 24, subdivide: 20, model: generic, I: 60, kref: 1.12974, A: 3, closure: directional_matrix }

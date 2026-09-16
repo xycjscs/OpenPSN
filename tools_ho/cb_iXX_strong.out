@@ -1,0 +1,10 @@
+=== env (checkerboard A3 strong I60/I120 S20 M24) ===
+b10r1n04
+40
+              total        used        free      shared  buff/cache   available
+Mem:           1007          75         273           0         658         927
+CBS60 M24_S20 keff=0.5167670 A=3 K=4 inner=gmres nodes=1600 iters=53 matvecs=533431 dref=+3.7pcm wall=617s peak=11.28GB threads=40
+DUMP saved /work/home/xycjscs/psn_runs/CBS60_M24_S20.npz pin=(2, 2) flux=(1, 1600)
+CBS120 M24_S20 keff=0.5168064 A=3 K=4 inner=gmres nodes=1600 iters=53 matvecs=1065635 dref=+7.6pcm wall=1172s peak=22.46GB threads=40
+DUMP saved /work/home/xycjscs/psn_runs/CBS120_M24_S20.npz pin=(2, 2) flux=(1, 1600)
+=== CB strong I60/I120 ALL DONE ===

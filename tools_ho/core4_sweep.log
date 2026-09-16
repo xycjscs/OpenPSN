@@ -1,0 +1,7 @@
+CORE4 M12_S1 keff=1.1872799 A=3 K=4 inner=gmres nodes=41616 iters=1092 matvecs=938674 dref=+6.2pcm wall=16424s peak=63.24GB threads=96
+CORE4 M16_S1 keff=1.1873089 A=3 K=4 inner=gmres nodes=41616 iters=1092 matvecs=1231533 dref=+9.1pcm wall=20695s peak=84.24GB threads=96
+CORE4 M24_S1 keff=1.1873279 A=3 K=4 inner=gmres nodes=41616 iters=1091 matvecs=1819817 dref=+11.0pcm wall=31697s peak=127.36GB threads=96
+CORE4 M2_S1 keff=1.1858612 A=3 K=4 inner=gmres nodes=41616 iters=1093 matvecs=163773 dref=-135.6pcm wall=4110s peak=7.26GB threads=96
+CORE4 M2_S2 keff=1.1857167 A=3 K=4 inner=gmres nodes=166464 iters=1094 matvecs=316762 dref=-150.1pcm wall=46170s peak=28.65GB threads=96
+CORE4 M4_S1 keff=1.1868760 A=3 K=4 inner=gmres nodes=41616 iters=1092 matvecs=350951 dref=-34.2pcm wall=9309s peak=21.77GB threads=96
+CORE4 M8_S1 keff=1.1872011 A=3 K=4 inner=gmres nodes=41616 iters=1092 matvecs=643409 dref=-1.7pcm wall=12307s peak=42.45GB threads=96

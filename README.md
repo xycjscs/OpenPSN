@@ -12,7 +12,8 @@ verified), 2-D Cartesian cores with square **and rectangular** nodes, a
 faithful, modernized reproduction of the PSN nodal method (Chao, Li & Chen,
 *Annals of Nuclear Energy* 240 (2027) 112707) **extended to arbitrary
 per-node x/y widths** (explicit un-homogenised intra-node fuel/water
-structure), rebuilt as a clean, YAML-driven Python package **plus a pure-JS
+structure) and to **higher-order directional angular-moment closure**
+(A = 0–3), rebuilt as a clean, YAML-driven Python package **plus a pure-JS
 in-browser engine**.
 
 🌐 **Try it live:** <https://openpsn-ai.com> — the checkerboard benchmark
@@ -20,13 +21,16 @@ runs entirely in your browser (no server, no dependencies), converging
 k<sub>eff</sub> to 10⁻¹⁰ in a few seconds, with the converged scalar-flux
 field rendered on screen.
 
-📄 **Paper (preprint):** *OpenPSN: a multi-group Phase Space Nodal solver
-with rectangular nodes, validated on the C5G7 MOX benchmark* —
+📄 **Paper (preprint):** *OpenPSN: Rectangular Phase-Space Nodal Transport
+with Higher-Order Angular Moments* —
 <https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark>
+
+代码仓库：<https://github.com/xycjscs/OpenPSN>
 
 **Python 启动即可**：`python -m psn2d run <problem.yaml>`。任意群数（1 / 2 / 7
 群已验证），任意几何（材料网格 + 边界 + 矩形节点），角向/空间离散、并行度、
-内存预算与收敛参数全部用户可配。
+内存预算与收敛参数全部用户可配。`examples/` 下的输入文件**逐一对应论文各
+实验**（输入 → 网格 → 参考值 → 结果，见 §5 对照表）。
 
 ---
 
@@ -48,17 +52,23 @@ with rectangular nodes, validated on the C5G7 MOX benchmark* —
 
 ## 1. 功能
 
-- **任意群数多群输运**：1 群（Fig.3 棋盘问题）、2 群（BWR 束组件）、7 群
-  （C5G7 MOX 基准）全部复现并与原文对齐（248 个已发表本征值点，附录 A 逐点
-  对照，几 pcm 内咬合）。
-- **PSN 节点法**：抛物线形节点内插（quartic parabola），节点内消元（intra-nodal
-  elimination），面流耦合；通用角度模型（generic）与 TY 受限模型（ty3）两套
-  参数共用同一闭式族。
+- **任意群数多群输运**：1 群（Fig.3 棋盘问题）、2 群（BWR 束组件，含 Gd 钉
+  变体）、7 群（C5G7 MOX 基准）全部复现并与原文对齐（248 个已发表本征值点
+  逐点对照，几 pcm 内咬合；逐点数据见 `docs/fig3ref.json` 与
+  `docs/bwr_ref.json`）。
+- **PSN 节点法**：抛物线形节点内插（quartic parabola），节点内消元
+  （intra-nodal elimination），面流耦合；通用角度模型（generic）与 TY 受限
+  模型（ty3）两套参数共用同一闭式族。
+- **高序方向角向矩闭包（A = 0–3）**：`angular.A: 1..3` +
+  `angular.closure: directional_matrix`，每个 (i,g) 系统 21 方向矩（A=3
+  TY3 协议）或 A·(I+1) 方向矩（generic I 协议）；内层 LU 直解或
+  GMRES + 进程池（§3）。论文 Study III 的 248 点扫表全部由该路径生成。
 - **矩形节点**：节点算子扩展到任意 x/y 宽度（`widths`），非均质 7 群材料
   截面直接赋给矩形节点，无需 pin 均质化 —— 首个带显式节点内燃料/水结构的
   PSN 实现。
-- **YAML 输入**：几何、截面、边界、矩形宽度、算法参数、批量 case（M×S 扫参）
-  一个文件描述。
+- **YAML 输入**：几何、截面、边界、矩形宽度、算法参数、批量 case（M×S×A
+  扫参）一个文件描述；per-case 可覆盖 `M / S(subdivide) / A / closure /
+  model / I`。
 - **稀疏 + 向量化**：节点耦合矩阵稀疏求解，多群循环向量化；继承快照版的
   107× 提速与 OOM 根治（见 `snapshot/`）；内存优化后端族（`--opt`，§3）。
 
@@ -67,20 +77,38 @@ with rectangular nodes, validated on the C5G7 MOX benchmark* —
 ```bash
 pip install -r requirements.txt   # numpy, scipy, pyyaml
 ```
-Python ≥ 3.9。纯 Python（无 C 扩展、无 MPI），单机即可。
+
+Python ≥ 3.9。纯 Python（无 C 扩展、无 MPI），单机即可。numba 可选
+（GMRES matvec 加速，缺省自动回退 NumPy 路径，结果位级一致）。
 
 ## 3. 运行
 
 ```bash
-python -m psn2d run examples/psn_repro/checkerboard_1g.yaml        # 1 群棋盘（Fig.3）
-python -m psn2d run examples/psn_repro/bwr_bundle_2g.yaml          # 2 群 BWR 束（Fig.8/10）
-python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml   # 7 群 C5G7-2D 1/4 芯（均质化 XS）
-python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core_bww_om.yaml   # Study I：BWW 自屏蔽均质化
-python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml  # 7 群矩形节点单 UO2 组件（非均质）
-python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect6_quarter_core.yaml # 7 群矩形节点 1/4 芯（6×6 准方划分）
-python -m psn2d run <file>.yaml --case M12_S1            # 只跑指定 case
-python -m psn2d run <file>.yaml --json                   # 结果输出 JSON
-python -m psn2d run <file>.yaml --opt auto               # 内存优化后端（见下）
+# §3 复现（原法 A=0，generic I=30）
+python -m psn2d run examples/psn_repro/checkerboard_1g.yaml --case S6_M24    # 1 群棋盘（Fig.3，弱吸收）
+python -m psn2d run examples/psn_repro/bwr_bundle_2g.yaml --case N4_M12      # 2 群 BWR 束（Fig.8/10，无 Gd）
+python -m psn2d run examples/psn_repro/bwr_bundle_2g_with_gd.yaml --case N4_M12  # 2 群 BWR 束（含 Gd 钉）
+
+# Study I（pinwise 均质化，BWW 自屏蔽 XS，ty3）
+python -m psn2d run examples/c5g7/study1_homogenised/c5g7_uo2_assembly_bww_om.yaml --case M12_S5
+python -m psn2d run examples/c5g7/study1_homogenised/c5g7_mox_assembly_bww.yaml --case M24_S6
+python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core_bww_om.yaml --case M24_S6
+
+# Study II（矩形节点 3×3 平铺，非均质 7 群）
+python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml --case M24
+python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml --case M24_S1
+
+# Study III（A=3 方向闭包，2×2 燃料分割铺装）
+python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect17_split4_uo2_assembly.yaml --case M24_S2
+python -m psn2d run examples/c5g7/study2_rectangular/c5g7_core_split4_uo2_mox_quarter_core.yaml --case M8_S1
+
+# Study III 棋盘（A=3，TY3 / generic I=30 / I=60 协议）
+python -m psn2d run examples/psn_repro/checkerboard_1g_rect.yaml --case i30_M24_S20
+
+# 通用开关
+python -m psn2d run <file>.yaml --case <name>        # 只跑指定 case
+python -m psn2d run <file>.yaml --json                # 结果输出 JSON
+python -m psn2d run <file>.yaml --opt auto            # 内存优化后端（见下）
 python -m psn2d run <file>.yaml --threads 24 --mem-limit-gb 32   # 并行/内存预算
 ```
 
@@ -125,8 +153,8 @@ LU 直解，也可以 GMRES + 红黑节点扫描 matvec + fork 进程池并行�
 ```yaml
 solver:
   inner: gmres          # lu（默认）| gmres
-  gmres_rtol: 1.0e-11   # 可选，系统残差判据
-  gmres_maxiter: 800    # 可选
+  gmres_rtol: 1.0e-11   # 可选，系统残差判据（论文生产扫表用 1e-7，与外迭代门一致）
+  gmres_maxiter: 800    # 可选（内部 Krylov 迭代上限，每 20 次重启）
   gmres_workers: 21     # 可选，默认 = 块数（system 模式=系统数，pair 模式=系统数×M/2）
   gmres_pairs: on       # 可选，off|on，默认 auto（M=2 走 system，M≥4 走 pair）
 ```
@@ -166,89 +194,84 @@ boundaries:              # 四条边：reflective 或 vacuum
   right: reflective
   top: reflective
 materials_file: c5g7_materials_pure.yaml   # 或内联 materials/chi
+angular:                   # 角向模型（全局默认；per-case 可覆盖）
+  model: generic           # generic（默认）| ty3
+  M: 12                    # 方位角段数（偶数）
+  I: 30                    # generic 模型的极向段数（ty3 忽略）
+  A: 0                     # 高序方向矩阶数 0..3（A>0 需 closure）
+  closure: directional_matrix   # A>0 时的闭包类型
 solver:
   max_outer: 3000
   keff_tol: 1e-10
   threads: 24            # 可选：进程树总并行度预算（父因子化 BLAS / 预因子线程池 / fork 扫算池之和恒 ≤ N）
   mem_limit_gb: 32       # 可选：--opt auto/chol/angschr/tile 的因子池预算（默认 32）
-cases:                   # 批量：M=方位角段数, S=空间细分, model=generic|ty3
+cases:                   # 批量：per-case 覆盖 M / subdivide / A / closure / model / I
   - { name: M8_S1,  model: generic,  M: 8,  subdivide: 1 }
   - { name: M12_S1, model: generic,  M: 12, subdivide: 1 }
   - { name: M12_S2, model: generic,  M: 12, subdivide: 2 }
+  - { name: A3_M24_S2, A: 3, closure: directional_matrix, M: 24, subdivide: 2, kref: 1.3347260 }
 ```
 
-- **model**：角度模型，`generic`（默认，论文 Sec.2 通用 PSN）或 `ty3`（TY 受限二维模型）。
+- **model**：角度模型，`generic`（默认，论文 Sec.2 通用 PSN）或 `ty3`
+  （TY 受限二维模型）。
 - **M**：方位角离散段数（角向精度，须为偶数）。
-- **S**：空间细分（每个材料网格再分为 S×S 子节点 → 空间精度）。
+- **S**：空间细分（每个材料网格再分为 S×S 子节点 → 空间精度；`subdivide`）。
+- **A / closure**：高序方向矩闭包；`A: 0`（默认）= 原法（论文 §3 复现）。
 - **kref**（可选）：参考 k 值，给出后自动打印 Δ（pcm）。
 
 内存模型：ty3 下 21 个 (i,g) 系统（3 TY 极线 × 7 群）各一次一次性因子化并
 常驻缓存，外迭代纯回代；**S 主导内存，M 只改块数不改填充**（1/4 芯 S=1 2601
-节点 ~4 GB，S=2 10404 节点峰值 ~14 GB；优化后端把 S=3..6 全收回 4–5 GB 量级）。
+节点 ~4 GB，S=2 10404 节点峰值 ~14 GB；优化后端把 S=3..6 全收回 4–5 GB
+量级）。
 
-## 5. 复现验证
+## 5. 输入 ↔ 论文实验对照（examples/ 覆盖论文全部实验）
 
-| 问题 | 输入 | 结果 | 对照 |
-|------|------|------|------|
-| Fig.3 棋盘（1 群） | `psn_repro/checkerboard_1g.yaml` | 与快照逐点咬合 | 原文 Fig.3（<4 pcm） |
-| BWR 2 群束 | `psn_repro/bwr_bundle_2g.yaml` | Δ=+28.3 pcm（N=2, M=8） | 原文 Fig.8/10 |
-| C5G7-2D 1/4 芯（7 群，均质化 XS） | `c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml` | k=1.18861（M12_S1） | 1.18646（McGraw PHYSOR 2014 高保真），+215 pcm |
-| C5G7 单 UO2 组件（7 群，均质化 XS） | `c5g7/study1_homogenised/c5g7_uo2_assembly.yaml` | k=1.34030 | nTRACER 1.33367 |
-| Study I 1/4 芯（BWW 自屏蔽均质化） | `c5g7/study1_homogenised/c5g7_2d_quarter_core_bww_om.yaml` | 最佳点 S=6, M=24：−7.7 pcm | 自算 OpenMC 同均质化参考 1.1867462（±3.4 pcm）；对高保真 1.18646 为 +28.6 pcm |
-| C5G7 单 UO2 组件（7 群，矩形节点非均质） | `c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml` | k=1.3347384（M24, S=1） | 自算 OpenMC 显式几何参考 1.3347260 ±3.6 pcm，+12.4 pcm |
-| C5G7-2D 1/4 芯（7 群，矩形节点非均质） | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | k=1.1871157（M24, S=1） | 自算 OpenMC 同几何参考 1.1872176 ±3.4 pcm，−10.2 pcm |
-| rect6 6×6 准方划分 1/4 芯 | `c5g7/study2_rectangular/c5g7_rect6_quarter_core.yaml` | M=2/4/8/12/16：−278.8…−126.2 pcm（S=1） | 同上同几何参考；core M≥24 超 62 GB 机器预算 |
+`examples/` 下每个输入文件的 `cases` 块覆盖论文对应表格的完整扫表网格；
+`kref` 即论文所用参考值（同几何 OpenMC / 原文发表值），运行时自动打印
+Δk（pcm）。
 
-完整 248 点复现数据与图见 `snapshot/`（原始快照仓库）。
+| 论文实验 | 输入文件 | 网格（cases） | 参考 kref | 结果（论文） |
+|---|---|---|---|---|
+| §3 复现：1 群棋盘（原法 A=0，generic I=30） | `psn_repro/checkerboard_1g.yaml` | S=1–10 × M=2–24（60 点） | 1.12974 | 与原文 Fig.3 逐点咬合（`docs/fig3ref.json`） |
+| §3 复现：1 群棋盘强吸收 | `psn_repro/checkerboard_1g_strong.yaml` | S=1–10 × M=2–24（60 点） | 0.51673 | 同上（附录 B） |
+| §3 复现：2 群 BWR 束（无 Gd） | `psn_repro/bwr_bundle_2g.yaml` | N=1–10 × M=4–24（60 点） | 1.18797 | 原文 Fig.8/10（附录 C） |
+| §3 复现：2 群 BWR 束（含 Gd 钉） | `psn_repro/bwr_bundle_2g_with_gd.yaml` | N=1–10 × M=4–24（60 点） | 0.86688 | 附录 D |
+| Study I：pinwise 均质化 UO₂ 组件 | `c5g7/study1_homogenised/c5g7_uo2_assembly_bww_om.yaml` | S=1–6 × M=2–24（36 点） | 1.3336285 | 最佳 S=5, M=12：+0.0 pcm（进 MC 误差带 ±3.5） |
+| Study I：pinwise 均质化 MOX 组件 | `c5g7/study1_homogenised/c5g7_mox_assembly_bww.yaml` | S=1–6 × M=2–24（36 点） | 1.1853993 | 最佳 S=6, M=24：−1.5 pcm（±3.3） |
+| Study I：pinwise 均质化 1/4 芯 | `c5g7/study1_homogenised/c5g7_2d_quarter_core_bww_om.yaml` | S=1–6 × M=2–24（36 点） | 1.1868230 | 最佳 S=6, M=24：−7.7 pcm（±3.4） |
+| Study II：3×3 平铺 UO₂ 组件（矩形节点） | `c5g7/study2_rectangular/c5g7_rect_uo2_assembly.yaml` | S=1–6 × M=2–24（36 点） | 1.3347260 | S=1, M=24：+1.2 pcm（S=1 行 M 收敛到参考带内） |
+| Study II：3×3 平铺 MOX 组件 | `c5g7/study2_rectangular/c5g7_rect_mox_assembly.yaml` | S=1–6 × M=2–24（36 点） | 1.1851053 | 同上网格（表 tab:rectsm） |
+| Study II：3×3 平铺 1/4 芯 | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–2 全 M + S=3 M=2,4,8（15 点） | 1.1872176 | S=1, M=24：−10.2 pcm（最佳点） |
+| Study III：A=3 组件 UO₂（2×2 燃料分割） | `c5g7/study2_rectangular/c5g7_rect17_split4_uo2_assembly.yaml` | S=1,2 × M=2–24（12 点） | 1.3347260 | S=1：−119.2→+10.3 pcm（M2→M24）；S=2：−128.7→−0.5 |
+| Study III：A=3 组件 MOX | `c5g7/study2_rectangular/c5g7_rect17_split4_mox_assembly.yaml` | S=1,2 × M=2–24（12 点） | 1.1851053 | S=1：−274.8→+7.4；S=2：−303.3→−9.8 |
+| Study III：A=3 1/4 芯 | `c5g7/study2_rectangular/c5g7_core_split4_uo2_mox_quarter_core.yaml` | S=1,2 × M=2–24（12 点） | 1.1872176 | S=1 全行：−135.6 / −34.2 / −1.7 / +6.2 / +9.1 / +11.0 pcm（M2→M24）；S=2 行在产（M=2：−150.1） |
+| Study III：A=3 棋盘弱吸收（TY3 / I30 / I60） | `psn_repro/checkerboard_1g_rect.yaml` | TY3 S=1–12；I30 S=1–20；I60 单点（194 case） | 1.12974 | I30 最佳 S=12：−0.1 pcm；I60 S=20 M=24：−0.9（vs I30 同点 −3.8，+2.9 pcm） |
+| Study III：A=3 棋盘强吸收 | `psn_repro/checkerboard_1g_rect_strong.yaml` | 同上（194 case） | 0.51673 | 同上网格 |
 
-回归套件 `tests/run_examples.py` 覆盖上表问题（fast 层 ~3 min，full 层另含
-C5G7 1/4 芯均质化与矩形节点重 case），对照 `tests/baseline_keff.json` 的位级
-基线（Δ 容差 1.0 pcm，`--record` 合并记录新基线，`--only <yaml 片段>` 过滤）：
+（棋盘 A3 的 `subdivide` 约定：case 名中的 S = 论文 S，2×2 基网格再细分
+S×S → 2S×2S 节点，即 `subdivide: S`。）
+
+旧快照版输入（`c5g7_2d_quarter_core.yaml`、`c5g7_uo2_assembly.yaml`、
+`study2_rectangular` 的 rect4x4 / rect6 / pin 系列）保留作历史对照与回归
+基线，不再对应论文主表。
+
+**完整 248 点复现数据**：`docs/fig3ref.json`（棋盘 weak/strong 各 60 点，
+S×M 键控，ours/paper/Δ 三列）与 `docs/bwr_ref.json`（BWR 无 Gd/含 Gd 各
+60 点，this-work 值）。原始快照仓库见 `snapshot/`。
+
+## 6. 复现验证与回归测试
+
+回归套件 `tests/run_examples.py` 覆盖 §5 各问题的代表点（fast 层 ~3 min，
+full 层另含 C5G7 1/4 芯均质化与矩形节点重 case），对照
+`tests/baseline_keff.json` 的位级基线（Δ 容差 1.0 pcm，`--record` 合并
+记录新基线，`--only <yaml 片段>` 过滤）：
 
 ```bash
-python tests/run_examples.py          # fast 层
+python tests/run_examples.py          # fast 层（当前 7/7 全过，Δ=0.000 pcm）
 python tests/run_examples.py --full   # 含 full 层重 case
 ```
 
-## 6. C5G7 基准结果（论文 §4）
-
-C5G7-2D MOX 1/4 芯（51×51 pin，2×2 燃料块 + L 形水反射，7 群）。两个研究
-把节点法的两类误差源分开：
-
-### Study I — pinwise 均质化（BWW 自屏蔽均质化截面）
-
-S×M 扫参，对照**同一均质化数据**上直接计算的 OpenMC 参考
-（100k×20200 批，collision，SEED 20260909）：
-
-```
-  UO2 组件  最佳 S=5, M=12   +0.0 pcm   （进入 MC 统计误差带 ±3.5 pcm）
-  MOX 组件  最佳 S=6, M=24   -1.5 pcm   （±3.3 pcm）
-  1/4 芯    最佳 S=6, M=24   -7.7 pcm   （±3.4 pcm；对高保真 1.18646 为 +28.6 pcm
-                                         —— 均质化模型本身的残余）
-最佳点 pin 通量场 vs 同配方 OpenMC：0.07% RMS（max 0.25%），1056 根燃料棒
-  —— 平滑方法级偏差，不是局部误差对消。
-```
-
-### Study II — 矩形节点（非均质 7 群材料截面，无均质化模型）
-
-**3×3 平铺**（153×153 节点，UO2 组件 S=1 全 M 收敛）：
-
-```
-1/4 芯（S=1）
-  M=8    -184.3 pcm
-  M=12   -110.9
-  M=16    -61.1
-  M=24    -10.2   ← 最佳点（同几何 OpenMC 参考 1.1872176 ±3.4）
-pin 级裂变 map（keff 最优配置）：UO2 组件 0.17% RMS；1/4 芯 1056 棒
-  0.54% RMS（max 1.50%，MOX 单元最大——局部梯度最陡处）
-```
-
-**6×6 准方划分**（单 pin 水隙节点长宽比 1.05，8×8 基网格；136×136 组件 /
-408×408 芯）：单 pin 验证最佳 M=192×S=6 达 −8.7 pcm（进参考 ±8.2 pcm 带），
-节点级裂变 RMS 0.05%/max 0.10%；全几何 pin 平均裂变分布 M≥8 即达 0.06–0.07%
-RMS 并保持到 M=48（先于 keff 收敛）。
-
-### 20 码 NEA 景观对照（高保真参考 1.18646）
+C5G7 20 码 NEA 景观对照（高保真参考 1.18646，论文 §4.5）：
 
 ```
 MOC 集群 ±28 pcm 内：CHAPLET +10, MCCG3D +11, DeCART +14, APOLLO2 -28
@@ -257,27 +280,53 @@ P1 扩散              -290 … -323
 OpenPSN（矩形节点 M=16）  1.1866067  +14.7   ← 落在高保真 MOC 集群内
 ```
 
-- 空间细化 S=1→2（2601→10404 节点）k 仅动 ~4 pcm → 离散已收敛。
-- 独立代数 k∞ = 1.32936 与 SPHINCS/nTRACER 无自屏蔽值**逐位一致**（数据接线铁证）。
-- 与 20 个确定性代码的完整对照见论文 §4.5（NEA/NSC/DOC(2003)16 Table 17）。
-- 高序方向闭合（A>0）的内存瓶颈已由 `solver.inner: gmres` 进程池路径解决：
-  M8 峰值 3.65 GB（LU 直解 54 GB）、M12 6.41 GB，keff 位级一致（A=1/2/3，Δ≤2e-14），
-  S≥2 / M≥12 的扫表点因此可在 62 GB 机器上跑通（`tools_ho/dir_table3_sweep_gmres.py`）。
+## 7. 论文扫表驱动与数据（tools_ho/）
 
-论文：[OpenPSN: a multi-group Phase Space Nodal solver with rectangular nodes, validated on the C5G7 MOX benchmark](https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark)（ResearchGate 预印本，2026）
+论文 Study III 各表的生产扫表（HPC，SLURM）由 `tools_ho/` 下的单点驱动
++ 批处理脚本生成；**逐点日志与 dump 数据随码发布**（`tools_ho/data/`），
+图可由仓库内脚本一键重生成：
 
-## 7. 目录结构
+```
+tools_ho/
+├── hpc_point.py            # 单点驱动（生产协议：GMRES 池, rtol=1e-7, pairs, dump）
+├── hpc_flux_dump.py        # 单点裂变场 dump 驱动（Figure-2 风格对比图用）
+├── rect17_run.py           # Study III 组件 24 点扫表协调器（2×2 燃料分割）
+├── make_core_split4.py     # 1/4 芯 2×2 燃料分割 YAML 生成器
+├── verify_core_split4.py   # 分割几何一致性校验
+├── cb_a3_table.py          # 棋盘 A3 TY3 表 + checkerboard_a3 图（自日志）
+├── cb_i30_table.py         # 棋盘 A3 I30/I60 表 + checkerboard_a3_i30_sm 图
+├── cb_fit_rms.py           # 棋盘 A3 RMS 拟合
+├── plot_a3_mconv.py        # 论文 Fig.（Δk + fission-max vs M，2×3 合并图）
+├── plot_a3_fission.py      # 论文 Fig.（3 行 pin 平均裂变对比热力图）
+├── plot_rect4_pin_geom.py  # 论文 Fig.（2×2 燃料分割节点几何示意图）
+├── plot_r17_m_conv*.py     # 组件 M 收敛图（历史版本）
+├── smoke_*.py              # 小网格冒烟测试（A3 各协议）
+├── slurm_*.sh              # SLURM 提交脚本（asm/core 串行批、棋盘 A3/I30/I60、redump）
+├── *.log / *.out           # 生产扫表逐点日志（assembly 24 点、core 7 点、棋盘 TY3/I30/I60、
+│                           #   Study II 4 点对照、DIR 早期 sweep）
+└── data/
+    ├── r17_core4/          # 组件/芯 A3 点 fission dump（31 × .npz，pin 平均 + 全节点 + 元数据）
+    └── omc_*.npy           # 同几何 OpenMC 参考功率场（组件 UO₂/MOX、1/4 芯）
+```
+
+论文图 → 生成脚本：`c5g7_rect4_a3_m_conv.png` ← `plot_a3_mconv.py`；
+`c5g7_rect4_a3_fission.png` ← `plot_a3_fission.py`；
+`checkerboard_a3_i30_sm.png` ← `cb_i30_table.py`；
+`rect4_pin_geometry.png` ← `plot_rect4_pin_geom.py`。
+
+## 8. 目录结构
 
 ```
 OpenPSN/
 ├── psn2d/            # 主包：现代多群 PSN（YAML 驱动）
-│   ├── __main__.py   #   CLI 入口 (run, --opt/--threads/--mem-limit-gb)
-│   ├── model.py      #   YAML 解析
+│   ├── __main__.py   #   CLI 入口 (run, --opt/--threads/--mem-limit-gb, per-case A/closure)
+│   ├── model.py      #   YAML 解析（expand_cases：per-case 默认填充）
 │   ├── solver.py     #   多群 PSN 节点求解器（稀疏+向量化，fork 扫算池）
 │   ├── node.py       #   方形节点闭式解（generic / ty3 两模型）
 │   ├── node_rect.py  #   矩形节点闭式解（任意 x/y 宽度）
 │   ├── highorder.py  #   高序方向矩闭合（A=0..3，directional/original 分支，LU 内层）
 │   ├── highsweep.py  #   GMRES 内层 + fork 进程池（solver.inner: gmres，静态分片 warm-start）
+│   ├── dump.py       #   fission 场 dump（全节点 + pin 块平均 + 元数据，生产扫表落盘用）
 │   ├── runtime.py    #   线程/内存预算（用户输入，进程树恒 ≤ N）
 │   ├── memopt.py     #   内存优化后端 auto 分派（--opt auto）
 │   ├── angschr.py    #   角度 Schur 剖分后端（方向块对角化, --opt angschr）
@@ -286,17 +335,19 @@ OpenPSN/
 ├── docs/             # 在线演示站（GitHub Pages → openpsn-ai.com）
 │   ├── index.html    #   产品页 + 浏览器内求解器 + C5G7 结果
 │   ├── psn.js        #   纯 JS PSN 引擎（无依赖）
-│   ├── fig3ref.json  #   论文 Fig.3 60 点复现数据（页面比对用）
+│   ├── fig3ref.json  #   论文 Fig.3 棋盘 120 点逐点数据（weak/strong 各 60）
+│   ├── bwr_ref.json  #   论文附录 C/D BWR 120 点逐点数据（无 Gd/含 Gd 各 60）
 │   └── img/          #   内嵌插图（原论文 Fig.1/3/6/7/8/10 + C5G7 图）
-├── examples/         # 论文问题输入（按论文结构分文件夹）
-│   ├── psn_repro/    #   §3 复现旧 PSN：1 群棋盘 + 2 群 BWR 束
+├── examples/         # 论文问题输入（按论文结构分文件夹，见 §5 对照表）
+│   ├── psn_repro/    #   §3 复现 + Study III 棋盘：1 群棋盘（A=0 / A=3 rect）+ 2 群 BWR（±Gd）
 │   ├── c5g7/
-│   │   ├── c5g7-mgxs.h5       # 原始 7 群截面库
-│   │   ├── study1_homogenised/    # §4.3 Study I：pinwise 均质化（含 BWW 自屏蔽）
-│   │   └── study2_rectangular/    # §4.4 Study II：矩形节点 3×3 / 6×6（非均质 XS）
+│   │   ├── c5g7-mgxs.h5             # 原始 7 群截面库
+│   │   ├── study1_homogenised/      # Study I：pinwise 均质化（含 BWW 自屏蔽）
+│   │   └── study2_rectangular/      # Study II：3×3 矩形节点 + Study III：2×2 燃料分割（A=3）
 │   ├── tools/        #   probe/chain/绘图等辅助脚本
 │   └── logs/         #   历史扫参日志
-├── paper/            # 论文：main.tex + appendix.tex + figures/ + 三格式交付（pdf/md/docx）
+├── tools_ho/         # 论文扫表驱动 + 逐点日志 + dump 数据 + 图脚本（见 §7）
+├── paper/            # 论文：main.tex + studyIII.tex + appendix.tex + figures/ + 三格式（pdf/md/docx）
 ├── tests/            # 回归套件：run_examples.py + test_memopt.py + test_tile.py
 │                     #   + verify_rect_node.py + baseline_keff.json（位级基线）
 ├── scripts/          # C5G7 规格/截面生成脚本
@@ -305,17 +356,27 @@ OpenPSN/
 └── README.md
 ```
 
-## 8. 方法说明
+## 9. 方法说明
 
-PSN（Phase Space Nodal，相空间节点法）节点法在每个节点内以四次抛物线插值表示通量，
-通过节点内消元得到面流与节点源之间的显式关系，再在节点边界耦合。
-相比传统 SN 差分，PSN 用更少的空间网格达到同等精度；相比 MOC，PSN 不依赖
-追踪方向在网格上的投影，对复杂网格更稳健。矩形节点扩展把每节点的 x/y 宽度
-作为独立几何参数进入全部闭式（衰减常数、面流、面通量、体矩），使非均质
-7 群材料截面可直接赋给显式燃料/水矩形节点。细节见论文与 `psn2d/solver.py`、
-`psn2d/node_rect.py` 注释（含论文式号 B.3 的抛物线源更新）。
+PSN（Phase Space Nodal，相空间节点法）节点法在每个节点内以四次抛物线插值
+表示通量，通过节点内消元得到面流与节点源之间的显式关系，再在节点边界
+耦合。相比传统 SN 差分，PSN 用更少的空间网格达到同等精度；相比 MOC，PSN
+不依赖追踪方向在网格上的投影，对复杂网格更稳健。三条能力线：
 
-## 9. 并行与部署
+1. **原法复现（A=0）**：generic / ty3 两套角度模型的忠实复现（论文 §3，
+   248 点逐点咬合）；
+2. **矩形节点**：把每节点的 x/y 宽度作为独立几何参数进入全部闭式（衰减
+   常数、面流、面通量、体矩），使非均质 7 群材料截面可直接赋给显式
+   燃料/水矩形节点（论文 §4 Study II）；
+3. **高序方向角向矩闭包（A=1–3）**：在节点面流耦合上引入方向矩修正，
+   把角向误差从 O(Δθ²) 压低到 O(Δθ^{2A+2}) 量级；A=3 + 2×2 燃料分割
+   铺装在 C5G7 组件/芯/棋盘上全部进入同几何 OpenMC 参考误差带（论文
+   §5，248 点）。
+
+细节见论文（`paper/`）与 `psn2d/solver.py`、`psn2d/node_rect.py`、
+`psn2d/highorder.py` 注释（含论文式号 B.3 的抛物线源更新）。
+
+## 10. 并行与部署
 
 - **线程/内存是用户输入**（YAML `solver.threads` / `solver.mem_limit_gb`，
   CLI `--threads` / `--mem-limit-gb`）：`threads` 是**整个进程树的总并行度
@@ -340,3 +401,7 @@ PSN（Phase Space Nodal，相空间节点法）节点法在每个节点内以四
   （COW 只共享读因子，私有部分是角度通量/局部归约）。62 GB 机器上
   core M12_S2 plain 全程约 41 GB，优化后端（chol/angschr/tile）低数倍至
   一个数量级（M192 组件 angschr 全池 ~48 GB 可行，tile 缝合面 185 GB 不可行）。
+
+---
+
+论文：[OpenPSN: Rectangular Phase-Space Nodal Transport with Higher-Order Angular Moments](https://www.researchgate.net/publication/414038054_OpenPSN_a_multi-group_Phase_Space_Nodal_solver_and_its_validation_on_the_C5G7_MOX_benchmark)（ResearchGate 预印本，2026）

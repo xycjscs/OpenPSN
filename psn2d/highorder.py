@@ -719,7 +719,7 @@ def keff_highorder(psn, A=3, branch="directional", max_outer=4000,
             if verbose and (outer % 5 == 0 or dlam < outer_tol):
                 print(f"ho it {outer:4d}  keff={lam:.7f}  dkeff={dlam:.2e}  "
                       f"src_res={src_res:.2e}")
-            if dlam < outer_tol and src_res < 1e-9:
+            if dlam < outer_tol and src_res < outer_tol:
                 converged = True
                 break
     finally:

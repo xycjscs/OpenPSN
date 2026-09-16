@@ -24,3 +24,4 @@ __version__ = "0.1.0"
 
 from .model import load_spec, expand_cases, arrays  # noqa: E402,F401
 from .solver import PSN2D  # noqa: E402,F401
+from .dump import dump_fields  # noqa: E402,F401
