@@ -133,7 +133,7 @@ ax.plot(CORE_S1['M'], CORE_S1['dk'], '-', marker='o', ms=4.5, lw=1.3,
         color='tab:blue', label='S=1')
 ax.axhline(0, color='0.5', lw=0.7)
 ax.set_xlim(1, 26)
-ax.text(0.95, 0.35, 'S=2 row: in progress',
+ax.text(0.95, 0.35, 'completed S=1 angular sweep (fixed spatial resolution)',
         transform=ax.transAxes, ha='right', va='center', fontsize=7.5,
         style='italic', color='0.3')
 ax.set_title(titles[2], fontsize=9.5, fontweight='bold')
@@ -162,7 +162,7 @@ axes[1, 0].set_ylabel(r'fission-rate max error $|\Delta|_{\max}$ (%)')
 axes[1, 0].legend(fontsize=8.5, framealpha=0.9)
 
 ax = axes[1, 2]
-for S, st in ((1, '-'), (2, '--')):
+for S, st in ((1, '-'),):
     Ms_, ys_ = [], []
     for M in MS:
         v = core_f[f'S{S}'].get(M)
@@ -177,14 +177,14 @@ ax.set_xlim(1, 26)
 ax.yaxis.set_major_formatter(
     matplotlib.ticker.FuncFormatter(lambda v, _: f'{v:.2f}'))
 ax.set_xlabel('M (azimuthal segments)')
-ax.text(0.95, 0.35, 'S=2 row: in progress',
-        transform=ax.transAxes, ha='right', va='center', fontsize=7.5,
+ax.text(0.05, 0.93, 'completed S=1 angular sweep (fixed spatial resolution)',
+        transform=ax.transAxes, ha='left', va='top', fontsize=7.5,
         style='italic', color='0.3')
 ax.tick_params(labelsize=8.5)
 for a in axes.flat:
     a.grid(alpha=0.25, lw=0.5, which='both')
 
-fig.suptitle(r'$A{=}3$ directional closure, $2\times2$ fuel-split tiling: '
+fig.suptitle(r'$A{=}3$ local angular-moment closure, $2\times2$ fuel-split tiling: '
              r'top, $\Delta k$ versus $M$; bottom, pin-averaged fission-rate '
              r'max error versus $M$ (same-geometry OpenMC references, '
              r'$\approx\pm 3.3$--$3.6$ pcm)',

@@ -26,8 +26,8 @@
 \newcommand{\doi}[1]{\,\href{https://doi.org/#1}{doi:#1}}
 \renewcommand{\arraystretch}{1.25}
 
-\title{\bf OpenPSN: Rectangular Phase-Space Nodal Transport\\
-with Higher-Order Angular Moments}
+\title{\bf OpenPSN: Implementation, Verification, and Assessment of
+Nodal Transport Methods}
 
 \author{
   Yuchao Xu \\
@@ -44,54 +44,30 @@ with Higher-Order Angular Moments}
 \maketitle
 
 \begin{abstract}
-We present \textbf{OpenPSN}, a self-contained, multi-group implementation of
-the \emph{Phase Space Nodal} (PSN) method for two-dimensional Cartesian
-neutron transport, together with a rigorous validation against the OECD
-Nuclear Energy Agency (NEA) C5G7 MOX benchmark. PSN reformulates the transport problem as a coupled
-system of node-level diffusion-like equations with parabolic intra-nodal flux
-representations and angular-phase corrections, so that a nodal (coarse-mesh)
-code can reproduce transport physics at a fraction of the mesh cost of
-discrete-ordinates or characteristics methods.
-
-We contribute four items.
-\emph{First}, a faithful, fully-vectorised, sparse re-implementation that
-reproduces the published PSN paper to within a few pcm on 248 independent
-eigenvalue data points (checkerboard and boiling-water-reactor (BWR)
-bundle problems), while removing the quadratic growth of the original
-dense formulation: the smallest C5G7 case (2601 nodes, $M=12$) already
-carries a $63{,}036^{2}$ dense system matrix, and the sparse form is
-verified against the dense path to $10^{-15}$ and extends to the
-$10{,}404$-node refinement.
-\emph{Second}, the PSN node operators extended to rectangular nodes
-with arbitrary per-node widths and explicit, un-homogenised intra-node
-fuel/water geometry, verified node-by-node against the square-node
-path.
-\emph{Third}, a directional angular-moment extension: the odd-parity
-flux is eliminated exactly before the even-parity equation is
-projected onto piecewise Legendre modes in azimuth, giving
-matrix-valued directional diffusion coefficients that define the local
-body response and face currents at angular order $A{=}3$ (Section~4.4).
-\emph{Fourth}, a benchmark study of C5G7 organised as three studies.
-In the \emph{pinwise-homogenised} study, OpenPSN is swept over spatial
-sub-division $S=1\ldots6$ and angular order $M=2\ldots24$ against a
-reference we compute directly with OpenMC on the identical homogenised
-cross sections (20000 batches $\times$ 100\,k particles, statistical
-uncertainty $\approx$3.3--3.5~pcm): the best assembly points
-($S{=}5$--$6$, $M{\ge}8$) sit inside the Monte Carlo standard error
-($+0.0$~pcm UO$_2$, $-1.5$~pcm MOX), and the best 1/4-core point
-reaches $-7.7$~pcm. In the \emph{rectangular-node} studies, the
-homogenisation model is removed entirely; with un-homogenised material
-data the $A{=}3$ 1/4-core eigenvalue is $\Delta\keff=-1.7$~pcm against
-the identical rectangular-rod OpenMC geometry ($+74.1$~pcm vs.\ the
-high-fidelity reference $1.18646$) at $A{=}3$, $S{=}1$, $M{=}8$ on the
-$2\times2$ fuel-split tiling, and the pin-averaged fission-rate maps
-agree with OpenMC at the sub-1\% RMS level on both geometries.
-We place all results against the full published landscape of C5G7-2D
-codes --- 20 deterministic codes from the original NEA benchmark,
-together with P1/SP3/SN/nodal results from the recent literature ---
-and the best assembly and core points sit within the same-geometry
-OpenMC standard error, with the homogenised result inside the
-high-fidelity MOC reference cluster.
+OpenPSN is a multigroup nodal transport framework containing an
+implementation of the phase space nodal (PSN) method and a separate
+local angular-moment formulation. We first document the implementation
+of the published PSN closure, including rectangular material nodes, and
+reproduce the reported checkerboard and BWR-bundle calculations. We then
+formulate a segmentwise even-parity angular-moment variant in which
+local Legendre modes in azimuth are coupled through matrix-valued second
+angular moments and a separated nodal spatial response. This variant
+belongs to the multi-$P_N$-type family of angular discretisations; it is
+distinguished from a direct higher-order extension of the original PSN
+construction. Numerical assessment uses the available checkerboard and
+C5G7-based calculations, with separate references for pin-homogenised
+and explicit square-fuel models. Selected assembly and quarter-core
+configurations give eigenvalues within the reported statistical
+uncertainty of their corresponding OpenMC references, while selected
+normalised pin-averaged fission distributions show small
+discrepancies. The original rectangular PSN and angular-moment campaigns
+use different pin tilings, so their comparison assesses the combined
+numerical configurations rather than angular order alone. For the local
+angular-moment branch, the completed quarter-core study is restricted to
+the $S{=}1$ angular-resolution sweep. The results document the behaviour
+of the implemented formulations and the accuracy of specified
+configurations without establishing a general cost advantage, joint
+monotonic convergence, or the limiting transport accuracy.
 \end{abstract}
 
 \section{Introduction}
@@ -104,64 +80,92 @@ work on coarse meshes and are cheap and robust, but classical diffusion
 under-predicts the transport corrections (shielding, pin-wise self
 shielding) that control $\keff$ and power shape.
 
-The \textbf{Phase Space Nodal (PSN)} method~\cite{psn2027} bridges the two.
-Within each node the scalar flux is represented by a separable
-hyperbolic profile in the two axes, plus a five-term quadratic
-particular solution of the source, whose angular dependence is carried
-through a small set of phase-space (angular) moments with closed-form
-correction coefficients. The
+The \textbf{Phase Space Nodal (PSN)} method of Chao
+\emph{et al.}~\cite{psn2027} bridges the two. Within each node the scalar
+flux is represented by a separable hyperbolic profile in the two axes, plus a
+five-term quadratic particular solution of the source; the angular flux is
+reconstructed from the spatial field as
+$4\pi\psi(\mathbf{r},\boldsymbol{\Omega})
+=\phi(\mathbf{r})-\Sigma_t^{-1}\boldsymbol{\Omega}\cdot\nabla\phi
+(\mathbf{r})$, so its directional variation is carried by a small set of
+phase-space (angular) moments with closed-form correction coefficients. The
 node is eliminated to give explicit relations between surface currents and
 node sources, and neighbouring nodes are coupled through those currents. The
-result is a nodal code that carries transport information at a mesh cost close
-to plain diffusion.
+result is a nodal code with a compact spatial representation; the present
+implementation uses a sparse assembly of the node-coupling system rather than
+the dense form of the original reference code.
 
-Two gaps remained. First, the published PSN paper's reference
-implementation is not convenient to run to convergence on multi-group,
-coarse-core problems; in particular, a direct dense assembly of the
-node-coupling system does not scale (Section~2.2). Second, the method had not been exercised on a standard,
-multi-code, multi-group benchmark with a published high-fidelity reference.
+Local angular expansions on subdomains of the direction domain
+precede the present work. Ghazaie \emph{et al.} formulated a Multi-PN
+approximation using separate angular expansions on subdomains and a
+finite-element treatment of space~\cite{ghazaie2019mpn}; Falabino
+\emph{et al.} developed a piecewise-polynomial representation of
+interface angular fluxes within a short-characteristic transport
+solver~\cite{falabino2022mpn}. Chao \emph{et al.} distinguish their PSN
+construction from such independently selected local angular
+expansions~\cite{psn2027}: in PSN, the angular structure is generated by
+powers of the streaming operator acting on spatial functions governed by
+diffusion-type equations, and their proposed SP3-based development
+concerns higher streaming-operator powers rather than a higher polynomial
+degree in azimuth.
 
-In this work we (i) re-implement PSN as a clean, multi-group,
-YAML-driven Python package (\textbf{OpenPSN}), with sparse assembly and
-vectorised node operators that agree with the validated loop form to
-$10^{-15}$ (floating-point rounding); (ii) verify the implementation by
-reproducing the published PSN results on the checkerboard and BWR
-bundle problems; (iii) derive a directional angular-moment extension of
-the nodal closure: the odd-parity flux is eliminated exactly before the
-even-parity equation is projected onto piecewise Legendre modes in
-azimuth, and the resulting matrix-valued diffusion coefficients define
-the local body response and face currents while the spatial trial family
-stays separated; and (iv) validate on the C5G7 MOX benchmark and the
-published checkerboard, comparing against directly computed OpenMC
-references (both homogenised and explicit-pin geometry) and the full
-published code landscape for C5G7-2D.
+The contributions of this work are fourfold. First, we implement the
+published PSN formulation in a multigroup framework with rectangular
+nodes, sparse assembly and vectorised local operators. Second, we
+verify the original branch through the reported implementation checks
+and the reproduction of the published checkerboard and BWR-bundle
+results. Third, we document a separate segmentwise even-parity
+angular-moment branch, including its matrix-valued nodal response and
+its relation to the original PSN closure. Fourth, we assess the
+available checkerboard and C5G7-based calculations using references
+appropriate to each material and geometry model. The assessment
+preserves the distinction between eigenvalue trends and spatial-field
+accuracy, and between controlled comparisons and comparisons in which
+both the angular formulation and pin tiling change. We do not claim a
+new principle of local angular expansion or a general accuracy or
+efficiency ranking against the cited methods.
 
-The remainder is organised as follows. Section~2 summarises the PSN
-formulation and the specific implementation choices,
-including the new rectangular-node extension. Section~3 documents the
-reproduction of the published results. Section~4 describes the C5G7
-configuration and three benchmark
-studies: (i) the pinwise-homogenised nodal model with a full
-spatial/angular ($S\times M$) convergence sweep against directly computed
-OpenMC references; (ii) the rectangular-node model with explicit
-(unhomogenised) intra-node fuel/water structure under the original
-$A{=}0$ angular closure; and (iii) the same rectangular-node model
-closed at the $A{=}3$ directional angular order, including flux
-comparisons against OpenMC and an eigenvalue comparison with the
-published code landscape. Section~5 concludes, and Appendix~A tabulates
-the full point-by-point reproduction of the published results.
+The remainder is organised as follows. Section~2 describes the
+formulations and their implementation: the legacy PSN formulation, the
+rectangular-node implementation, and the separate segmentwise
+angular-moment formulation. Section~3 presents the implementation
+verification and the reproduction of the published PSN results.
+Section~4 assesses the checkerboard and C5G7-based
+calculations, distinguishing the pin-homogenised and explicit-material
+models and the two formulations: the legacy PSN branch on the
+$3\times3$ pin tiling (homogenised and explicit rectangular nodes)
+and the segmentwise angular-moment variant at $A{=}3$ on the $4\times4$
+fuel-split tiling, with fission-field comparisons against OpenMC. Section~5 discusses the scope
+of the comparisons and the relation to prior methods; Section~6 gives
+the conclusions. Appendix~A tabulates the full point-by-point
+reproduction of the published results.
 
-\section{The PSN method and the OpenPSN implementation}
+\section{Numerical formulations and implementation}
 
-\subsection{Method in brief}
+OpenPSN is a single software framework containing two distinct
+formulations of the nodal transport problem. The first is an
+implementation of the published legacy PSN construction~\cite{psn2027},
+including a rectangular-node extension. The second is a separate
+segmentwise even-parity angular-moment variant with a PSN-inspired
+nodal response, assessed at angular order $A{=}3$. The two share the
+rectangular geometry, the multi-group assembly and the outer
+fission-source iteration; they differ in the angular closure and, in the
+C5G7 campaigns, in the pin tiling. The software name OpenPSN does not
+imply that all of its results are instances of the original PSN method.
 
-The full theory is given in Ref.~\cite{psn2027}; we summarise only what is
-needed to read the implementation. The angular flux within a node is expanded
-in a small basis of angular moments; the scalar flux is taken as a
-separable hyperbolic profile in space (plus the five-term source
-particular solution) whose coefficients are fixed by the node-averaged
-flux and a set of surface-current (moment) unknowns. Two closed-form coefficients
-control the intra-nodal shape and the angular phase correction:
+\subsection{Legacy PSN}
+
+The full theory is given in Ref.~\cite{psn2027}; we summarise the
+ingredients needed here. The legacy PSN reconstruction combines a
+spatial nodal field with a direction-dependent gradient term: the
+scalar flux is a separable hyperbolic profile in space (plus the
+five-term source particular solution) whose coefficients are fixed by
+the node-averaged flux and a set of surface-current (moment) unknowns,
+and the angular flux is reconstructed from that field, so it is \emph{not}
+constant within an angular segment --- its directional variation is
+constrained by derivatives of the underlying spatial field. Two
+closed-form coefficients control the intra-nodal shape and the angular
+phase correction:
 
 \begin{align}
 \alpha_{imn} &\quad\text{(face-flux weight, }\overline{\Phi}_{imn}
@@ -197,14 +201,17 @@ The four implementation components are:
 
 \begin{enumerate}[label=\textbf{(\roman*)}, leftmargin=2.2em]
 \item \textbf{Sparse assembly (removes the quadratic growth).}
-  The nodal coupling matrix has only $\sim$9 non-zeroes per row (the node
-  couples to its own face-current unknowns and to its neighbours), so the
-  assembly scales linearly in the node count where the natural dense form
-  scales quadratically. We assemble in coordinate (COO) format and solve in
+  For the legacy PSN branch the nodal coupling matrix has only
+  $\sim$9 non-zeroes per row (the node couples to its own face-current
+  unknowns and to its neighbours), so the assembly scales linearly in
+  the node count where the natural dense form scales quadratically. We
+  assemble in coordinate (COO) format and solve in
   compressed-sparse-column (CSC) format; the path agrees with the plain
   dense reference to $10^{-15}$, and the $10{,}404$-node refinement
   ($250{,}920$ unknowns) converges to $10^{-10}$ in the
-  relative eigenvalue change.
+  relative eigenvalue change. The angular-moment branch assembles a
+  larger per-node system ($4K$ face-mode unknowns at $A{=}3$) with the
+  same sparse structure.
 
 \item \textbf{Vectorised node operators, verified to $10^{-15}$.}
   The node-state map is strictly linear in the $(J_4,q)$ unknowns. We probe
@@ -236,39 +243,562 @@ OpenPSN extends the node operators to arbitrary
   node widths; they are verified node-by-node against the square-node path
   (which they reduce to exactly when all widths are equal).
 
-\item \textbf{High-order directional moment closure ($A$-order angular
-  fidelity).}
-  The nodal moment closure is generalised to an arbitrary polynomial
-  order $A$ ($K{=}A{+}1$ face modes per direction): the original-scale
-  branch at $A{=}0$ reproduces the legacy state matrix element-for-
-  element (dedicated regression; the directional branch at $A{=}0$ is
-  the distinct segment-resolved variant of Section~4.4), and
-  $A{=}1,2,3$ extend it to higher
-  angular fidelity without changing any other part of the solver. Each
-  $(i,g)$ node system is then a fixed sparse linear system in $K$
-  face-mode unknowns per face ($4K$ per node), so the high-order
-  closure converges
-  every point to the same $10^{-7}$
-  gate as the original method. The accuracy of the assembly is
-  certified against an independent full-mesh direct solve: at full
-  convergence the keffs agree to ${\le}2\times10^{-14}$ for
-  $A{=}1,2,3$.
+\item \textbf{Segmentwise angular-moment nodal variant
+  (Section~\ref{sec:amvariant}).}
+  The additional angular-moment branch retains $K{=}A{+}1$ local
+  even-parity modes per segment. It uses a PSN-inspired nodal response,
+  but changes the angular closure and the body decay scales. The
+  original-scale $A{=}0$ regression branch and the directional $A{=}0$
+  member must be distinguished; only the former is reported to
+  reproduce the legacy state matrix, and $A{=}1,2,3$ increase the local
+  angular polynomial order. Each $(i,g)$ node system is a fixed sparse
+  linear system in $K$ face-mode unknowns per face ($4K$ per node), and
+  every point of the assessment converges to the same $10^{-7}$ gate.
+  The accuracy of the local assembly is certified against an
+  independent full-mesh direct solve: at full convergence the
+  eigenvalues agree to ${\le}2\times10^{-14}$ for $A{=}1,2,3$.
 \end{enumerate}
 
-These are the implementation components behind the results that follow:
-not a change to the physics, but the choices that (a) make the
-published method reproducible to machine precision and (b) make it
-converge to $10^{-7}$--$10^{-10}$ in relative eigenvalue change on
-multi-group
-coarse cores, at any subdivision the dense formulation cannot address.
+These components are shared by both branches where stated: they make
+the published method reproducible to machine precision and let each
+branch converge to $10^{-7}$--$10^{-10}$ in relative eigenvalue change
+on multi-group coarse cores, at subdivisions the dense formulation
+cannot address. The physics of the two branches differs, however: the
+angular-moment variant changes the angular closure, the body decay
+scales and the per-node unknown count, and that change is the subject
+of the assessment in Section~4 rather than an implementation
+convenience.
 
-\section{Reproduction of the published PSN results}
+\subsection{The segmentwise angular-moment variant}\label{sec:amvariant}
 
-Before any new application we verify the implementation against the source
-paper~\cite{psn2027}. We reproduce the two checkerboard eigenvalue
-convergence tables (Fig.~3, weak/strong absorption) and the BWR 12-pin
-bundle tables (Figs.~10/12, with and without Gd) to within a few pcm.
-Table~\ref{tab:repro} summarises the maximum deviations.
+\subsubsection{The $A{=}3$ closure: projection of the even-parity
+transport equation, compared with PSN}
+
+The local angular-moment branch changes the retained angular space and
+the body closure. It starts from the even-parity form of the transport
+equation under the stated material and source assumptions, represents
+the even field within each azimuthal segment in local Legendre modes,
+and reconstructs the odd field from the even-field gradient. Its sectorwise
+moment construction is classified here as multi-$P_N$-type; its use of a
+PSN-inspired spatial response does not make it the original PSN closure
+at a higher angular order. In particular, $A{=}3$ denotes a cubic
+polynomial in local azimuth with four retained even coefficients per
+segment; it does not denote global spherical-harmonic $P_3$ or
+SP$_3$. The polar treatment remains the one stated for each calculation.
+
+\emph{Where the original PSN approximates.}
+Start from the steady multi-group transport equation inside a
+homogeneous node of the original phase-space nodal method~\cite{psn2027},
+Eq.~(2.1a) of that paper:
+\begin{equation}
+\boldsymbol{\Omega}\cdot\nabla\psi(\boldsymbol{\Omega},\mathbf{r})
++\Sigma_t\psi(\boldsymbol{\Omega},\mathbf{r}) = \frac{Q(\mathbf{r})}{4\pi},
+\label{eq:transport}
+\end{equation}
+with $Q$ the isotropic (scattering $+$ fission) source and
+$\phi=\int\psi\,d\Omega$. The lowest GSPN ansatz, Eq.~(2.3a) of
+Ref.~\cite{psn2027},
+\begin{equation}
+\psi_{P_1} = \frac{1}{4\pi}\Big[\phi_0
+-\frac{1}{\Sigma_t}\boldsymbol{\Omega}\cdot\nabla\phi_0\Big],
+\end{equation}
+annihilates the first-derivative term when substituted back into
+Eq.~\eqref{eq:transport}, leaving
+$-\frac{1}{\Sigma_t}(\boldsymbol{\Omega}\cdot\nabla)^2\phi_0
++\Sigma_t\phi_0 = Q$, which no single angle-independent
+$\phi_0$ can satisfy for every direction. The original paper therefore
+integrates over the full solid angle, using
+$\langle\Omega_j\Omega_l\rangle_{4\pi}=\delta_{jl}/3$, and obtains the
+isotropic diffusion equation, its Eq.~(2.3c),
+\begin{equation}
+-\frac{1}{3\Sigma_t}\nabla^2\phi_0+\Sigma_t\phi_0 = Q,
+\label{eq:diff3c}
+\end{equation}
+whose wave number is $k^2 = 3\Sigma_t^2$ (Eq.~(2.11b)). The reconstruction
+$\psi = \frac{1}{4\pi}[\phi - \Sigma_t^{-1}\boldsymbol{\Omega}\cdot\nabla\phi]$
+with $\phi=\phi_0+C$ (Eqs.~(2.3d,e)) adds one node-constant degree of
+freedom fixed by the phase-space node balance (Eq.~(2.9a)), but the
+\emph{body} of the node is still governed by the full-solid-angle
+average of Eq.~\eqref{eq:diff3c}: the direction-dependent operator
+$(\boldsymbol{\Omega}\cdot\nabla)^2$ has been replaced by the
+angle-averaged Laplacian. The face quantities, by contrast, retain the
+true angular second moments: the original face current
+(Eq.~(2.8b)) carries the polar factor
+$\beta_i/3=\tau_i/2$ with $\beta_i=\tfrac32\,\tau_i$
+(Eq.~(2.8d)) and the azimuthal
+chordal-averaging factor $\gamma_m=\sin\Delta\varphi_m/\Delta\varphi_m$,
+i.e.\\ a direction-dependent diffusion tensor, with
+$c_m$ the segment centre,
+\[
+D^{(0)}_{im} = \frac{\tau_i}{2\Sigma_t}
+\begin{pmatrix}
+1+\gamma_m\cos 2c_m & \gamma_m\sin 2c_m\\
+\gamma_m\sin 2c_m & 1-\gamma_m\cos 2c_m
+\end{pmatrix}
+\]
+with $\tau_i=\langle\sin^2\theta\rangle_i$.
+\textbf{The original
+method thus evaluates the body on the isotropic scale while the faces
+carry the anisotropic angular moments; the $A{=}3$ angular-moment closure
+makes the body use the same angular second moments as the faces, at
+every angular order.}
+
+\emph{Parity elimination and the exact even-parity equation.}
+Write $f=4\pi\psi$ and split into even and odd parity,
+$e(\Omega)=\tfrac12[f(\Omega)+f(-\Omega)]$,
+$o(\Omega)=\tfrac12[f(\Omega)-f(-\Omega)]$:
+$\boldsymbol{\Omega}\cdot\nabla o+\Sigma_t e=Q$ and
+$\boldsymbol{\Omega}\cdot\nabla e+\Sigma_t o=0$. Inside a node of
+constant $\Sigma_t$ the odd parity is eliminated \emph{exactly},
+$o=-\Sigma_t^{-1}\boldsymbol{\Omega}\cdot\nabla e$, giving the
+directional second-order equation
+\begin{equation}
+-\boldsymbol{\Omega}\cdot\nabla\Big(\Sigma_t^{-1}
+\boldsymbol{\Omega}\cdot\nabla e\Big)+\Sigma_t e = Q.
+\label{eq:A1}
+\end{equation}
+This is the mother equation of the closure. If the even-parity trial
+field is restricted to be angle-independent and
+Eq.~\eqref{eq:A1} is then averaged over the full solid angle,
+$\langle\boldsymbol{\Omega}\boldsymbol{\Omega}\rangle_{4\pi}
+=\tfrac13\mathbf{I}$, the result is Eq.~\eqref{eq:diff3c}, and the
+original reconstruction (2.3a) is recovered as the exact
+parity-elimination identity. Odd-parity elimination is performed \emph{before} angular
+projection, so the projected streaming terms contain the \emph{full}
+second angular moments $\langle b_a\,\Omega_x^2\, b_b\rangle$. If
+both parities were first projected onto the same finite angular space,
+eliminating the projected odd field would generally produce products of
+projected first moments,
+$\langle b_a\Omega_x b_c\rangle\langle b_c\Omega_x b_b\rangle$,
+instead; these constructions need not coincide. This observation does
+not distinguish the present equations from all multi-$P_N$
+formulations: an appropriate odd space containing the streamed even
+trial functions can yield the same second-order moment system after
+elimination. The even-parity form is used here to define the chosen
+closure, without a novelty claim for parity elimination itself. The
+eliminated odd flux is reconstructable from
+$\boldsymbol{\Omega}\cdot\nabla e$ and is not required to stay
+inside the truncated angular space.
+
+\emph{Polar reduction and the two polar moments.}
+For a $z$-invariant 2-D problem the unit direction keeps its three
+components $\boldsymbol{\Omega}=(\sin\theta\cos\varphi,
+\sin\theta\sin\varphi,\cos\theta)$ and the operator uses
+$\partial_z=0$; with even-parity pairing over opposite directions the
+$z$-component drops out of every even-parity moment below, so only the
+planar projection $\boldsymbol{\Omega}_\perp=(\sin\theta\cos\varphi,
+\sin\theta\sin\varphi,0)$ enters. The scalar flux is the half-plane
+average
+$\phi=\frac{1}{\pi}\int_0^1\!\!\int_0^\pi e\,d\varphi\,d\zeta$,
+$\zeta=\cos\theta$; this half-plane folding uses, beyond the even-parity
+pairing, reflection symmetry of the source and the boundaries in $z$
+(or an equivalent mirrored $z$-folded field) --- the isotropic-source,
+vacuum/mirror 2-D configurations of this paper satisfy it, and the
+even-parity pairing alone does not extend to arbitrary asymmetric
+incident boundaries. Two polar moments are carried per polar sector $i$:
+the folded solid-angle weight
+$W_i=\int_{\theta_-}^{\theta_+}\sin\theta\,d\theta$ (normalized,
+$\sum_i W_i=1$), the second moment
+$\tau_i=\langle\sin^2\theta\rangle_i$ and the first moment
+$\kappa_i=\langle\sin\theta\rangle_i$. With the generic even
+$\theta$-partition $\Delta\theta=\pi/I$,
+\begin{align}
+\tau_i &= 1-\frac{\zeta_+^2+\zeta_+\zeta_-+\zeta_-^2}{3}, \\
+\kappa_i &= \frac{[\zeta\sqrt{1-\zeta^2}+\arcsin\zeta]_{\zeta_-}^{\zeta_+}}
+{2(\zeta_+-\zeta_-)},
+\end{align}
+which are exactly the original node parameters
+$\tau_i=2\beta_i/3=2\Sigma_t p_i$ and $\kappa_i$
+of Ref.~\cite{psn2027} (Eq.~(2.8d) for $\beta_i$; the generic polar
+set --- the source paper's three-polar protocol is the same structure
+with fixed quadrature nodes). These are P0
+moments per polar sector --- the polar quadrature is not extended
+here; $I$ stays a partition parameter.
+
+\emph{Azimuthal projection: the $K$-mode segment space.}
+The essential new degree of freedom is the intra-segment angular
+representation. Within segment $m$, $\varphi\in[\varphi_-,\varphi_+]$
+of width $\Delta\varphi$, centre $c_m$, half-width $\delta_m=\Delta\varphi/2$,
+set $\xi=(\varphi-c_m)/\delta_m\in[-1,1]$ and expand the even-parity
+angular flux in the orthonormal Legendre basis of the segment,
+\begin{equation}
+e(\mathbf{r},\varphi) \simeq \sum_{a=0}^{A} b_a(\xi)\,e_a(\mathbf{r}),
+\qquad b_a(\xi)=\sqrt{2a+1}\,P_a(\xi),
+\label{eq:azexp}
+\end{equation}
+with $K=A{+}1$ unknowns per face per segment ($K{=}4$ at $A{=}3$) and
+$\langle f\rangle=\tfrac12\int_{-1}^{1}f\,d\xi$, so
+$\langle b_a b_b\rangle=\delta_{ab}$ and $\langle b_a\rangle=\delta_{a0}$.
+Projecting Eq.~\eqref{eq:A1}: multiply by each test basis function
+$b_a$, average over the segment and the polar sector; the basis is
+angle-space only, so the spatial derivatives come out of the angular
+integrals. The $K$ test equations per segment are the Galerkin projections of
+Eq.~\eqref{eq:A1} onto the segment basis; they supersede the original
+single segment-mean balance (Eq.~(2.9a) of
+Ref.~\cite{psn2027}) in the angular representation, without
+constituting a higher streaming-operator order of the original PSN
+construction.
+The collision term is diagonal by orthogonality, the isotropic source
+feeds only the $a{=}0$ mode, and the streaming term produces the three
+segment-averaged moment matrices
+\begin{equation}
+\mathbf{C}_m{}_{ab} = \big\langle b_a b_b\cos^2\varphi\big\rangle,
+\qquad
+\mathbf{S}_m{}_{ab} = \big\langle b_a b_b\sin^2\varphi\big\rangle,
+\qquad
+\mathbf{H}_m{}_{ab} = \big\langle b_a b_b\sin\varphi\cos\varphi\big\rangle,
+\label{eq:CSH}
+\end{equation}
+evaluated once per segment by Gauss quadrature and cached. The
+matrices are symmetric, $\mathbf{C}+\mathbf{S}=\mathbf{I}_K$,
+$\mathbf{C}$ and $\mathbf{S}$ positive definite for any positive-width
+segment (grazing-adjacent segments can be ill-conditioned, which the
+spectral construction below monitors), and $\mathbf{H}$ is generically
+non-commuting with both.
+
+\emph{The directional diffusion coefficients.}
+Substituting the expansion \eqref{eq:azexp} into the mother equation
+\eqref{eq:A1} and expanding the directional operator inside a node of
+constant $\Sigma_t$: the in-plane projection
+$\boldsymbol{\Omega}_\perp=(\sin\theta\cos\varphi,\sin\theta\sin\varphi,0)$
+is independent of $(x,y)$, so the streaming term acts purely on the
+spatial derivatives of the angular field,
+\begin{equation}
+\boldsymbol{\Omega}\cdot\nabla\bigl(\boldsymbol{\Omega}\cdot\nabla e\bigr)
+=\sin^2\theta\Bigl(\cos^2\varphi\, e_{xx}
++2\sin\varphi\cos\varphi\, e_{xy}+\sin^2\varphi\, e_{yy}\Bigr),
+\label{eq:stream}
+\end{equation}
+where $e_{xx}$, $e_{xy}$, $e_{yy}$ are the second spatial derivatives
+of $e$.
+
+The projection then separates exactly. Multiply
+\eqref{eq:stream} by the test basis $b_a$ and average over the
+segment $m$ and the polar sector $i$. The collision term is diagonal
+by orthogonality ($\langle b_a b_b\rangle=\delta_{ab}$), the
+isotropic source feeds only the $a{=}0$ mode, and the streaming term
+admits the expansion $e=\sum_b b_b\,e_b$ with the spatial
+derivatives passing through the angular average unchanged. Since
+$\sin^2\theta$ depends only on the polar angle, the $\theta$- and
+$\varphi$-averages factorize, and the contribution of the streaming
+term to the $a$-th test equation is
+\begin{equation}
+-\frac{\tau_i}{\Sigma_t}\sum_{b=0}^{A}\Bigl(
+C_{ab}\,e_{b,xx}+2H_{ab}\,e_{b,xy}+S_{ab}\,e_{b,yy}\Bigr),
+\label{eq:proj}
+\end{equation}
+where $\tau_i=\langle\sin^2\theta\rangle_i$ is the sector's second
+polar moment and the angular integrals are exactly the moment
+matrices \eqref{eq:CSH}: the three directional second derivatives
+$e_{xx}$, $e_{xy}$, $e_{yy}$ select $\mathbf{C}$, $\mathbf{H}$,
+$\mathbf{S}$ respectively, and no other combination enters. In vector
+form, with $\mathbf{e}_{xx}=(e_{0,xx},\ldots,e_{A,xx})^T$ and
+analogously for $e_{xy}$, $e_{yy}$, this is the projected body
+equation
+\begin{equation}
+-\frac{\tau_i}{\Sigma_t}\Bigl(\mathbf{C}\,\mathbf{e}_{xx}
++2\mathbf{H}\,\mathbf{e}_{xy}+\mathbf{S}\,\mathbf{e}_{yy}\Bigr)
++\Sigma_t\,\mathbf{e}=\mathbf{v}_0\,q(\mathbf{r}),
+\label{eq:A7}
+\end{equation}
+where $\mathbf{e}=(e_0,\ldots,e_A)^T$, $\mathbf{v}_0=(1,0,\ldots,0)^T$,
+and $q$ is the five-term source (below). Identifying the
+\emph{directional diffusion coefficients}
+\begin{equation}
+\mathbf{D}_x = \frac{\tau_i}{\Sigma_t}\mathbf{C} = 2p\,\mathbf{C},
+\qquad
+\mathbf{D}_y = \frac{\tau_i}{\Sigma_t}\mathbf{S} = 2p\,\mathbf{S},
+\qquad
+\mathbf{D}_{xy} = \frac{\tau_i}{\Sigma_t}\mathbf{H} = 2p\,\mathbf{H},
+\label{eq:A8}
+\end{equation}
+with $p=\beta_i/(3\Sigma_t)=\tau_i/(2\Sigma_t)$ the original node
+parameter (Eq.~(2.8d) of Ref.~\cite{psn2027} gives
+$\beta_i=\tfrac32\,\tau_i$).
+
+\textbf{The $A{=}0$ limit reproduces the original face current
+exactly.} Restricting Eq.~\eqref{eq:A8} to the $a{=}0$ component and
+writing $c_m$ and $\Delta\varphi_m$ for the segment centre and width,
+the three scalar coefficients become
+\begin{equation}
+(\mathbf{D}_x)_{00} = \frac{\tau_i}{2\Sigma_t}\,
+\bigl(1+\gamma_m\cos 2c_m\bigr),\qquad
+(\mathbf{D}_{xy})_{00} = \frac{\tau_i}{2\Sigma_t}\,
+\gamma_m\sin 2c_m,\qquad
+(\mathbf{D}_y)_{00} = \frac{\tau_i}{2\Sigma_t}\,
+\bigl(1-\gamma_m\cos 2c_m\bigr),
+\label{eq:CSH-A0}
+\end{equation}
+$\gamma_m=\sin\Delta\varphi_m/\Delta\varphi_m$ as in
+Eq.~(2.8b) of Ref.~\cite{psn2027}. With the face-current relation
+(Section~\ref{sec:face} below),
+$J_n=-(n_x\mathbf{D}_x+n_y\mathbf{D}_{xy})\bar{e}_x^{\,n}
+-(n_x\mathbf{D}_{xy}+n_y\mathbf{D}_y)\bar{e}_y^{\,n}$, the $a{=}0$
+component is then $J_n=-\hat{\mathbf{n}}^T D^{(0)}_{im}
+\overline{\nabla\phi}^{\,n}$ with
+$D^{(0)}_{im}=\frac{\tau_i}{2\Sigma_t}
+\bigl[(1-\gamma_m)\mathbf{I}+2\gamma_m\mathbf{d}_m\mathbf{d}_m^T\bigr]$
+($\mathbf{d}_m=(\cos c_m,\sin c_m)^T$) the original face-current
+tensor, \emph{for any face normal and any segment} --- the directional face current at $A{=}0$ is the original
+Eq.~(2.8b), not an approximation to it.
+
+\textbf{The original wave number.} The scalar $k^2=3\Sigma_t^2$ of
+Eq.~\eqref{eq:diff3c} is the $A{=}0$ special case of
+Eq.~\eqref{eq:A8} in which both averages are taken over their full
+ranges --- the azimuthal segment over the complete half plane
+($\Delta\varphi_m=\pi$, $\gamma_m=0$, $(\mathbf{C})_{00}=(\mathbf{S})_{00}=\tfrac12$,
+$\mathbf{H}=\mathbf{0}$) \emph{and} the polar range over the full
+solid angle, $\tau_i=\tfrac23$. Then
+$\mathbf{D}=\frac{\tau_i}{2\Sigma_t}\mathbf{I}=\frac{1}{3\Sigma_t}\mathbf{I}$
+and the single decay constant
+$k=\sqrt{\Sigma_t/\tfrac{1}{3\Sigma_t}}=\sqrt{3}\,\Sigma_t$ is
+recovered. For a truncated polar range the decay rates are
+$\sqrt{\Sigma_t/\lambda_j}$ with $\lambda_j$ the spectrum of
+$(\tau_i/\Sigma_t)\mathbf{C}$: at $A{=}0$ over the full half-plane
+that spectrum is the single value $\tau_i/(2\Sigma_t)$, so the two scales
+coincide only at $\tau_i=\tfrac23$ --- a full-half-plane $A{=}0$
+statement; for a finite segment the whole $\mathbf{C}$ spectrum, not
+the polar moment alone, sets the rates. The angular-moment closure
+generalizes that one decay constant to the spectrum of the
+segment-resolved matrix; at $A{=}0$ the two discretizations still
+differ, because the original \emph{body} uses a single scalar wave
+number (full-solid-angle for the generic set, per-sector for the
+three-polar protocol) while the directional body uses the
+\emph{segment-resolved} decay rates (Section~\ref{sec:a3a0} below).
+
+\emph{Rectangular nodes: the per-node widths enter only through the
+spatial scales.}
+The angular construction above is width-independent: neither the
+projected equation \eqref{eq:A7} nor the moment matrices
+\eqref{eq:CSH} contains a node width, and the same is true of the
+original method, whose spatial shape (Eq.~(2.11a) of
+Ref.~\cite{psn2027}) uses the scalar wave number
+$k=\sqrt{3}\,\Sigma_t$ for the generic polar set and
+$k_i=\sqrt{2}\,\Sigma_t/\mu_i$ for the three-polar protocol, with the
+node widths entering only through the spatial coordinates and the
+hyperbolic arguments. For rectangular nodes the source basis is
+rescaled by the per-axis coordinates $\eta_x=2x/h_x$,
+$\eta_y=2y/h_y$ (the same five spatial moments), and the hyperbolic
+family below carries per-axis arguments $U_x=h_xK_x/2$,
+$U_y=h_yK_y/2$, so each angular mode decays across the node at its own
+rate $k_j=\sqrt{\Sigma_t/\lambda_j}$ over the actual width of each
+axis. Nodes meet corner-to-corner only (no T-junctions), so on this
+conforming grid every face has a single shared tangential length and
+the face-current matching is unchanged (the two nodes on either side
+of a face need not have the same width in the normal direction). When all widths are equal the rectangular
+operators reduce exactly to the square-node path, and the two are
+verified node-by-node to machine precision (the regression of
+Section~2.2).
+
+\emph{The body function: hyperbolic functions of the matrix spectrum.}
+With the five-term spatial source
+\begin{equation}
+q(x,y) = q_0+q_{1x}P_1(\eta_x)+q_{1y}P_1(\eta_y)+q_{2x}P_2(\eta_x)
++q_{2y}P_2(\eta_y),\qquad
+\eta_x=\frac{2x}{h_x},\quad \eta_y=\frac{2y}{h_y},
+\label{eq:source5}
+\end{equation}
+(the same five spatial source moments as the original method; the
+spatial function family is unchanged, written in the rescaled
+per-axis coordinates), the even-parity body is sought in the separated
+hyperbolic family
+\begin{equation}
+\mathbf{e}(x,y) = F_x(x)\mathbf{a}_x+G_x(x)\mathbf{b}_x
++F_y(y)\mathbf{a}_y+G_y(y)\mathbf{b}_y+\mathbf{c}
++\mathbf{v}_0\,q(x,y)/\Sigma_t,
+\label{eq:A10}
+\end{equation}
+$F_x(x)=\cosh(K_x x)\cosh(U_x)^{-1}$,
+$G_x(x)=\sinh(K_x x)\cosh(U_x)^{-1}$ (and y-analogues), with the
+positive-definite square roots $K_x=(\Sigma_t\mathbf{D}_x^{-1})^{1/2}$,
+$U_x=h_xK_x/2$ and similarly for $y$. Each scalar mode of the
+eigen-decomposition of $\mathbf{D}_x$ contributes a hyperbolic pair at
+its own decay constant $k_j=\sqrt{\Sigma_t/\lambda_j}$; the
+scaled-hyperbolic form $\cosh v/\cosh u$ (all exponents non-positive)
+guards the grazing directions against overflow. The quadratic source
+fixes the constant vector by $\partial_x^2 P_2(\eta_x)=12/h_x^2$:
+\begin{equation}
+\mathbf{c} = \frac{12}{\Sigma_t^2}\Big(
+\mathbf{D}_x\mathbf{v}_0\,\frac{q_{2x}}{h_x^2}
++\mathbf{D}_y\mathbf{v}_0\,\frac{q_{2y}}{h_y^2}\Big).
+\label{eq:A11}
+\end{equation}
+The family has $e_{xy}=0$; it satisfies the \emph{projected} node
+equation Eq.~\eqref{eq:A7} inside this separated space --- the general
+mixed-derivative response is not recovered, and
+$\mathbf{D}_{xy}$ acts through the face tangential-gradient current
+(below), not through the body. All matrix functions of one axis
+($\tanh U$, $\tanh U/U$, and the space-integrals $I_1,I_2$ defined below)
+are built from the \emph{same} eigen-decomposition; in particular
+$\mathbf{D}_{xy}\tanh U_y$ is not commutable and keeps that order.
+
+\emph{Face currents: the $4K\times4K$ local system.}\label{sec:face}
+With $t_x=\tanh U_x$ and the face operators $A_x=\mathbf{D}_xK_xt_x$,
+$B_x=\mathbf{D}_xK_x$, $H_y=\frac{2}{h_y}\mathbf{D}_{xy}\tanh U_y$,
+$H_x=\frac{2}{h_x}\mathbf{D}_{xy}\tanh U_x$ (y-analogues of $A_x,B_x$),
+the outward face-current coefficients of the four faces satisfy the
+block relation
+\begin{equation}
+\underbrace{\begin{pmatrix}\mathbf{J}_{x+}\\\mathbf{J}_{x-}\\
+\mathbf{J}_{y+}\\\mathbf{J}_{y-}\end{pmatrix}}_{\mathbf{J}}
+= \underbrace{\begin{pmatrix}
+-A_x&-B_x&0&-H_y\\
+-A_x& B_x&0& H_y\\
+0&-H_x&-A_y&-B_y\\
+0& H_x&-A_y& B_y
+\end{pmatrix}}_{\mathcal{K}}
+\begin{pmatrix}\mathbf{a}_x\\\mathbf{b}_x\\\mathbf{a}_y\\\mathbf{b}_y\end{pmatrix}
++ \mathcal{O}\,\mathbf{q},
+\label{eq:A13}
+\end{equation}
+which is the tensor face-current relation
+$\mathbf{J}_n = -\big(n_x\mathbf{D}_x+n_y\mathbf{D}_{xy}\big)\overline{\mathbf{e}}_x^{\,n}
+-\big(n_x\mathbf{D}_{xy}+n_y\mathbf{D}_y\big)\overline{\mathbf{e}}_y^{\,n}$:
+\emph{every angular mode sees its own directional diffusion
+coefficient}, which is the origin of the name. The source-offset block
+$\mathcal{O}$ is the face evaluation of the five-term particular
+solution, with an overall $1/\Sigma_t$ factor: its rows are the
+columns $\mathbf{D}_x\mathbf{v}_0$, $\mathbf{D}_y\mathbf{v}_0$,
+$\mathbf{D}_{xy}\mathbf{v}_0$ scaled by $(1/\Sigma_t)(2/h)$ and
+$(1/\Sigma_t)(6/h)$, so \emph{high angular modes do receive source
+contribution} even though the source itself is purely $a{=}0$.
+Inverting Eq.~\eqref{eq:A13} (by direct solve, not explicit
+inversion) yields the local response mapping
+$\mathbf{q}$ and $\mathbf{J}\mapsto$ face means and the five spatial
+moments. At $K{=}4$ the local coefficient system is $16\times16$ per
+node (plus the five source columns); the angular quadrature points used
+to build Eq.~\eqref{eq:CSH} are construction points, not transport
+unknowns. The five spatial moments returned to the source update are
+\begin{align}
+m_0 &= \mathbf{v}_0^T\overline{\mathbf{e}}, \qquad
+m_{1x} = 3\,\mathbf{v}_0^T I_1(U_x)\,\mathbf{b}_x + q_{1x}/\Sigma_t,\\
+m_{2x} &= 5\,\mathbf{v}_0^T I_2(U_x)\,\mathbf{a}_x + q_{2x}/\Sigma_t,
+\end{align}
+with $I_1(U)=U^{-1}(I-U^{-1}\tanh U)$, $I_2(U)=U^{-1}(\tanh U-3I_1(U))$
+and y-analogues. The angular-zeroth extraction is performed
+\emph{after} the full matrix--vector product (e.g.\
+$(3\,I_1\mathbf{b}_x)_0$, not $3(I_1)_{00}(\mathbf{b}_x)_0$): high
+angular modes feed the scalar source through the off-diagonal entries,
+which is exactly the coupling that the single-mode closure cannot
+represent. The node volume balance
+$\overline{\mathbf{e}}=\mathbf{v}_0 q_0/\Sigma_t
+-(\mathbf{J}_{x+}+\mathbf{J}_{x-})/(h_x\Sigma_t)
+-(\mathbf{J}_{y+}+\mathbf{J}_{y-})/(h_y\Sigma_t)$ holds for every
+angular mode simultaneously.
+
+\emph{Assembly: face fluxes, boundaries, and the eigenproblem.}
+The signed face flux entering the global connection is the original
+PSN convention with the basis promoted to a matrix:
+$\Phi_n = \frac{\kappa_i}{2}\mathbf{E}_n\,\mathbf{L}_n$,
+$\big(\mathbf{E}_n\big)_{ab}=\langle b_a b_b\cos(\varphi-\varphi_n)\rangle$,
+with $\mathbf{L}_n$ the face-mean even-parity vector,
+$\big(\mathbf{L}_n\big)_a = \frac{1}{|\partial n|}\int_{\partial n}
+e_a\,ds$; at $A{=}0$ this is exactly the original $\alpha\,\times$
+face-mean. The internal face closure uses the same raw face-mean
+continuity and anti-symmetric outward-current pairing as the original
+method; on a uniform even $M$ grid with axis-aligned nodes every
+segment has a single sign of $\Omega\cdot n$, so the connection is
+exact in this $L$-representation. Mirror reflection maps segment $m$ to
+$M{-}1{-}m$ with local $\xi\mapsto-\xi$, which in the $K$-mode
+representation is $L_m = R\,L_{m'}$, $J_m = -R\,J_{m'}$ with
+$R=\mathrm{diag}(1,-1,1,-1,\ldots)$ --- odd modes reverse their
+reflection sign; the moment matrices obey the corresponding identities
+$C_{m'}=RC_mR$, $H_{m'}=-RH_mR$. Vacuum is the hemispheric current
+$J = B\,L$ with $B$ the positive-definite matrix
+$\bigl(B\bigr)_{ab}=\kappa_i\langle b_a b_b
+|\cos(\varphi-\varphi_n)|\rangle$ (the same normal-relative form on
+every face: $\varphi_n=0$ on $x$ faces, $\pi/2$ on $y$ faces), $\kappa_i$
+the first polar
+moment (not $\sqrt{\tau_i}$); at $A{=}0$ this is
+$B_{00}=2|\alpha_{imn}|$, the original vacuum condition. Multi-group assembly keeps the original structure: each
+group's five-moment response $R_g$ is coupled through the isotropic
+scattering and fission blocks, the discrete eigenproblem is non-symmetric
+and is driven by the same outer fission-source (power) iteration as the
+original implementation; each outer sweep solves the node-coupling
+system with a Krylov method (GMRES). The outer iteration stops when the
+relative eigenvalue change $|\Delta k|/k$ and the fission-source
+iterate change both fall below $10^{-7}$: the iterate change is the
+$\ell_2$ norm of the difference between successive fission sources
+divided by the larger of the previous source's norm and unity,
+$r_F=\|s^{(n+1)}-s^{(n)}\|_2/\max(\|s^{(n)}\|_2,1)$, a scaled
+iterate change --- relative when the source norm exceeds unity,
+absolute below it --- with both iterates produced on the same
+normalisation convention; the GMRES inner solve runs to a relative
+linear-residual tolerance of $10^{-7}$ (absolute tolerance zero) --- the
+same value as the outer gate, as used by the production sweep driver;
+the library default of $10^{-11}$ applies to standalone CLI runs ---
+with a restart length of $20$ inner iterations, at most $800$ restart
+cycles per linear system (the $\mathtt{maxiter}$ interface parameter of the
+scipy implementation as invoked). This
+linear-system tolerance is separate from the outer stopping
+criteria.
+
+\paragraph{Relation between legacy PSN and the directional $A{=}0$ member}
+\label{sec:a3a0}
+At $A{=}0$ the two branches of the implementation share the
+\emph{face-current constitutive law} --- the $(0,0)$ entries of
+Eq.~\eqref{eq:CSH} are the original segment means
+$\langle\cos^2\varphi\rangle_m$ etc. --- and the interface
+flux/current connection. The \emph{body} differs. The original branch
+keeps the published scalar wave number, $k=\sqrt{3}\,\Sigma_t$ for the
+generic polar set and $k_i=\sqrt{2}\,\Sigma_t/\mu_i$
+($\mu_i=\sin\theta_i$) for the three-polar protocol, while the
+directional branch evaluates its hyperbolic functions at the
+segment-resolved spectrum of $\mathbf{D}_x,\mathbf{D}_y$, i.e.\ at
+$\sqrt{\Sigma_t/\lambda_j}$ with $\lambda_j$ the segment-dependent
+eigenvalues. A shared constitutive law and connection do not make the
+condensed nodal response $J,q\mapsto L,m$ identical --- the body wave
+number enters the face-current block matrices directly --- so the two
+discretizations agree on the face current at equal gradients but not
+inside the node: this is precisely the body/face scale split of the
+original method (Section above) carried into the new branch, and it is
+why the directional $A{=}0$ solution is a distinct, segment-resolved
+discretization rather than a reproduction of the legacy state matrix
+(verified numerically over all 2016 node-response configurations of a
+C5G7 pin cell: 3 polar points $\times$ 7 groups $\times$ 24 azimuthal
+segments $\times$ 4 material groups: the original branch at $A{=}0$
+reproduces the legacy node response to $4.8\times10^{-13}$, while the
+directional branch at $A{=}0$ differs by $\mathcal{O}(1)$ in the body
+scales, with a decay-rate spread of $0.62$--$45.9$ across the
+half-plane segments).
+The $A{=}0$ directional solution is the correct limiting member of the
+new family; the $A{=}1,2,3$ results below are reported with it as the
+reference closure.
+
+\section{Implementation verification and reproduction}
+
+\subsection{Local algebra and the $A{=}0$ regression}
+
+\paragraph{Verification of the local construction.}
+Before any benchmark was re-run, the local node response was verified
+against independently constructed solutions: for $A{=}0\ldots3$, five
+azimuthal segment widths, both aspect ratios of a $2$-cm node, and all
+five unit sources (plus one mixed source), a spatial field is built
+from arbitrary homogeneous coefficients and source, the four face
+flux/current vectors and the five spatial moments are computed by
+independent numerical integration, and compared against the local
+response matrix. Maximum normalized differences over 240 cases:
+face response and five moments $4.5\times10^{-12}$, constant-vector
+recovery from the volume balance $8.5\times10^{-12}$, strong residual
+of the projected body equation $1.0\times10^{-15}$. These verify the
+discretization \emph{as written}; they are not a transport-accuracy
+statement.
+
+These checks concern the implementation of the specified local responses
+and discrete systems. Agreement between two algebraic solution paths
+supports implementation consistency for those systems; it does not remove
+their angular or spatial approximation errors. Likewise, the
+original-scale regression establishes recovery of the legacy
+implementation under that setting, rather than equivalence of the
+directional $A{=}0$ closure and original PSN.
+
+\subsection{Reproduction of the published PSN results}
+
+Before any new application we verify the implementation against the
+source paper~\cite{psn2027}. We reproduce the two checkerboard
+eigenvalue convergence tables (Fig.~3, weak/strong absorption) and the
+BWR 12-pin bundle tables (Figs.~10/12, with and without Gd) to within a
+few pcm. Table~\ref{tab:repro} summarises the maximum deviations.
 
 \begin{table}[h]
 \centering
@@ -298,7 +828,7 @@ $M$ or $S$, confirming implementation fidelity. The full point-by-point comparis
 Appendix~A (Tables~\ref{tab:appA}--\ref{tab:appD}); the complete
 per-point data are shipped with the code.
 
-\section{C5G7 MOX benchmark}
+\section{Numerical assessment}
 
 \subsection{Configuration}
 
@@ -313,14 +843,29 @@ of fuel assemblies (UO2 on the diagonal, MOX on the anti-diagonal) plus an
 L-shaped one-assembly water reflector, 51$\times$51 pins, 64.26~cm on a side.
 Following Ref.~\cite{nea2003} we apply \emph{vacuum} boundaries on the two
 open (right, top) edges and \emph{reflective} boundaries on the two symmetry
-(left, bottom) edges. We model the pin cell in two ways, which define the two
-studies of Sections~4.2--4.3: \emph{(i)} the standard pin-homogenised nodal
-model, in which each pin cell is a single homogenised node
-(fuel$+$water for fuel pins; pure water for reflector and guide pins), and
-\emph{(ii)} the rectangular-node model of Section~2.2, in which each pin cell
-is a $3\times3$ array of rectangles carrying the un-homogenised
-fuel/water materials. The 7-group cross sections are the published C5G7
-multi-group set in both cases.
+(left, bottom) edges. We model the pin cell in three ways. \emph{(i)} The standard
+pin-homogenised nodal model folds each fuel pin cell into a single
+homogenised node (fuel$+$water; pure water for reflector and guide
+pins). \emph{(ii)} The rectangular-node model of Section~2.2 represents
+each pin by multiple homogeneous material rectangles: a $3\times3$
+base tiling per pin (one fuel square plus eight water strips), so the
+explicit square-fuel model resolves the fuel--moderator boundary across
+nodes rather than assigning both materials to a single node; the
+equal-area replacement of the circular fuel by a square remains a
+geometry approximation. \emph{(iii)} The local angular-moment campaign
+uses a $4\times4$ tiling obtained by splitting the fuel region into
+four rectangles ($2\times2$ fuel sub-nodes). The original rectangular PSN
+campaign and the angular-moment campaign thus use the same square-fuel
+boundary but different numerical meshes. The 7-group cross sections
+are the published C5G7 multi-group set in all cases.
+
+Eigenvalue differences in the present tables are reported as
+$\Delta k=10^5(k-k_{\mathrm{ref}})$, following the convention used for the
+reported numerical data; this quantity is distinct from the relative
+eigenvalue change used to stop an iteration. References for the
+pin-homogenised model and the explicit square-fuel model are kept
+separate, and comparisons with the circular-fuel literature reference
+additionally contain a difference between geometry models.
 
 Two reference eigenvalues are in the literature and we report against both:
 \begin{itemize}
@@ -486,7 +1031,7 @@ fuel-normalised).}
 \end{figure}
 
 \subsection{Study II --- the rectangular-node model with explicit
-intra-node structure}
+fuel/moderator rectangles}
 
 \paragraph{Motivation and layout.}
 Study I isolates the discretisation error of the nodal PSN model, but its
@@ -605,8 +1150,8 @@ $\Delta k=-10.2$~pcm (fuel region).}
 
 The sweep shows three things. (i)~On the UO$_2$ assembly the best point
 ($S{=}1,M{=}24$, $+1.2$~pcm) lies within the OpenMC standard error
-($\pm3.6$~pcm): with a low-absorption fuel the nodal model is essentially
-reference-grade on this geometry, and every deeper subdivision is worse,
+($\pm3.6$~pcm): with a low-absorption fuel this tiling reaches the
+reported reference accuracy on this geometry, and every deeper subdivision is worse,
 monotonically from $-28.1$~pcm at $S{=}2$ to $-56.5$~pcm at $S{=}6$ ---
 within this tiling and the tested range, subdivision alone moves the
 result away from the reference.
@@ -659,7 +1204,7 @@ relative per-cent error against its MCNP reference 1.18655; the pcm values
 here are recomputed from the printed $k$ against 1.18646.}
 \label{tab:lit}
 \small
-\begin{tabular}{llcc}
+\begin{tabular}{@{}p{6.4cm}lcc@{}}
 \toprule
 method class & code & $\keff$ & $\Delta$ (pcm) \\
 \midrule
@@ -690,9 +1235,22 @@ MOC (stoch.\ rays) & UNKGRO & 1.18523 & $-123$ \\
 \midrule
 \multicolumn{4}{l}{\emph{This work}}\\
 \rowcolor{gray!15}
-PSN nodal (rect.\ node, $A{=}3$, $S{=}1$, $M{=}8$) & OpenPSN & 1.1872011 & $+74.1$ \\
+Local angular-moment nodal ($A{=}3$; square-fuel model) & OpenPSN & 1.1872011 & $+74.1$ \\
 \bottomrule
 \end{tabular}
+
+\begin{minipage}{\linewidth}
+\footnotesize The OpenPSN entry in this row uses the local
+angular-moment formulation at $S{=}1,M{=}8,A{=}3$ on the equal-area
+square-fuel model. Its difference from the same-geometry OpenMC
+estimate, $k=1.1872176$, is $-1.7$~pcm. The $+74.1$~pcm entry relative
+to the circular-fuel literature reference $1.18646$ also contains the
+difference between geometry models and is not a same-geometry
+discretisation-error comparison. The literature values are provided as
+benchmark context, not as a ranking obtained with matched meshes,
+algorithms or computational resources.
+\end{minipage}
+
 \end{table}
 
 \emph{Readings.}
@@ -720,15 +1278,14 @@ Sections~4.2--4.4 compare two representations of the pin geometry. With the
   references --- the two assemblies inside their own Monte Carlo standard
   errors; with the
   rectangular-node model that removes homogenisation entirely, the
-  $A{=}3$ directional closure on the $2\times2$ fuel-split tiling
+  $A{=}3$ local angular-moment formulation on the $2\times2$ fuel-split tiling
   (Section~4.4) is at
   $-1.7$~pcm vs.\ the OpenMC run on the identical rectangular-rod geometry
   ($1.1872176$, $\pm3.4$~pcm) at $S{=}1$, $M{=}8$ --- inside the reference
   standard error; the $S{=}1$ row then moves to $+6.2$~pcm ($M{=}12$)
   and $+9.1$~pcm ($M{=}16$), so $M{=}8$ is quoted as the point within
   the reference uncertainty, not as a converged angular limit; the
-  completed $S{=}1$ row ends at $+11.0$~pcm ($M{=}24$), with only the
-  $S{=}2$ row still in progress --- i.e.\
+  completed $S{=}1$ angular sweep ends at $+11.0$~pcm ($M{=}24$) --- i.e.\
   $+74.1$~pcm vs.\ $1.18646$; the pin-level fission maps agree to
   $0.055$--$0.075\%$ RMS on the assemblies and $0.286\%$ RMS on the core.
   The pinwise-homogenised point sits inside the MOC reference cluster
@@ -743,79 +1300,92 @@ Two published outliers are worth noting for completeness: COHINT
 $+675$~pcm), both far outside the converged cluster and attributable to
 their respective current/transport approximations.
 
+\section{Discussion and scope of comparisons}
+
+This study combines implementation of the published PSN formulation,
+assessment of homogenised and explicit-material models, and evaluation
+of a separate local angular-moment nodal branch. The original PSN
+results and the $A{=}3$ results should be interpreted as outcomes of
+specified discretisations within a common software framework. In
+particular, the rectangular campaigns change both the angular
+formulation and the pin tiling, so they do not isolate the improvement
+due to angular order alone.
+
+Eigenvalue accuracy and spatial-distribution accuracy provide
+complementary information. A configuration with small errors in both is
+a meaningful joint accuracy result; such a result should not be
+dismissed solely because the eigenvalue lies near an error valley.
+Nevertheless, a finite region of good agreement is different from an
+established refinement limit. The present parameter scans mainly
+describe eigenvalue behaviour, while the normalised pin-averaged
+fission distributions are available at the selected configurations
+shown; they do not constitute a complete $S\times M$ spatial-field
+error survey. The evidence therefore supports point-specific field
+accuracy, but not a claim that all joint error valleys have
+disappeared or that joint convergence is monotonic throughout the
+parameter domain.
+
+The distinction also applies to iteration tolerances. Convergence of an
+algebraic iteration certifies the requested solution of the discrete
+system under its stopping criteria; it does not quantify the remaining
+transport-discretisation error. Agreement with an OpenMC estimate
+within its reported standard error is statistical compatibility at the
+stated configuration, rather than proof of a deterministic error below
+that uncertainty. The spatial, polar and azimuthal approximations
+remain part of the formulation, including the restriction of the
+separated nodal body on mixed derivatives.
+
+For the local angular-moment branch, the completed quarter-core study
+is restricted to the $S{=}1$ angular sweep. Its results and selected
+spatial-field comparison are reported on that basis, without a core
+spatial-convergence claim. Together with the assembly and checkerboard
+calculations, they establish the behaviour of the implemented
+configurations over the reported parameter ranges. Matched
+computational-cost comparisons and an isolated attribution of the
+changes to angular order are outside the evidence provided here.
+
 \section{Conclusions}
 
-We built \textbf{OpenPSN}, a clean, multi-group, sparse, vectorised
-implementation of the Phase Space Nodal method, and validated it on two
-levels. On the source paper's problems it reproduces all 248 published
-eigenvalue data points to a few pcm (full point-by-point comparison in
-Appendix~A). The sparse path is additionally verified against the plain
-dense path to $10^{-15}$, and extends to the $10{,}404$-node C5G7
-refinement, which the dense formulation cannot address. We also
-carried the rectangular-node generalisation of the PSN node operators
-through to explicit closed-form coefficients for arbitrary per-node
-widths, giving an implementation with explicit, un-homogenised
-intra-node fuel/water structure and the node-by-node verification of
-Section~2.2.
+We have documented OpenPSN as a multigroup nodal transport framework
+containing two distinct formulations. The original branch implements
+the published PSN construction, including rectangular-node operators,
+and is supported by the reported reproduction and algebraic
+verification results. The additional branch is a segmentwise
+even-parity angular-moment formulation with a PSN-inspired separated
+spatial response. Its local Legendre representation belongs to the
+multi-$P_N$-type family; increasing its azimuthal degree to $A{=}3$ is
+distinct from constructing a higher streaming-operator order of the
+original PSN method.
 
-On the C5G7 MOX benchmark the studies separate the two error sources
-that a nodal code carries. In the \emph{pinwise-homogenised} study, the
-$S\times M$ sweep against a directly computed OpenMC reference on the same
-homogenised data shows the discretisation converging: their best points
-($S{=}5$--$6$, $M{\ge}8$) sit inside the Monte Carlo standard error
-($\approx$3.3--3.5~pcm; $+0.0$~pcm UO$_2$, $-1.5$~pcm MOX), and the
-best core point (with the self-shielding-aware flux-weighted recipe) is $-7.7$~pcm
-versus the OpenMC run on the same homogenised data, i.e.\ $+28.6$~pcm
-versus the high-fidelity reference $1.18646$ --- the difference
-decomposes as $28.6=(-7.7)+36.3$~pcm: a $-7.7$~pcm method-level term
-(PSN against the same-data OpenMC run) plus a $+36.3$~pcm term
-between the homogenised OpenMC model itself and the resolved-pin
-reference, which also carries the reference's own statistical and
-state differences and is not uniquely attributable to
-homogenisation. The best-point pin-power fields agree with the
-same-recipe OpenMC maps to $0.07\%$ RMS (max $0.25\%$); a small
-power-distribution RMS does not by itself exclude partial cancellation
-of eigenvalue errors, so the $-7.7$~pcm term is reported as a
-method-level discrepancy of unresolved origin.
-In the \emph{rectangular-node} study the homogenisation model is removed
-entirely. On the $3\times3$ fuel-square tiling with the original
-$A{=}0$ closure, with un-homogenised 7-group material data the 1/4-core
-eigenvalue converges monotonically with $M$ against the OpenMC
-same-geometry reference ($-184.3\rightarrow-110.9\rightarrow-61.1\rightarrow-10.2$~pcm
-for $M=8\rightarrow24$, $S{=}1$): the residual $-10.2$~pcm is consistent
-with a method-level bias in the angular closure; the available scans do
-not separate the angular, spatial, and coupled contributions. On the
-$2\times2$ fuel-split tiling --- a different, finer tiling ($4624$ vs
-$2601$ rectangles per assembly at the same $S$), so this comparison
-measures the new setting as a whole rather than the angular order
-alone --- the $A{=}3$ directional closure of Section~4.4 brings the
-assemblies to $-0.9$~pcm (MOX, $S{=}1$, $M{=}12$) and $-0.5$~pcm
-(UO$_2$, $S{=}2$, $M{=}24$) --- both inside their Monte Carlo standard
-errors --- and the 1/4 core to $-1.7$~pcm at $S{=}1$, $M{=}8$, inside
-the $\pm3.4$~pcm reference standard error (the row then moves to
-$+6.2$/$+9.1$~pcm at $M{=}12/16$); the pin-averaged fission maps
-$\Sigma_f\phi$ agree with OpenMC to $0.055$--$0.075\%$ RMS on the
-assemblies and $0.286\%$ RMS over all $1056$ fuel pins of the core. On
-the published checkerboard the same closure's coarse-grid error
-decays close to second order in $S$; the sweep crosses the
-five-decimal reference within $0.1$~pcm (weak absorber,
-$S{\approx}12$) --- a finite-range crossing, not a proven asymptotic
-limit --- and the $S{=}20$ point shifts from $-3.8$ to $-0.9$~pcm
-when the polar set is doubled to $I{=}60$.
-Placed against the 20-code NEA landscape and the recent P1/SP3/SN/nodal
-literature, the pinwise-homogenised result sits inside the
-high-fidelity MOC reference cluster; the rectangular-node result is
-anchored to the rectangular-rod idealisation --- whose own OpenMC
-reference sits $+75.8$~pcm above $1.18646$ --- and is judged against
-the same-geometry reference rather than the circular-rod cluster.
-Selected assembly and core configurations agree with their
-same-geometry OpenMC references within one reported standard error;
-this agreement is point-specific --- the homogenised core retains a
-$-7.7$~pcm discrepancy, and the $A{=}3$ core moves beyond one standard
-error as $M$ increases from $8$ to $12$ and $16$ --- and further
-controlled refinement is required to establish the limiting accuracy.
-In both cases the method uses a compact nodal spatial representation
-rather than a discrete-ordinates or characteristics mesh.
+The numerical assessment distinguishes pin-homogenised and explicit
+square-fuel models and uses the corresponding OpenMC references. The
+original PSN calculations give low eigenvalue and spatial-field
+discrepancies at selected configurations, while also exhibiting
+parameter sensitivity in the explicit rectangular-node study. The
+$A{=}3$ configuration gives eigenvalue differences of $-0.5$~pcm for
+UO$_2$ at $S{=}2,M{=}24$ and $-0.9$~pcm for MOX at $S{=}1,M{=}12$. The
+selected field comparisons at $S{=}2,M{=}24$ have normalised
+pin-averaged fission-rate RMS differences of $0.055\%$ and
+$0.075\%$, respectively; the MOX eigenvalue difference at this
+field-comparison point is $-9.8$~pcm. The completed quarter-core study
+of the local angular-moment branch reports the $S{=}1$ angular sweep,
+with the existing $S{=}1,M{=}8$ field comparison giving
+$\Delta k=-1.7$~pcm and a fission-rate RMS difference of
+$0.286\%$.
+
+The checkerboard results show accurate finite-parameter
+configurations and remaining sensitivity to polar resolution at the
+reported fine-mesh points. Across the studies, these observations
+support the accuracy of specified configurations rather than a proof
+of the limiting transport solution. The original rectangular and
+angular-moment campaigns use different numerical tilings, so their
+comparison does not isolate the effect of angular order. Selected
+field maps likewise do not establish joint monotonic convergence over
+the full parameter domain, and the local angular-moment core study does
+not address spatial refinement. Within these limits, the work provides
+a documented implementation, existing verification evidence and a
+numerical assessment of two nodal transport formulations in a common
+framework.
 
 \section*{Acknowledgments}
 
@@ -832,6 +1402,18 @@ Y.-A.~Chao, Z.~Li, and G.~Chen, ``Diffusion-based phase space nodal method
 (PSN): Solving the neutron transport equation with a diffusion code,''
 \emph{Annals of Nuclear Energy} \textbf{240} (2027) 112707
 \doi{10.1016/j.anucene.2026.112707}.
+
+\bibitem{ghazaie2019mpn}
+S.~H.~Ghazaie, M.~Abbasi, and A.~Zolfaghari, ``The Multi-PN approximation
+to neutron transport equation,'' \emph{Progress in Nuclear Energy}
+\textbf{110} (2019) 64--74 \doi{10.1016/j.pnucene.2018.09.001}.
+
+\bibitem{falabino2022mpn}
+M.~Falabino, D.~Sciannandrone, E.~Masiello, and J.-F.~Vidal, ``The
+Multi-PN angular discretization method of the neutral-particle
+transport equation for radiation shielding calculations,''
+\emph{Annals of Nuclear Energy} \textbf{177} (2022) 109301
+\doi{10.1016/j.anucene.2022.109301}.
 
 \bibitem{nea2003}
 \emph{Benchmark on Deterministic Transport Calculations Without Spatial
