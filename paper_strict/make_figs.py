@@ -44,7 +44,8 @@ LG_W = load("LGW30", [D + "hpc_out/ext_0.log", D + "cb_legacy_weak.log",
 ST_W = load("STW30", [D + "hpc_out/ext_2.log", D + "cb_strict_weak.log",
                       D + "cb_strict_weak_M48p.log",
                       D + "cb_weak_Mconv_S12.log",
-                      D + "cb_final_checks.log"])
+                      D + "cb_final_checks.log",
+                      D + "s20m384_weak.log"])
 
 # ---------- Fig 1: best-S trajectory -------------------------------------
 fig, ax = plt.subplots(1, 2, figsize=(9.2, 3.6))

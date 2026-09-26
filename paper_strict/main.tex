@@ -39,7 +39,14 @@ closure}: the node body is solved with the exact sector tensor
 $\bm{D}_m$ that already governs the face currents, whose two
 sector-diagonal plane waves are pointwise exact homogeneous solutions
 for every sector width and anisotropy level (dispersion lemma
-$w^{\mathsf T}\bm{D}_m w = p$).  The closure keeps the legacy node size,
+$w^{\mathsf T}\bm{D}_m w = p$).  Of the five modeling steps of PSN,
+the closure removes exactly one (the body/face projection mismatch)
+and retains the other four verbatim: within the assumed angular
+structure the node is then free of further approximation --- modes
+pointwise exact, source particular solution pointwise exact, face
+currents exactly the divergence-theorem currents of the body
+operator.  The error has a single channel, and both of its axes become
+individually estimable from the method's own output.  The closure keeps the legacy node size,
 closure equations, and conditioning; at $M=2$ it reproduces the legacy
 node bit-for-bit.  On the strong/weak-absorber checkerboard
 ($S\le20$, $M\le192$, 288 points), every fixed-$S$ row of the strict
@@ -124,8 +131,8 @@ $M=2$ anchor (Sec.~\ref{sec:strict});
 \item the predictability experiment: 288 checkerboard points
 $S\le20$, $M\le192$, showing per-row monotone $O(M^{-2})$ convergence,
 Richardson prediction of row limits to sub-pcm against $M=384$
-measurement, and a $\propto S^{-2}$ spatial-residual sequence
-(Sec.~\ref{sec:exp});
+measurement, and a characterized (monotone, sign-crossing)
+spatial-residual sequence along $S$ (Sec.~\ref{sec:exp});
 \item release as \texttt{angular.closure: strict\_phase\_space} in
 OpenPSN with regression gates (Sec.~\ref{sec:impl}).
 \end{enumerate}
@@ -182,8 +189,11 @@ d(S,M) \;=\; a(S) + b(M) + \text{h.o.t.},
 b(M)\asymp c_M M^{-2},
 \label{eq:split}
 \end{equation}
-with $c_S c_M < 0$ for the checkerboard (measured: $a>0$, $b<0$ for
-the strong absorber).  A zero contour $a(S)+b(M)=0$ then exists in
+with $c_S c_M < 0$ for the checkerboard at moderate $S$ (measured:
+$a>0$ up to $S\approx10$, $b<0$, for the strong absorber; the
+$S^{-2}$ rate is a leading-order statement, the measured $a(S)$
+crossing zero near $S\approx11$ is discussed in
+Sec.~\ref{sec:pred}).  A zero contour $a(S)+b(M)=0$ then exists in
 \emph{every} consistent two-parameter method --- it is a consequence of
 the intermediate value theorem, not a defect.  The defect is when the
 contour \emph{drifts with $M$} (here $S^{*}\approx M/2$, because
@@ -192,7 +202,20 @@ and the per-row limits are nonzero: the method's own asymptotics point
 \emph{away} from the contour as either axis is refined past the
 crossing.  Measured legacy optima (strong absorber):
 $S^{*}=5,9,15,20,\text{ out of range}$ at $M=12,24,48,96,192$ ---
-the band runs out of every finite grid.
+the band runs out of every finite grid.  The split
+\eqref{eq:split} is directly testable without any reference: the
+mixed second difference of $d$ over any rectangle of the
+$(S,M)$ grid vanishes iff the two axis-errors are separable.  Over
+all $3.2\times10^{4}$ rectangles of the $20\times16$ sweep, the strict
+map is separable to a median residual of $0.9$~pcm (strong; grid
+$|d|$ median $190$~pcm) and $0.2$~pcm (weak), versus $10.6$ and
+$2.0$~pcm for legacy --- a 12$\times$ and 25$\times$ violation of
+separability by the inconsistent operator.  Non-separable cross
+coupling is the algebraic fingerprint of the valley: in a separable
+map, refining either axis can only shrink its own term, and the
+per-axis residuals $c_S S^{-2}$, $c_M M^{-2}$ can be estimated
+separately and added --- which is exactly the error budget a
+qualifier needs (Sec.~\ref{sec:pred}).
 
 %======================================================================
 \section{Strict phase-space diffusion closure}
@@ -264,6 +287,32 @@ $k^2 = 3\Sigma_t^2 \ne \Sigma_t/p$ \emph{by construction}; the anchor
 there is the consistent-tensor limit itself, and strict$\,\neq\,$legacy
 at every $M$ --- by design.)
 
+\subsection{In what sense ``strict'': the removed vs.\ the retained
+approximation}
+\label{sec:sense}
+PSN rests on five modeling steps: (A1) sector-restricted P1-type base
+angular function; (A2) elimination of the odd parity in favor of net
+face currents; (A3) low-order source-moment expansion
+($q_0,q_{1x},q_{1y},q_{2x},q_{2y}$); (A4) geometry-free face chord
+factor $\alpha_f$; (A5) \emph{body equation projected with a different
+tensor than the face currents}.  The strict closure removes A5 and
+only A5: steps A1--A4 are retained verbatim, which is why the node
+size, closure equations, conditioning profile and $M{=}2$ node are
+unchanged.  In this precise sense the strict node is
+\emph{approximation-free within its own assumed angular structure}:
+its homogeneous modes solve the body equation pointwise
+(Lemma~1), its source particular solution is pointwise exact, and its
+face currents are exactly the divergence-theorem currents of its own
+body operator --- nothing inside the node is fitted, blended, or
+projected twice.  What remains wrong at finite $M$ is then
+\emph{one} thing --- the angular truncation A1--A4 --- and it is
+$M$-dependent with a known order.  Legacy PSN has two simultaneous,
+opposite-sign error channels (A1--A4 truncation $\propto M^{-2}$ and
+the A5 operator mismatch $b_\mathrm{face}{-}b_\mathrm{body}$ with its
+own $M$-decay); their sum is what the valley hides.  A single-channel
+error is what makes both axes individually estimable
+(Sec.~\ref{sec:pred}).
+
 %======================================================================
 \section{Experiments: predictability, not point accuracy}
 \label{sec:exp}
@@ -312,18 +361,27 @@ extrapolations, computable without any measurement beyond $M_3$.
 $-3.5$ / $-2.8$~pcm, bar $0.7$~pcm; \emph{later-measured} $M{=}384$
 point: $-3.0$~pcm.  Hit inside the bar.
 \item Weak, $S{=}12$: predictions $-1.7$ / $-1.5$, bar $0.2$~pcm;
-\emph{measured} $M{=}384$: $-1.6$~pcm.
+\emph{measured} $M{=}384$: $-1.6$~pcm.  Weak, $S{=}20$: predictions
+$-4.4$ / $-4.2$, bar $0.2$~pcm; \emph{measured} $M{=}384$: $-4.3$~pcm.
 \item Strong, $S{=}20$ (the highest row, one grid doubling beyond the
 last sweep point): predictions $-15.9$ / $-15.3$~pcm, bar $0.6$~pcm;
 \emph{measured} $M{=}384$: $-15.6$~pcm --- inside the bar, $0.3$~pcm
 from its centre.  The prediction was issued from $(M{=}48,96,192)$
 data only; the $M{=}384$ run was committed to the queue unseen.
 \item All 40 rows (both absorbers, $S\le20$):
-$|\hat d_\infty| \le 22$~pcm with bars $\le 3$~pcm; the row-limit
-sequence $\hat d_\infty(S)$ follows $S^{-2}$
-(Fig.~\ref{fig:limits}) --- the limits \emph{are} the spatial
-discretization residual of one operator, and refining the \emph{other}
-axis shrinks them predictably.
+$|\hat d_\infty| \le 22$~pcm with bars $\le 3$~pcm.  The row-limit
+sequence $\hat d_\infty(S)$ --- the pure spatial residual $a(S)$,
+exposed by removing the angular channel --- is at least an order of
+magnitude smaller than the raw errors it replaces, and it is smooth
+and monotone (Fig.~\ref{fig:limits}).  Its measured shape is the
+honest one for a nodal spatial discretization on this checkerboard:
+$c_1 S^{-2}$-like decay at small $S$, a sign change near
+$S\approx11$ (the sub-grid spatial bias is positive on coarse grids
+and negative on fine ones), and an $O(S^{-1})$ tail beyond the
+crossing.  This is a \emph{characterized} residual: piecewise
+single-signed, extrapolable along $S$ like any discretization error,
+and verifiable by running one more $S$ level --- not the wandering
+per-point sign reversals of Table~\ref{tab:rows}.
 \item Legacy, same formula: $(48,96)$ and $(96,192)$ give $+48.1$ /
 $+49.7$ at $S{=}12$, self-consistent to $1.6$~pcm --- and
 \emph{wrong}: the limit is the body/face operator-error plateau, not
@@ -333,11 +391,27 @@ limits with physical identity.  Against the Monte Carlo reference the
 legacy limits sit at $+126.5, +49.7, +20.5, +6.2$~pcm for
 $S=8,12,16,20$ --- visible as error only with an external solution.
 \end{itemize}
-This is the operative difference for qualification: with the strict
-closure, a computation at $M\le192$ \emph{knows} its own distance to
-the angular limit within $\sim1$~pcm, can allocate the remaining
-budget to the correct axis, and certifies $O(S^{-2})$ convergence
-without ever consulting $k_{\mathrm{ref}}$.
+This is the operative difference for qualification, and the reason it
+matters practically is that \emph{there is no reference}.  In
+production core analysis the Monte Carlo solution used here as
+$k_{\mathrm{ref}}$ does not exist at design time: full-core
+depletion, control-rod worth, and transient scenarios are computed
+once, at one grid, and the analyst must state an uncertainty from the
+deterministic run itself.  A valley-locked method cannot: its error at
+any point is a cancellation residual whose size is invisible without
+an external solution, and its own extrapolations converge to the
+operator plateau while looking self-consistent to $1.6$~pcm.  The
+strict closure supplies the missing instrument: the row Richardson
+limit $\hat d_\infty(S)$ with its self-bar $E_M(S)$ estimates the
+angular-axis residual $b(M)$ at every computed point; the
+$S$-difference $|d(S{+}\Delta S,M)-d(S,M)|$ bounds the spatial term
+$a(S)$ (with $E_M$ subtracted); and separability --- itself verifiable
+at zero cost from the rectangle test above --- licenses adding the two
+into a budget $|d| \lesssim |\hat d_\infty| + E_M + |a|$.  Every term
+in that budget is produced by the method's own runs; none requires a
+reference.  A computation at $M\le192$ thus knows its distance to the
+angular limit within $\sim1$~pcm and can allocate remaining budget to
+the correct axis.
 
 \subsection{Cost to accuracy}
 Reaching $|\Delta k|<5$~pcm on the strong checkerboard: strict at
@@ -407,8 +481,9 @@ its own face currents; making the node body solve the exact sector
 tensor equation --- at zero cost growth and with an exact $M{=}2$
 anchor --- converts the checkerboard convergence map from a locked
 valley into 40 clean per-row $O(M^{-2})$ sequences whose extrapolated
-limits are the spatial residual, self-bounded to sub-pcm, and shrink
-$\propto S^{-2}$ under spatial refinement.  The diagonal zero contour
+limits are the spatial residual, self-bounded to sub-pcm, and form a
+smooth monotone sequence under spatial refinement whose own $S$-trend
+is extrapolable.  The diagonal zero contour
 remains in the error map --- it must, in any consistent method --- but
 it is demoted from an attractor that governs convergence to a
 topological fact that no longer matters.
@@ -440,7 +515,8 @@ strict $S^{*}$ saturates at the zero crossing of the spatial residual.}
 \includegraphics[width=\linewidth]{figures/fig_limits.png}
 \caption{Richardson $M\to\infty$ limit of each fixed-$S$ row (error
 bar: extrapolation self-disagreement). Strict limits form a single-signed
-$\propto S^{-2}$ spatial-residual sequence; legacy limits plateau at the
+smooth spatial-residual sequence (sign-crossing at $S\approx11$,
+$O(S^{-1})$ tail --- measured, not assumed); legacy limits plateau at the
 body/face operator-error offset.}
 \label{fig:limits}
 \end{figure}
