@@ -78,10 +78,12 @@ def load_spec(path):
     else:
         A = 0
     closure = ang.get("closure", "legacy")
-    if closure not in ("legacy", "directional_matrix", "original_azimuth"):
+    if closure not in ("legacy", "directional_matrix", "original_azimuth",
+                       "strict_phase_space"):
         raise ValueError(
             f"angular.closure must be one of 'legacy', "
-            f"'directional_matrix', 'original_azimuth', got {closure!r}")
+            f"'directional_matrix', 'original_azimuth', "
+            f"'strict_phase_space', got {closure!r}")
     ang["A"] = A
     ang["closure"] = closure
 

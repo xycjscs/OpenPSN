@@ -49,6 +49,7 @@ from .node import (node_alphas, node_alphas_generic, node_params_generic,
                       generic_polar_set)
 from .node_rect import (node_params_rect, node_params_rect_generic,
                         node_state_rect, node_response_matrix_rect)
+from . import node_strict
 
 PI = np.pi
 
@@ -244,7 +245,7 @@ class PSN2D:
     def __init__(self, mat_map, h, St, Sgg, nuSf, chi=None,
                  boundary=("reflect",) * 4, M=12, TY=None, full_2pi=False,
                  generic=False, I=30, widths=None, threads=None,
-                 mem_limit_gb=None):
+                 mem_limit_gb=None, strict=False):
         if M % 2 != 0:
             raise ValueError("M must be even (mirror pairs need paired segments)")
         # Runtime inputs (user settings 2026-09-12): total parallel-unit
@@ -303,6 +304,11 @@ class PSN2D:
         # (cos2phi/sin2phi invariant under phi -> phi + pi).  M = paper's M.
         self.dphi = (2.0 * PI / M) if full_2pi else (PI / M)
         self.generic = generic
+        # strict phase-space diffusion node closure (Xu, strict PSN):
+        # replaces the isotropic body with the exact sector tensor node
+        # (node_strict); faces/alpha/closure unchanged.  M=2 restricted-
+        # model anchor: node map == legacy bit-for-bit (see node_strict).
+        self.strict = bool(strict)
         if generic:
             # uniform polar partition (2.10d-f); in 2D z-invariant, opposite
             # pairs (theta, pi-theta) are identical -> keep I/2 distinct lines,
@@ -467,8 +473,12 @@ class PSN2D:
             k = (i, g, m, mat, sh)
             if k not in self._Rcache:
                 pr, alpha = self._pr_alpha_rect(i, g, m, mat, n)
-                R, _ = node_response_matrix_rect(pr, self._phi_m(m),
-                                                 self.dphi, alpha)
+                if self.strict:
+                    R, _ = node_strict.strict_response_dispatch(
+                        pr, self._phi_m(m), self.dphi, alpha)
+                else:
+                    R, _ = node_response_matrix_rect(pr, self._phi_m(m),
+                                                     self.dphi, alpha)
                 self._Rcache[k] = R
             return self._Rcache[k]
         k = (i, g, m, mat)
@@ -477,10 +487,12 @@ class PSN2D:
                 R, _ = node_response_matrix(self.St[g, mat], 1.0, self.h,
                                             self._phi_m(m), self.dphi,
                                             pr=self._pr_generic(i, g, mat),
-                                            alpha=self._alpha_for(i, m))
+                                            alpha=self._alpha_for(i, m),
+                                            strict=self.strict)
             else:
                 R, _ = node_response_matrix(self.St[g, mat], self.mu[i], self.h,
-                                            self._phi_m(m), self.dphi)
+                                            self._phi_m(m), self.dphi,
+                                            strict=self.strict)
             self._Rcache[k] = R
         return self._Rcache[k]
 
@@ -489,14 +501,19 @@ class PSN2D:
         mat = self.mat[self.j_idx[n], self.i_idx[n]]
         if self.rect:
             pr, alpha = self._pr_alpha_rect(i, g, m, mat, n)
+            if self.strict:
+                return node_strict.strict_state_dispatch(
+                    J4, qn, pr, self._phi_m(m), self.dphi, alpha)
             return node_state_rect(J4, qn, pr, self._phi_m(m), self.dphi, alpha)
         if self.generic:
             return node_state(J4, qn, self.St[g, mat], 1.0, self.h,
                               self._phi_m(m), self.dphi,
                               pr=self._pr_generic(i, g, mat),
-                              alpha=self._alpha_for(i, m))
+                              alpha=self._alpha_for(i, m),
+                              strict=self.strict)
         return node_state(J4, qn, self.St[g, mat], self.mu[i],
-                          self.h, self._phi_m(m), self.dphi)
+                          self.h, self._phi_m(m), self.dphi,
+                          strict=self.strict)
 
     def _pr_alpha_rect(self, i, g, m, mat, n):
         """Rectangular node params + alpha for node n (its hx, hy)."""

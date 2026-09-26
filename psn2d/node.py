@@ -303,7 +303,8 @@ def face_fluxes(Ax, Bx, Ay, By, C, q, pr):
     ])
 
 
-def node_state(J4, q, St, mu, a, phi_m, dphi, pr=None, alpha=None):
+def node_state(J4, q, St, mu, a, phi_m, dphi, pr=None, alpha=None,
+               strict=False):
     """
     Full node state: returns dict with
       Ax,Bx,Ay,By,C, phi_bar,
@@ -317,6 +318,10 @@ def node_state(J4, q, St, mu, a, phi_m, dphi, pr=None, alpha=None):
         pr = {**pr, "St": St, "a": a}
     if alpha is None:
         alpha = node_alphas(mu, a, phi_m, dphi)
+    if strict:
+        from . import node_strict
+        return node_strict.strict_state_square(J4, q, St, mu, a, phi_m,
+                                               dphi, pr=pr, alpha=alpha)
     Ax, Bx, Ay, By, C = node_coeffs(J4, q, St, mu, a, phi_m, dphi, pr)
     Phi = face_fluxes(Ax, Bx, Ay, By, C, q, pr)
     phi_bar = q[0] / St - (J4[0] + J4[1] + J4[2] + J4[3]) / (St * a)
@@ -334,11 +339,16 @@ def node_state(J4, q, St, mu, a, phi_m, dphi, pr=None, alpha=None):
                 Ax, Bx, Ay, By, q, pr, phi_m, dphi)}
 
 
-def node_response_matrix(St, mu, a, phi_m, dphi, q=None, pr=None, alpha=None):
+def node_response_matrix(St, mu, a, phi_m, dphi, q=None, pr=None,
+                         alpha=None, strict=False):
     """
     Linear node response:  Phibar_f/alpha_f = R_f . J4 + s_f   (f in 0..3)
     R (4x4), s (4,).  Built by probing the closed-form model (robust).
     """
+    if strict:
+        from . import node_strict
+        return node_strict.strict_response_square(St, mu, a, phi_m, dphi,
+                                                  pr=pr, alpha=alpha, q=q)
     if q is None:
         q = np.zeros(5)
     if pr is None:

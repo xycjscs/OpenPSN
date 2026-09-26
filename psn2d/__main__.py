@@ -57,15 +57,16 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None):
     bnd = spec["boundaries"]
     boundary = (bnd["left"], bnd["bottom"], bnd["right"], bnd["top"])
     generic = case["model"] == "generic"
+    strict = case.get("closure", "legacy") == "strict_phase_space"
     if generic:
         return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
                      boundary=boundary, generic=True, I=int(case["I"]),
                      M=int(case["M"]), widths=widths, threads=threads,
-                     mem_limit_gb=mem_limit_gb)
+                     mem_limit_gb=mem_limit_gb, strict=strict)
     return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
                  boundary=boundary, generic=False, M=int(case["M"]),
                  widths=widths, threads=threads,
-                 mem_limit_gb=mem_limit_gb)
+                 mem_limit_gb=mem_limit_gb, strict=strict)
 
 
 def run_case(spec, case, verbose=True, opt="off", threads=None,
@@ -73,7 +74,13 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
     t0 = time.time()
     closure = case.get("closure", "legacy")
     A = int(case.get("A", 0))
-    if closure != "legacy":
+    if closure == "strict_phase_space":
+        # strict PSN runs on the plain power-iteration path; the node
+        # kernel is swapped inside PSN2D (strict=True), faces unchanged.
+        closure_run = "legacy"
+    else:
+        closure_run = closure
+    if closure_run != "legacy":
         bnd = spec["boundaries"]
         if any(v not in ("reflect", "vacuum") for v in bnd.values()):
             raise ValueError(
@@ -86,7 +93,7 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
                 "applicable for A > 0")
     psn = build_solver(spec, case, threads=threads,
                        mem_limit_gb=mem_limit_gb)
-    if closure != "legacy":
+    if closure_run != "legacy":
         from . import highorder
         branch = ("directional" if closure == "directional_matrix"
                   else "original")
@@ -160,7 +167,8 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
             "model": case["model"],
             "I": int(case["I"]),
             "M": int(case["M"]),
-            "closure": "legacy",
+            "closure": ("strict_phase_space"
+                        if closure == "strict_phase_space" else "legacy"),
             "subdivide": int(case["subdivide"]),
             "keff": float(k),
             "time_s": round(dt, 2),
