@@ -58,8 +58,12 @@ prediction with a self-reported error bar --- while the legacy
 sequences, however extrapolated, converge to an operator-error
 plateau ($+49.7$~pcm at $S{=}12$) that is only visible against an
 external Monte Carlo reference.  Error predictability, not accuracy at
-the best tunable point, is the operative property for qualification,
-and it is what the strict closure restores.
+the best tunable point, is the operative property for qualification.
+It is a conditional statement --- a consistent operator implies a
+separable single-channel error implies Richardson-validity on both
+axes --- and the strict closure establishes the antecedent
+analytically (body$\equiv$face, by construction); the sweeps
+demonstrate the consequents.
 \end{abstract}
 
 \noindent\textbf{Keywords:} phase-space nodal method; diffusion
@@ -360,7 +364,7 @@ sign-reversal sequence.
 \toprule
 $M$ & 24 & 48 & 96 & 192 & 384 \\
 \midrule
-legacy & $-37.4$ & $+24.0$ & $+42.1$ & $+47.8$ & (plateau $+52$) \\
+legacy & $-37.4$ & $+24.0$ & $+42.1$ & $+47.8$ & [$+52$, Richardson] \\
 strict & $-83.2$ & $-25.2$ & $-8.9$  & $-4.3$  & $-3.0$ \\
 \bottomrule
 \end{tabular}
@@ -491,7 +495,28 @@ contrast, not a transfer error budget.
 \label{sec:audit}
 Three skeptic-tests of the predictability claim were run on the
 sweep data; two of them legacy passes, and saying so sharpens what
-the claim actually is.
+the claim actually is.  Table~\ref{tab:tests} ranks all candidate
+discriminators by measured behavior; the prose below gives each
+test's protocol.
+
+\begin{table}[t]
+\centering
+\caption{Candidate convergence-certification tests, measured on the
+checkerboard sweeps (strong/weak absorber where two numbers). A
+qualifier executes rows 3--5 plus the code-level row 6.}
+\label{tab:tests}
+\begin{tabular}{lll}
+\toprule
+Test & strict & legacy \\
+\midrule
+self-consistent Richardson & 19/19 & 19/19 (no signal) \\
+monotone approach to own limit & 19/19 & 19/19 (no signal) \\
+refinement helps, $|d(S,2M)|<|d(S,M)|$ & 12/20, 12/20 & 3/20, 5/20 (strong) \\
+rectangle separability, full map & 0.9 / 0.2~pcm & 10.6 / 2.0~pcm (strong) \\
+body$\equiv$face, $M{=}2$ anchor & \multicolumn{2}{c}{algebraic: strict passes, legacy fails by construction} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \emph{(i) Self-consistency is not a discriminator.} Applying the
 Richardson recipe with data up to $M{=}96$ and predicting the
@@ -597,7 +622,12 @@ solver's source-iteration floor: reported $\Delta k$ bit-identical
 ($-2540.6$/$-83.2$~pcm), keff agreeing to $1.4\times10^{-7}$, the
 iteration-residual floor.  The checkerboard grids and logs
 (288 strict + 288 legacy points, $S\le20$, $M\le192$, plus
-$M{=}384$ anchors) accompany the code.
+$M{=}384$ and $S\le26$ extensions) accompany the code.  All points
+--- early local runs and HPC-array runs alike --- execute the same
+kernel revision (method-commit lineage), the same solver tolerance
+$10^{-10}$ and the same reference constants; machine differences
+enter wall times only, and every extrapolation reported here
+compares keff values, not times.
 
 %======================================================================
 \section{Related work and scope}
@@ -637,7 +667,13 @@ smooth monotone sequence under spatial refinement whose own $S$-trend
 is extrapolable.  The diagonal zero contour
 remains in the error map --- it must, in any consistent method --- but
 it is demoted from an attractor that governs convergence to a
-topological fact that no longer matters.
+topological fact that no longer matters.  Operationally the user
+does four reference-free things: confirm the node's
+body$\equiv$face identity once (regression test); count refinement
+direction on two production grids and stop if refinement often
+hurts; budget the angular axis by row Richardson with self-bars;
+and choose $S$ from the trend of the measured row-limit sequence,
+never from the smallest-error point.
 
 \begin{thebibliography}{9}
 \bibitem{chao2027} J.~Chao, Y.~Xu, et~al., Phase-space nodal method for
