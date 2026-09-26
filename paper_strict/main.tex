@@ -385,6 +385,15 @@ last sweep point): predictions $-15.9$ / $-15.3$~pcm, bar $0.6$~pcm;
 \emph{measured} $M{=}384$: $-15.6$~pcm --- inside the bar, $0.3$~pcm
 from its centre.  The prediction was issued from $(M{=}48,96,192)$
 data only; the $M{=}384$ run was committed to the queue unseen.
+\item \textbf{Frozen blind set, 8 points.} Predictions
+(frozen 13:14 UTC, from $(48,96,192)$ only) versus later-measured
+$M{=}384$: strong $S=4$: $+148.6\,/\,+148.2$; $S=8$: $+21.6\,/\,
++21.2$; $S=16$: $-11.4\,/\,-11.6$; $S=12$: $-2.8\,/\,-3.0$;
+$S=20$: $-15.3\,/\,-15.6$; weak $S=4$: $+30.8\,/\,+30.7$; $S=8$:
+$+3.7\,/\,+3.6$; $S=16$: $-3.4\,/\,-3.4$~pcm. All 8 inside their
+self-bars; $|\mathrm{pred}-\mathrm{meas}| \le 0.4$~pcm. Note the
+blind set spans row limits from $+148$ to $-15$~pcm: the predictor
+is not tuned to near-zero rows.
 \item All 40 rows (both absorbers, $S\le20$):
 $|\hat d_\infty| \le 22$~pcm with bars $\le 3$~pcm.  The row-limit
 sequence $\hat d_\infty(S)$ --- the pure spatial residual $a(S)$,
@@ -550,7 +559,19 @@ doubling pairs; the sweep's non-doubling columns
 ($M=12,16,24$) are displayed in maps but never enter an
 extrapolation.
 
-\emph{(vi) What remains genuinely open.} A single-method,
+\emph{(vi) S-axis blind extension.} Increment-ratio forecasts for
+$d(S,48)$, $S=21\ldots26$, issued from $S\le20$ data and frozen
+before the runs: strict errors are $0.3$--$0.6$~pcm (weak) and
+$0.3$--$5.4$~pcm (strong; the forecast slightly overshoots the drop
+because the measured tail beyond the $a(S)$ zero crossing decays
+slower than geometric --- the $O(S^{-1})$ tail again); legacy
+forecasts diverge from their own later behavior by up to
+$31.8$~pcm (strong, median 14.3), the extrapolated
+$S\approx M/2$ drift continuing past the forecast horizon. Spatial-
+axis extrapolation is thus honest-but-slow for strict and
+unreliable-by-construction for legacy, mirroring the $M$-axis story.
+
+\emph{(vii) What remains genuinely open.} A single-method,
 single-benchmark audit cannot distinguish ``converged to a wrong
 operator'' from ``converged'' without either the analytical
 consistency proof or a second discretization family (e.g.\ running
