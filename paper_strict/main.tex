@@ -210,11 +210,12 @@ the band runs out of every finite grid.  The split
 \eqref{eq:split} is directly testable without any reference: the
 mixed second difference of $d$ over any rectangle of the
 $(S,M)$ grid vanishes iff the two axis-errors are separable.  Over
-all $3.2\times10^{4}$ rectangles of the $20\times16$ sweep, the strict
-map is separable to a median residual of $0.9$~pcm (strong; grid
-$|d|$ median $190$~pcm) and $0.2$~pcm (weak), versus $10.6$ and
-$2.0$~pcm for legacy --- a 12$\times$ and 25$\times$ violation of
-separability by the inconsistent operator.  Non-separable cross
+all $6840$ rectangles ($\binom{20}{2}\binom{9}{2}$) of the
+$20{\times}9$ sweep, the strict map is separable to a median residual
+of $1.5$~pcm (strong; grid $|d|$ median $196$~pcm) and $0.3$~pcm
+(weak), versus $16.9$ and $3.3$~pcm for legacy --- a
+$11\times$ violation of separability by the inconsistent operator on
+both absorbers.  Non-separable cross
 coupling is the algebraic fingerprint of the valley: in a separable
 map, refining either axis can only shrink its own term, and the
 per-axis residuals $c_S S^{-2}$, $c_M M^{-2}$ can be estimated
@@ -553,10 +554,10 @@ qualifier executes rows 3--5 plus the code-level row 6.}
 \toprule
 Test & strict & legacy \\
 \midrule
-self-consistent Richardson & 19/19 & 19/19 (no signal) \\
+self-consistent Richardson & 17/19 & 19/19 (no signal) \\
 monotone approach to own limit & 19/19 & 19/19 (no signal) \\
 refinement helps, $|d(S,2M)|<|d(S,M)|$ & 12/20, 12/20 & 3/20, 5/20 (strong) \\
-rectangle separability, full map & 0.9 / 0.2~pcm & 10.6 / 2.0~pcm (strong) \\
+rectangle separability, full map & 1.5 / 0.3~pcm & 16.9 / 3.3~pcm \\
 body$\equiv$face, $M{=}2$ anchor & \multicolumn{2}{c}{algebraic: strict passes, legacy fails by construction} \\
 \bottomrule
 \end{tabular}
@@ -564,10 +565,11 @@ body$\equiv$face, $M{=}2$ anchor & \multicolumn{2}{c}{algebraic: strict passes, 
 
 \emph{(i) Self-consistency is not a discriminator.} Applying the
 Richardson recipe with data up to $M{=}96$ and predicting the
-$M{=}192$ point: strict rows hit within their self-bars on 19/19
-(median error $0.9$/$0.2$~pcm strong/weak), but legacy rows,
-\emph{measured against their own wrong-operator limit}, are equally
-self-consistent (19/19, median $0.5$/$0.1$~pcm). An extrapolation of
+$M{=}192$ point: strict rows hit within their self-bars on 17/19
+(median error $0.9$/$0.2$~pcm strong/weak; the two misses are
+coarse rows $S{=}2,4$ exceeding their bars by $\le$1.3~pcm).  Legacy
+rows, \emph{measured against their own wrong-operator limit}, are
+\emph{more} self-consistent (19/19, median $0.5$/$0.1$~pcm). An extrapolation of
 a consistent wrong operator looks exactly as self-consistent as one
 of a consistent right operator. Extrapolation quality therefore
 cannot certify an operator --- only the analytical
@@ -600,10 +602,12 @@ self-consistency of extrapolation --- no discrimination (legacy
 passes); monotone approach to the method's \emph{own} limit --- no
 discrimination (both 19/19; a wrong operator is still an operator);
 refinement-direction against the finest grid in hand ---
-\textbf{strong} (12/20 vs 0--5/20); rectangle separability over
-sliding $5\times3$ windows --- \textbf{strong on the full map}
-(median-window residuals $0.0$ vs $0.3$~pcm, worst-window flag 0/15
-vs 1/15, full-map medians $0.2$--$0.9$ vs $2.0$--$10.6$~pcm);
+\textbf{strong} (12/20 vs 0--5/20); rectangle separability ---
+\textbf{strong}: full-map medians $0.3$--$1.5$~pcm (strict) vs
+$3.3$--$16.9$~pcm (legacy), and over 119 sliding four-row
+three-column windows the $>$20~pcm non-separability flag fires on
+10/238 strict windows vs 35/238 legacy --- a $3.5\times$ flag-rate
+difference;
 kernel-anchor and body$\equiv$face identity tests ---
 \textbf{conclusive, and free}: they are algebraic properties of the
 implementation, executed in the regression suite, not inferred from
