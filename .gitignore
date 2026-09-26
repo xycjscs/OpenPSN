@@ -19,3 +19,6 @@ psn2d/memopt_cxx/*_asan.so
 
 # scratch scripts (throwaway probes, keep local)
 tmp_*.py
+paper_strict/*.aux
+paper_strict/*.out
+paper_strict/pg*.png
