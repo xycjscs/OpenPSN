@@ -1,0 +1,10 @@
+[WARNING] Could not convert TeX math \begin{equation}
+  -\nabla\!\cdot\!\left(\bm{D}_m \nabla\phi\right)
+  + \Sigma_t\,\phi = q(x,y),
+  \qquad \bm{D}_m\ \text{(Eq.~\ref{eq:Dm})}.
+  \label{eq:strictbody}
+  \end{equation}, rendering as TeX:
+  {D}_m\ \text{(Eq.~\ref{eq:Dm})}.
+                     ^
+  unexpected "r"
+  expecting " ", "!", ",", ":", ";" or ">"

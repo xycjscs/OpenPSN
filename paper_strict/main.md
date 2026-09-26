@@ -59,9 +59,9 @@ b(M)\asymp c_M M^{-2},
 Replace [\[eq:legacybody\]](#eq:legacybody){reference-type="eqref" reference="eq:legacybody"} by the sector tensor body: $$\begin{equation}
 -\nabla\!\cdot\!\left(\bm{D}_m \nabla\phi\right)
 + \Sigma_t\,\phi = q(x,y),
-\qquad \bm{D}_m\ \text{(Eq.~\ref{eq:Dm})}.
+\qquad \bm{D}_m.
 \label{eq:strictbody}
-\end{equation}$$ The face currents of [\[eq:face\]](#eq:face){reference-type="eqref" reference="eq:face"} are then exactly the divergence-theorem currents $J_f = \langle -\bm{n}\!\cdot\!\bm{D}_m
+\end{equation}$$ where $\bm{D}_m$ is the face tensor of Eq. [\[eq:Dm\]](#eq:Dm){reference-type="ref" reference="eq:Dm"}. The face currents of [\[eq:face\]](#eq:face){reference-type="eqref" reference="eq:face"} are then exactly the divergence-theorem currents $J_f = \langle -\bm{n}\!\cdot\!\bm{D}_m
 \nabla\phi\rangle_f$ of the body operator: body and face are the *same* operator (verified to $3\times10^{-15}$ against the printed mixing formula for arbitrary sectors, including non-power-of-two $M$). Equation [\[eq:strictbody\]](#eq:strictbody){reference-type="eqref" reference="eq:strictbody"} is not a heuristic blend: it is the cell-tensor projection of the same transport operator that produced [\[eq:face\]](#eq:face){reference-type="eqref" reference="eq:face"}, obtained by averaging the second angular moment over the sector before (not after) eliminating the odd parity --- the projection order that the face formula implicitly assumes.
 
 ## Exact basis lemma
