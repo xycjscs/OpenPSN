@@ -49,7 +49,7 @@ operator.  The error has a single channel, and both of its axes become
 individually estimable from the method's own output.  The closure keeps the legacy node size,
 closure equations, and conditioning; at $M=2$ it reproduces the legacy
 node bit-for-bit.  On the strong/weak-absorber checkerboard
-($S\le20$, $M\le192$, 288 points), every fixed-$S$ row of the strict
+($S\le20$, $M\le192$, 720 points), every fixed-$S$ row of the strict
 method converges monotonically and single-signed at $O(M^{-2})$ to a
 limit that \emph{is} the pure spatial residual.  Consequently the
 Richardson $M\to\infty$ limit predicted from $M=48/96$ alone matches
@@ -132,7 +132,7 @@ the proof that the checkerboard diagonal valley is its zero-error
 contour (Sec.~\ref{sec:legacy});
 \item the strict closure: derivation, exact basis lemma, node map,
 $M=2$ anchor (Sec.~\ref{sec:strict});
-\item the predictability experiment: 288 checkerboard points
+\item the predictability experiment: 720 checkerboard points
 $S\le20$, $M\le192$, showing per-row monotone $O(M^{-2})$ convergence,
 Richardson prediction of row limits to sub-pcm against $M=384$
 measurement, and a characterized (monotone, sign-crossing)
@@ -335,8 +335,9 @@ error is what makes both axes individually estimable
 Protocol: strong ($\Sigma_a=0.70$, $k_{\mathrm{ref}}=0.51673$) and weak
 ($0.07$, $1.12974$) absorber checkerboards~\cite{chao2027}, generic
 polar $I=30$, solver tolerance $10^{-10}$, grid
-$S=1\ldots20 \times M=2\ldots192$ (288 points per method-material
-combination pair), OpenMC references as in~\cite{chao2027}.  All
+$S=1\ldots20 \times M=2,4,8,12,16,24,48,96,192$ (9 columns $\times$
+20 rows $=180$ points per method-material combination pair, 720
+sweep points total), OpenMC references as in~\cite{chao2027}.  All
 numbers below are computed, none fitted.  The published references
 carry 5--6 significant decimals (quantization floor $\pm0.5$~pcm at
 $k\approx0.52$; the Monte Carlo statistical uncertainty of the
@@ -477,6 +478,7 @@ $S=20$ & 117\,/\,108  & 230\,/\,206 & 418\,/\,407 \\
 \end{table}
 
 \subsection{Transfer to a heterogeneous assembly}
+\label{sec:c5g7}
 On the C5G7 UO$_2$ rect-node assembly (51$\times$51 nodes, TY3,
 $I=30$, $k_\mathrm{ref}=1.334726$) legacy and strict wall times agree
 within 1\% at every refinement (92/193/287\,s vs 94/198/294\,s at
@@ -610,18 +612,26 @@ inspection or the release's anchor tests that body and face currents
 of the production node are divergence-theorem pairs (one run, no
 reference); (2)~on two production grids, run the refinement-direction
 count --- frequent degradation under refinement is a stop condition
-regardless of how small the errors look; (3)~budget the angular axis
-by row Richardson with self-bars; (4)~budget the spatial axis by the
-measured row-limit sequence $\hat d_\infty(S)$, choosing $S$ from
-its trend (never by the smallest-$|d|$ point, which is the valley); (5)~never
-use point-vs-point closeness as evidence of convergence.
+regardless of how small the errors look; (3)~measure the row's local
+order $p$ from adjacent-doubling increments and extrapolate with the
+measured factor $2^p$, never an assumed one: the checkerboard rows run
+$p\approx2$ but assembly rows with material-interface kinks run
+$p\approx1$ (Sec.~\ref{sec:c5g7}), and a forced $1/M^2$ recipe
+mis-sets those row limits by $10$--$20$~pcm; (4)~budget the angular
+axis by row Richardson with self-bars; (5)~budget the spatial axis by
+the measured row-limit sequence $\hat d_\infty(S)$, choosing $S$ from
+its trend (never by the smallest-$|d|$ point, which is the valley);
+(6)~never use point-vs-point closeness as evidence of convergence.
 
 \emph{(v) Convergence order is measured, not assumed.} Per-row
 local orders from adjacent-doubling increments,
 $p = \log_2|\Delta d(M)/\Delta d(2M)|$, give (strict) median
 $p=1.87$, 10--90\% range $1.81$--$2.04$ (strong) and $1.91$,
 $1.74$--$1.97$ (weak) --- consistent with $O(M^{-2})$ without
-fitting it in. The Richardson formula with factor 2 is used only on
+fitting it in.  The order is a property of the \emph{problem}, not of
+the closure: on the C5G7 assembly the same strict rows measure
+$p\approx1$ (Sec.~\ref{sec:c5g7}), and the procedure therefore
+extrapolates with the locally measured factor. The Richardson formula with factor 2 is used only on
 doubling pairs; the sweep's non-doubling columns
 ($M=12,16,24$) are displayed in maps but never enter an
 extrapolation.
