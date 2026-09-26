@@ -63,8 +63,8 @@ and it is what the strict closure restores.
 \end{abstract}
 
 \noindent\textbf{Keywords:} phase-space nodal method; diffusion
-approximation; convergence analysis; Richardson extrapolation;
-verification and validation
+approximation; convergence analysis; Richardson
+extrapolation; verification and validation
 
 %======================================================================
 \section{Introduction}
@@ -282,10 +282,20 @@ global checkerboard $k_{\mathrm{eff}}$ to $8.9\times10^{-11}$~pcm
 (solver noise).  The strict method is therefore a conservative
 generalization: the legacy method is not discarded, it is the $M{=}2$
 slice of the strict family where the two operators happen to agree.
-(For the generic polar model the legacy body is
-$k^2 = 3\Sigma_t^2 \ne \Sigma_t/p$ \emph{by construction}; the anchor
-there is the consistent-tensor limit itself, and strict$\,\neq\,$legacy
-at every $M$ --- by design.)
+(For the generic polar model the legacy body decay is
+$k=\sqrt{3}\,\Sigma_t$, i.e.\ it projects the \emph{full-angle} $P_1$
+second moment before the sector restriction, so its body operator
+differs from the face tensor at \emph{every} $M$, including $M=2$:
+legacy-generic carries both error channels everywhere, and the strict
+family does not contain legacy-generic as any slice. The checkerboard
+experiments of this paper are therefore the fair test of the
+\emph{repair} --- both methods on the same angular model --- and the
+generic results above should be read with legacy's extra channel in
+mind: its $M{\to}\infty$ plateau folds together both projection
+mismatches (the causal split between them is not separated in this
+paper; a TY-body legacy sweep would isolate it and is left as a
+regression exercise). All legacy numbers in this paper are
+legacy-generic.)
 
 \subsection{In what sense ``strict'': the removed vs.\ the retained
 approximation}
@@ -420,6 +430,31 @@ magnitude more unknowns) \emph{and} degrades again at $M{=}192$
 ($+4.5$~pcm, sign reversal) --- the optimum is a cancellation point,
 not a converged value.
 
+\subsection{Cost parity}
+Table~\ref{tab:cost}: strict and legacy wall times on the same solver
+(HPC node, 64 threads) agree within the scheduling noise at every
+matched point; the strict node evaluates four hyperbolic modes instead
+of four additive ones and its LU pools are identical in size. Peak
+memory is likewise mode-shared: the $O(M)$ LU-pool term is the same
+expression in both closures (both methods required the 120~GB
+allocation at $S{=}17$--$20$, $M{=}192$).
+
+\begin{table}[t]
+\centering
+\caption{Wall time, seconds, strong absorber (legacy\,/\,strict).}
+\label{tab:cost}
+\begin{tabular}{lccc}
+\toprule
+ & $M=48$ & $M=96$ & $M=192$ \\
+\midrule
+$S=4$  & 7\,/\,9      & 14\,/\,18   & 28\,/\,36 \\
+$S=8$  & 18\,/\,20    & 37\,/\,41   & 76\,/\,85 \\
+$S=12$ & 39\,/\,40    & 80\,/\,83   & 169\,/\,174 \\
+$S=20$ & 117\,/\,108  & 230\,/\,206 & 418\,/\,407 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Transfer to a heterogeneous assembly}
 On the C5G7 UO$_2$ rect-node assembly (51$\times$51 nodes, TY3,
 S{=}1, $k_\mathrm{ref}=1.334726$) legacy and strict wall times agree
@@ -435,6 +470,54 @@ which at S{=}1 is hundreds of pcm.  A quantitative predictability
 claim for C5G7 requires the S{=}2--3 rows (running); until then we
 state measured cost parity and the qualitative zero-crossing
 contrast, not a transfer error budget.
+
+\subsection{Audits and honest limitations}
+\label{sec:audit}
+Three skeptic-tests of the predictability claim were run on the
+sweep data; two of them legacy passes, and saying so sharpens what
+the claim actually is.
+
+\emph{(i) Self-consistency is not a discriminator.} Applying the
+Richardson recipe with data up to $M{=}96$ and predicting the
+$M{=}192$ point: strict rows hit within their self-bars on 19/19
+(median error $0.9$/$0.2$~pcm strong/weak), but legacy rows,
+\emph{measured against their own wrong-operator limit}, are equally
+self-consistent (19/19, median $0.5$/$0.1$~pcm). An extrapolation of
+a consistent wrong operator looks exactly as self-consistent as one
+of a consistent right operator. Extrapolation quality therefore
+cannot certify an operator --- only the analytical
+body$\equiv$face identity (Sec.~\ref{sec:strict}) plus the two
+behavioral tests below can.
+
+\emph{(ii) Refinement-direction test (legacy fails).} Without any
+reference, ask whether refining helps: the fraction of $S$-rows where
+$|d(S,2M)| < |d(S,M)|$. At $M{:}48{\to}96$: strict 12/20 (both
+absorbers) versus legacy 3/20 and 5/20; at $96{\to}192$: strict
+10--11/20 versus legacy 0/20 and 3/20. A practitioner running two
+adjacent grids can detect and identify the pathology from their own
+numbers: if refining the angular axis \emph{often increases} the
+distance to the finest grid in hand, the row limits are not physical.
+
+\emph{(iii) Fixed-budget point accuracy (no winner --- by design).}
+Over the production-like sub-grid $S\le20$, $M\in\{8,16,24,48\}$
+(80 points per combination), the fraction with $|\Delta k|<20$~pcm is
+legacy 12\%/strict 8\% (strong) and 40\%/44\% (weak); at the 50~pcm
+threshold 22\%/24\% and 62\%/69\%. Neither method systematically wins
+single-point accuracy at equal grid --- which is precisely the point:
+legacy's best points are valley cancellations that (a) move when the
+benchmark's material contrast changes and (b) are, by test (i),
+indistinguishable from its worst points without a reference. The
+strict method trades unknowable lucky points for knowable ones.
+
+\emph{(iv) What remains genuinely open.} A single-method,
+single-benchmark audit cannot distinguish ``converged to a wrong
+operator'' from ``converged'' without either the analytical
+consistency proof or a second discretization family (e.g.\ running
+the same problem at a different $P$-order basis). The strict closure
+supplies the first internally; the release therefore pairs every
+convergence claim in this paper with its kernel-level anchor test, so
+that a user's regression suite, not a Monte Carlo campaign, is the
+referee.
 
 %======================================================================
 \section{Implementation}
