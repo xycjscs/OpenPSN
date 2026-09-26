@@ -332,7 +332,14 @@ Protocol: strong ($\Sigma_a=0.70$, $k_{\mathrm{ref}}=0.51673$) and weak
 polar $I=30$, solver tolerance $10^{-10}$, grid
 $S=1\ldots20 \times M=2\ldots192$ (288 points per method-material
 combination pair), OpenMC references as in~\cite{chao2027}.  All
-numbers below are computed, none fitted.
+numbers below are computed, none fitted.  The published references
+carry 5--6 significant decimals (quantization floor $\pm0.5$~pcm at
+$k\approx0.52$; the Monte Carlo statistical uncertainty of the
+published values, not restated in~\cite{chao2027}, is of the same
+size), so sub-pcm margins are only meaningful between deterministic
+runs --- which is how they are used below: every prediction/hit pair
+compares two $k_{\mathrm{eff}}$ of this code, and $k_{\mathrm{ref}}$
+cancels in the difference.
 
 \subsection{Valley locking removed (Fig.~\ref{fig:bestS})}
 The strict optimum at fixed $M$ saturates:
@@ -509,7 +516,41 @@ benchmark's material contrast changes and (b) are, by test (i),
 indistinguishable from its worst points without a reference. The
 strict method trades unknowable lucky points for knowable ones.
 
-\emph{(iv) What remains genuinely open.} A single-method,
+\emph{(iv) The executable procedure, and what each test buys.}
+Ranking the tests by measured discrimination on the data above:
+self-consistency of extrapolation --- no discrimination (legacy
+passes); monotone approach to the method's \emph{own} limit --- no
+discrimination (both 19/19; a wrong operator is still an operator);
+refinement-direction against the finest grid in hand ---
+\textbf{strong} (12/20 vs 0--5/20); rectangle separability over
+sliding $5\times3$ windows --- \textbf{strong on the full map}
+(median-window residuals $0.0$ vs $0.3$~pcm, worst-window flag 0/15
+vs 1/15, full-map medians $0.2$--$0.9$ vs $2.0$--$10.6$~pcm);
+kernel-anchor and body$\equiv$face identity tests ---
+\textbf{conclusive, and free}: they are algebraic properties of the
+implementation, executed in the regression suite, not inferred from
+sweeps.  A qualifier's procedure is therefore: (1)~verify by code
+inspection or the release's anchor tests that body and face currents
+of the production node are divergence-theorem pairs (one run, no
+reference); (2)~on two production grids, run the refinement-direction
+count --- frequent degradation under refinement is a stop condition
+regardless of how small the errors look; (3)~budget the angular axis
+by row Richardson with self-bars; (4)~budget the spatial axis by the
+measured row-limit sequence $\hat d_\infty(S)$, choosing $S$ from
+its trend (never by the smallest-$|d|$ point, which is the valley); (5)~never
+use point-vs-point closeness as evidence of convergence.
+
+\emph{(v) Convergence order is measured, not assumed.} Per-row
+local orders from adjacent-doubling increments,
+$p = \log_2|\Delta d(M)/\Delta d(2M)|$, give (strict) median
+$p=1.87$, 10--90\% range $1.81$--$2.04$ (strong) and $1.91$,
+$1.74$--$1.97$ (weak) --- consistent with $O(M^{-2})$ without
+fitting it in. The Richardson formula with factor 2 is used only on
+doubling pairs; the sweep's non-doubling columns
+($M=12,16,24$) are displayed in maps but never enter an
+extrapolation.
+
+\emph{(vi) What remains genuinely open.} A single-method,
 single-benchmark audit cannot distinguish ``converged to a wrong
 operator'' from ``converged'' without either the analytical
 consistency proof or a second discretization family (e.g.\ running
@@ -554,7 +595,13 @@ fixed source and $k$-eigenvalue transport with isotropic scattering,
 vacuum boundaries, and 3D generalizations of the basis lemma
 (plane waves along the cone $\theta_w = \phi_m \pm \pi/4$ generalize
 sector-wise in 3D; the $S_N$-order coupling is unchanged) are
-open.
+open.  The predictability evidence itself is scoped: $k$-eigenvalue
+checkerboards (1-group transport, void-free, isotropic scattering)
+carries the quantitative claims; the C5G7 transfer demonstrates cost
+parity and the zero-crossing pathology on a heterogeneous composition
+but not yet a closed error budget (S-levels 2--3 in progress).  A
+fixed-source demonstration and a rod-lattice valley geometry are the
+next evidence items; neither should be assumed until run.
 
 %======================================================================
 \section{Conclusions}
