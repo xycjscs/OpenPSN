@@ -6,7 +6,7 @@
 \newtheorem{lemma}{Lemma}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{siunitx}
+% siunitx removed: unused
 \usepackage[margin=1in]{geometry}
 \usepackage{caption}
 \usepackage[hidelinks]{hyperref}
@@ -230,7 +230,7 @@ Replace \eqref{eq:legacybody} by the sector tensor body:
 \begin{equation}
 -\nabla\!\cdot\!\left(\bm{D}_m \nabla\phi\right)
 + \Sigma_t\,\phi = q(x,y),
-\qquad \bm{D}_m \text{ from } \eqref{eq:Dm}.
+\qquad \bm{D}_m\ \text{(Eq.~\ref{eq:Dm})}.
 \label{eq:strictbody}
 \end{equation}
 The face currents of \eqref{eq:face} are then exactly the
@@ -484,49 +484,53 @@ The S{=}1 row shows the pathology in its pure form: legacy crosses
 zero through the cancellation valley
 ($-101.0\to-37.2\to+1.2$~pcm at $M=8/16/24$); strict sits at $-264$
 to $-285$~pcm, which \emph{is} the true spatial error of an assembly
-model with unresolved fuel-pin rings.  Rows $S=2,3$
-($M=8/16/24$, twelve runs) give the quantitative contrast:
+model with unresolved fuel-pin rings.  Rows $S=2,3$ over
+$M=8/16/24/48$ (sixteen runs) give the quantitative contrast:
 \begin{center}
 \begin{tabular}{lrrrrr}
 \multicolumn{6}{l}{$\Delta k_\mathrm{eff}$ (pcm) vs.\ Monte Carlo reference}\\[2pt]
 \toprule
-row & $M{=}8$ & 16 & 24 & $\lim\,(\cdot)$ & $|\varepsilon|$ \\
+row & $M{=}8$ & 16 & 24 & 48 & $\hat d_\infty\,(1/M)$ \\
 \midrule
-legacy $S{=}2$ & $-99.4$ & $-50.1$ & $-21.0$ & $+2.3$ & 35.9 \\
-strict\ $S{=}2$ & $-125.3$ & $-85.0$ & $-56.8$ & $-34.2$ & 37.3 \\
-legacy $S{=}3$ & $-102.6$ & $-60.1$ & $-33.9$ & $-12.9$ & 33.0 \\
-strict\ $S{=}3$ & $-113.3$ & $-75.6$ & $-52.6$ & $-34.2$ & 28.8 \\
+legacy $S{=}2$ & $-99.4$ & $-50.1$ & $-21.0$ & $+7.5$ & $+21.9$ \\
+strict\ $S{=}2$ & $-125.3$ & $-85.0$ & $-56.8$ & $-27.9$ & $-17.3$ \\
+legacy $S{=}3$ & $-102.6$ & $-60.1$ & $-33.9$ & $-6.3$ & $+5.3$ \\
+strict\ $S{=}3$ & $-113.3$ & $-75.6$ & $-52.6$ & $-29.0$ & $-18.5$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-\noindent($\lim$ from the $(16,24)$ Richardson pair;
-$|\varepsilon|$ its disagreement with the $(8,16)$ extrapolation.)
-Three observations, all as the framework predicts.  (1)~The legacy
-rows \emph{look} convergent-to-truth ($|d|$ halves every refinement
-toward the Monte Carlo value) while the strict rows stop short ---
-exactly the valley trap on a real composition: at $M{=}24$, $S{=}2$
-legacy is $-21$~pcm and would be published as converged, yet its own
-extrapolation points through zero.
-(2)~The two strict row limits agree to $0.0$~pcm ($-34.2$ both)
-within bars of $\sim30$~pcm: the angular residual is being removed
-and what remains is a single $S$-independent spatial constant, the
-separability signature.  The legacy limits disagree by $15$~pcm and
-each legacy row's successive extrapolations disagree by
-$30$--$36$~pcm --- the bars honestly say the extrapolation is not yet
-converged, and they are the bars of a \emph{wrong-operator} sequence
-to begin with.
-(3)~The $S{=}2\!\to\!3$ shift separates cleanly for strict
-($+12.0$, $+9.4$, $+4.2$~pcm, decaying with $M$ --- pure $a(S)$) but
-not for legacy ($-3.2$, $-10.0$, $-12.9$~pcm, growing \emph{with}
-$M$ --- the angular and cancellation channels entangle, which is why
-its rectangle residual is worse on the $(8,16)$ window: $6.8$ vs
-$2.6$~pcm).  The strict error budget at $M{=}24$, $S{=}3$: angular
-$|{-}34.2|\pm28.8$ from row Richardson, spatial bounded by the
-measured $S{=}2\to3$ drift --- a reference-free $\sim\pm60$~pcm total
-on a real assembly with the dominant term (spatial, not angular)
-correctly identified and reducible by $S$, not by $M$.  The coarse
-three-point rows carry wide bars as they should; densifying the row
-tightens them by the usual factor.
+\noindent Measured order first, extrapolation second
+(same protocol as the checkerboard): unlike the checkerboard's clean
+$O(M^{-2})$, the C5G7 rows decay $O(M^{-1})$ --- per-refinement
+increments $49,29,28$~pcm barely shrink, the signature of the
+material-interface flux kinks that a Cartesian node grid resolves only
+linearly.  The four-point least-squares fit to $1/M$ has rms
+$5$--$7$~pcm versus $11$--$14$ for a forced $1/M^2$ fit; using the
+measured law is what makes the row limits meaningful.  With it:
+(1)~The two \emph{strict} row limits agree to $1.2$~pcm ($-17.3$,
+$-18.5$): the angular residual is removed and a single
+$S$-independent spatial constant $b\approx-18$~pcm remains --- the
+separability signature, now on a real assembly.  The
+$S{=}2{\to}3$ shift decays with $M$ for strict
+($+12.0,+9.4,+4.2,-1.1$~pcm: pure $a(S)$ vanishing into $b$) but
+\emph{grows} for legacy ($-3.2,-10.0,-12.9,-13.8$~pcm: angular and
+cancellation channels entangle), and the legacy limits disagree by
+$16.6$~pcm with unstable sign.
+(2)~The valley trap in production dress: legacy $S{=}2$ at $M{=}24$
+is $-21$~pcm and at $M{=}48$ has crossed zero to $+7.5$ ---
+$|d|$ halving toward the reference all the way, published as
+converged, while its own extrapolation points past zero to the
+operator plateau ($+21.9$).  Strict stops short of the reference at
+$\approx$$-18$~pcm and \emph{says so}: the row limit with its
+successive-fit spread is the angular budget; the measured
+$S{=}2{\to}3$ drift bounds the spatial term; the reference-free total
+at $M{=}48$, $S{=}3$ is $\sim$$50$~pcm with the dominant term
+(spatial, reducible only by $S$) correctly identified.
+(3)~On the same four-point data, a practitioner without a reference
+can still catch legacy: its rectangle (separability) residual is
+$6.8$ vs $2.6$~pcm on the $(8,16)$ window, and its refinement
+increments grow non-monotonically toward zero-crossing rather than
+decaying to a same-signed limit.
 
 \subsection{Audits and honest limitations}
 \label{sec:audit}
