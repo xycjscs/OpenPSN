@@ -119,9 +119,13 @@ This is the operative difference for qualification: with the strict closure, a c
 
 Reaching $|\Delta k|<5$ pcm on the strong checkerboard: strict at $S{=}12, M{=}48$; legacy requires $S{=}20, M{=}96$ (an order of magnitude more unknowns) *and* degrades again at $M{=}192$ ($+4.5$ pcm, sign reversal) --- the optimum is a cancellation point, not a converged value.
 
+## Transfer to a heterogeneous assembly
+
+On the C5G7 UO$_2$ rect-node assembly (51$\times$`<!-- -->`{=html}51 nodes, TY3, S=1, $k_\mathrm{ref}=1.334726$) legacy and strict wall times agree within 1% at every refinement (92/193/287 s vs 94/198/294 s at $M=$ 8/16/24): cost parity holds on a realistic composition. The S=1 rows show the honest division of labor the framework predicts. Legacy crosses zero through the cancellation valley ($-101.0\to-37.2\to+1.2$ pcm --- the same sign-reversal pathology as the checkerboard). Strict sits at $-264$ to $-285$ pcm: its row limit *equals* the true spatial discretization error of an assembly model in which the fuel-pin rings are entirely unresolved, which at S=1 is hundreds of pcm. A quantitative predictability claim for C5G7 requires the S=2--3 rows (running); until then we state measured cost parity and the qualitative zero-crossing contrast, not a transfer error budget.
+
 # Implementation {#sec:impl}
 
-The closure ships in OpenPSN as the YAML setting `angular.closure: strict_phase_space` (module `psn2d/node_strict.py`, node-map dispatch in the solver; legacy default bit-identical). Gates in `tests/`: kernel anchor (relative $4\times10^{-11}$, machine-cancellation level), state-dict closure keys, global $M{=}2$ anchor ($8.9\times10^{-11}$ pcm), and the full example regression (7/7, $\Delta=0.000$ pcm). The checkerboard grids and logs (288 strict + 288 legacy points, $S\le20$, $M\le192$, plus $M{=}384$ anchors) accompany the code.
+The closure ships in OpenPSN as the YAML setting `angular.closure: strict_phase_space` (module `psn2d/node_strict.py`, node-map dispatch in the solver; legacy default bit-identical). Gates in `tests/`: kernel anchor (relative $4\times10^{-11}$, machine-cancellation level), state-dict closure keys, global $M{=}2$ anchor ($8.9\times10^{-11}$ pcm), and the full example regression (7/7, $\Delta=0.000$ pcm). Production-path spot checks (YAML switch, generic $I{=}30$, rect path) reproduce the sweep-driver values to the solver's source-iteration floor: reported $\Delta k$ bit-identical ($-2540.6$/$-83.2$ pcm), keff agreeing to $1.4\times10^{-7}$, the iteration-residual floor. The checkerboard grids and logs (288 strict + 288 legacy points, $S\le20$, $M\le192$, plus $M{=}384$ anchors) accompany the code.
 
 # Related work and scope
 
