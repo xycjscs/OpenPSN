@@ -676,9 +676,14 @@ anchor ($8.9\times10^{-11}$~pcm), and the full example regression
 generic $I{=}30$, rect path) reproduce the sweep-driver values to the
 solver's source-iteration floor: reported $\Delta k$ bit-identical
 ($-2540.6$/$-83.2$~pcm), keff agreeing to $1.4\times10^{-7}$, the
-iteration-residual floor.  The checkerboard grids and logs
-(288 strict + 288 legacy points, $S\le20$, $M\le192$, plus
-$M{=}384$ and $S\le26$ extensions) accompany the code.  All points
+iteration-residual floor.  Every point reported in this paper ---
+777 (closure, case, $M$, $S$, $k_{\mathrm{eff}}$, $\Delta k$) tuples
+across the checkerboard, C5G7-UO$_2$, and C5G7-MOX cases --- is
+released as \texttt{data/all\_points\_archive.csv} beside the
+manuscript, and all separability, refinement-direction, and
+self-consistency statistics in Sec.~\ref{sec:audit} are recomputed
+from that file by a single script, so the audit table is checkable
+without rerunning any solver.  All points
 --- early local runs and HPC-array runs alike --- execute the same
 kernel revision (method-commit lineage), the same solver tolerance
 $10^{-10}$ and the same reference constants; machine differences
