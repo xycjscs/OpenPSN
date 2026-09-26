@@ -109,6 +109,8 @@ For every row with $M=24,48,96,192$ we form the Richardson limit $\hat d_\infty 
 
 - Weak, $S{=}12$: predictions $-1.7$ / $-1.5$, bar $0.2$ pcm; *measured* $M{=}384$: $-1.6$ pcm.
 
+- Strong, $S{=}20$ (the highest row, one grid doubling beyond the last sweep point): predictions $-15.9$ / $-15.3$ pcm, bar $0.6$ pcm; *measured* $M{=}384$: $-15.6$ pcm --- inside the bar, $0.3$ pcm from its centre. The prediction was issued from $(M{=}48,96,192)$ data only; the $M{=}384$ run was committed to the queue unseen.
+
 - All 40 rows (both absorbers, $S\le20$): $|\hat d_\infty| \le 22$ pcm with bars $\le 3$ pcm; the row-limit sequence $\hat d_\infty(S)$ follows $S^{-2}$ (Fig. [2](#fig:limits){reference-type="ref" reference="fig:limits"}) --- the limits *are* the spatial discretization residual of one operator, and refining the *other* axis shrinks them predictably.
 
 - Legacy, same formula: $(48,96)$ and $(96,192)$ give $+48.1$ / $+49.7$ at $S{=}12$, self-consistent to $1.6$ pcm --- and *wrong*: the limit is the body/face operator-error plateau, not the spatial residual. Self-consistency of an extrapolation is not evidence of its validity; only the operator-consistent method has limits with physical identity. Against the Monte Carlo reference the legacy limits sit at $+126.5, +49.7, +20.5, +6.2$ pcm for $S=8,12,16,20$ --- visible as error only with an external solution.
