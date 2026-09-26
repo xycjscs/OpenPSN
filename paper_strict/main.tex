@@ -477,19 +477,56 @@ $S=20$ & 117\,/\,108  & 230\,/\,206 & 418\,/\,407 \\
 
 \subsection{Transfer to a heterogeneous assembly}
 On the C5G7 UO$_2$ rect-node assembly (51$\times$51 nodes, TY3,
-S{=}1, $k_\mathrm{ref}=1.334726$) legacy and strict wall times agree
+$I=30$, $k_\mathrm{ref}=1.334726$) legacy and strict wall times agree
 within 1\% at every refinement (92/193/287\,s vs 94/198/294\,s at
-$M=$~8/16/24): cost parity holds on a realistic composition.  The
-S{=}1 rows show the honest division of labor the framework predicts.
-Legacy crosses zero through the cancellation valley
-($-101.0\to-37.2\to+1.2$~pcm --- the same sign-reversal pathology as
-the checkerboard).  Strict sits at $-264$ to $-285$~pcm: its row
-limit \emph{equals} the true spatial discretization error of an
-assembly model in which the fuel-pin rings are entirely unresolved,
-which at S{=}1 is hundreds of pcm.  A quantitative predictability
-claim for C5G7 requires the S{=}2--3 rows (running); until then we
-state measured cost parity and the qualitative zero-crossing
-contrast, not a transfer error budget.
+$M=$~8/16/24, S{=}1): cost parity holds on a realistic composition.
+The S{=}1 row shows the pathology in its pure form: legacy crosses
+zero through the cancellation valley
+($-101.0\to-37.2\to+1.2$~pcm at $M=8/16/24$); strict sits at $-264$
+to $-285$~pcm, which \emph{is} the true spatial error of an assembly
+model with unresolved fuel-pin rings.  Rows $S=2,3$
+($M=8/16/24$, twelve runs) give the quantitative contrast:
+\begin{center}
+\begin{tabular}{lrrrrr}
+\multicolumn{6}{l}{$\Delta k_\mathrm{eff}$ (pcm) vs.\ Monte Carlo reference}\\[2pt]
+\toprule
+row & $M{=}8$ & 16 & 24 & $\lim\,(\cdot)$ & $|\varepsilon|$ \\
+\midrule
+legacy $S{=}2$ & $-99.4$ & $-50.1$ & $-21.0$ & $+2.3$ & 35.9 \\
+strict\ $S{=}2$ & $-125.3$ & $-85.0$ & $-56.8$ & $-34.2$ & 37.3 \\
+legacy $S{=}3$ & $-102.6$ & $-60.1$ & $-33.9$ & $-12.9$ & 33.0 \\
+strict\ $S{=}3$ & $-113.3$ & $-75.6$ & $-52.6$ & $-34.2$ & 28.8 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent($\lim$ from the $(16,24)$ Richardson pair;
+$|\varepsilon|$ its disagreement with the $(8,16)$ extrapolation.)
+Three observations, all as the framework predicts.  (1)~The legacy
+rows \emph{look} convergent-to-truth ($|d|$ halves every refinement
+toward the Monte Carlo value) while the strict rows stop short ---
+exactly the valley trap on a real composition: at $M{=}24$, $S{=}2$
+legacy is $-21$~pcm and would be published as converged, yet its own
+extrapolation points through zero.
+(2)~The two strict row limits agree to $0.0$~pcm ($-34.2$ both)
+within bars of $\sim30$~pcm: the angular residual is being removed
+and what remains is a single $S$-independent spatial constant, the
+separability signature.  The legacy limits disagree by $15$~pcm and
+each legacy row's successive extrapolations disagree by
+$30$--$36$~pcm --- the bars honestly say the extrapolation is not yet
+converged, and they are the bars of a \emph{wrong-operator} sequence
+to begin with.
+(3)~The $S{=}2\!\to\!3$ shift separates cleanly for strict
+($+12.0$, $+9.4$, $+4.2$~pcm, decaying with $M$ --- pure $a(S)$) but
+not for legacy ($-3.2$, $-10.0$, $-12.9$~pcm, growing \emph{with}
+$M$ --- the angular and cancellation channels entangle, which is why
+its rectangle residual is worse on the $(8,16)$ window: $6.8$ vs
+$2.6$~pcm).  The strict error budget at $M{=}24$, $S{=}3$: angular
+$|{-}34.2|\pm28.8$ from row Richardson, spatial bounded by the
+measured $S{=}2\to3$ drift --- a reference-free $\sim\pm60$~pcm total
+on a real assembly with the dominant term (spatial, not angular)
+correctly identified and reducible by $S$, not by $M$.  The coarse
+three-point rows carry wide bars as they should; densifying the row
+tightens them by the usual factor.
 
 \subsection{Audits and honest limitations}
 \label{sec:audit}
