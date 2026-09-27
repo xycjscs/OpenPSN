@@ -536,21 +536,45 @@ $6.8$ vs $2.6$~pcm on the $(8,16)$ window, and its refinement
 increments grow non-monotonically toward zero-crossing rather than
 decaying to a same-signed limit.
 
-\subsection{Second assembly: MOX}
+\subsection{Second assembly: MOX, and where the budget degrades}
 \label{sec:mox}
-The MOX assembly ($k_\mathrm{ref}=1.1851053$, stronger spectral
-inhomogeneity) tests whether the UO$_2$ findings were case-specific.
-The legacy $S{=}2$ row reproduces the zero-crossing trap with a
-production-shaped disguise: $-392.3$, $-125.1$, $-28.3$, $+49.8$~pcm
-at $M=8$--$48$ --- at $M{=}24$ the error sits inside the $30$~pcm band
-a qualification guide would call converged, and one more doubling
-flips its sign; the legacy $S{=}2{\to}3$ differences
-($-19.7$, $-42.2$, $-49.5$~pcm at $M=8,16,24$) drift monotonically
-more negative with $M$, the entanglement signature seen on UO$_2$.
-The strict MOX rows (two complete $S$ rows on the same
-$M=8\ldots48$ grid) are in computation at submission time; the
-transfer claim in this section is therefore restricted to the legacy
-pathology, which the completed points already establish.
+The MOX assembly ($k_\mathrm{ref}=1.1851053$, strong Pu peaks,
+$4.4\times$ leakage of UO$_2$) stress-tests the transferability
+claim, and the answer is split.
+
+\textbf{What transfers.} Legacy $S{=}2$ crosses zero on the same
+trajectory: $-392.3$, $-125.1$, $-28.3$, $+49.8$~pcm at
+$M=8/16/24/48$ --- at $M{=}24$ the ``error'' has entered the 30~pcm
+band a qualification review would accept, and one doubling later it
+flips sign. Strict stays one-sided and monotone at every one of its
+16 points ($-461$ to $-41$): the sign guarantee holds even where the
+quantitative budget gets hard. Legacy's $S{=}2{\to}3$ shift grows
+systematically with $M$ ($-31.6$ to $-51.2$~pcm), the entangled
+pattern seen on UO$_2$.
+
+\textbf{What degrades.} The row Richardson limits no longer agree:
+with the measured $1/M$ factor, strict $\hat d_\infty$ from
+$(24,48)$ is $+38$~pcm ($S{=}2$) vs $-7$ ($S{=}3$), a spread of
+$46$~pcm against $1.2$ on UO$_2$, and the $S$ shift no longer decays
+with $M$ (from $+14.7$ to $-32.6$~pcm). The increments give the
+reason: $245$, $96$, $79$~pcm --- the second ratio is $1.2$, not the
+$\approx 2$ of the UO$_2$ rows, i.e.\ MOX pin-by-pin heterogeneity
+has an additional slowly-decaying spatial component in the
+$M\le48$ window, and \eqref{eq:split}'s single-$b(M)$ form is only
+asymptotically valid. The honest statement: at $M\le48$ the strict
+budget on MOX carries a $\ge50$~pcm bar and its two-row
+cross-check correctly \emph{flags} that (a $46$~pcm limit spread is
+itself the separability violation signal); tightening it requires
+$M\ge96$, outside this study's budget. Legacy carries no flag at
+all --- its M48/$S{=}3$ error of $-1.4$~pcm looks superb and is pure
+cancellation.
+
+A probe-integrity note in fairness: an earlier MOX strict batch was
+temporarily voided over a closure-name typo in the probe (silent
+fallback path); the API now rejects unknown closure names, and the
+re-run reproduced all seven overlapping points \emph{bit-identically}
+--- confirming both the determinism claim and that the original
+numbers were computed on the correct kernel after all.
 
 \subsection{Audits and honest limitations}
 \label{sec:audit}
