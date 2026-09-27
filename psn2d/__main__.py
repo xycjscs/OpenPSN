@@ -73,6 +73,11 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
              mem_limit_gb=None):
     t0 = time.time()
     closure = case.get("closure", "legacy")
+    _ALLOWED = ("legacy", "directional_matrix", "strict_phase_space")
+    if closure not in _ALLOWED:
+        raise ValueError(
+            f"case closure {closure!r} not in {_ALLOWED}; short forms "
+            "like 'strict' silently run the wrong path and are refused")
     A = int(case.get("A", 0))
     if closure == "strict_phase_space":
         # strict PSN runs on the plain power-iteration path; the node
