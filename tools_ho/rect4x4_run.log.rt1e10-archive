@@ -1,0 +1,12 @@
+--- RECT4X4 4-POINT start (A=3, M=24, closure=directional_matrix, inner=gmres pool, pairs=True numba=True w=24, budget=24) ---
+--- R4UO2 M24_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=0s
+R4UO2 M24_S1 keff=1.3268839 A=3 K=4 inner=gmres nodes=16 iters=196 matvecs=450785 dref=-784.2pcm wall=48s peak=0.22GB elapsed=50s
+--- R4UO2 M24_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=50s
+R4UO2 M24_S2 keff=1.3267607 A=3 K=4 inner=gmres nodes=64 iters=196 matvecs=959360 dref=-796.5pcm wall=265s peak=0.24GB elapsed=320s
+--- R4MOX M24_S1 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=320s
+R4MOX M24_S1 keff=1.1363287 A=3 K=4 inner=gmres nodes=16 iters=153 matvecs=388651 dref=-4877.7pcm wall=41s peak=0.22GB elapsed=365s
+--- R4MOX M24_S2 start (fresh subprocess, gmres pool, pairs=True numba=True w=24) t=365s
+R4MOX M24_S2 keff=1.1361416 A=3 K=4 inner=gmres nodes=64 iters=153 matvecs=845181 dref=-4896.4pcm wall=232s peak=0.24GB elapsed=600s
+R4UO2 S2-S1 consistency: -12.3 pcm
+R4MOX S2-S1 consistency: -18.7 pcm
+RECT4X4 4-POINT DONE in 600s

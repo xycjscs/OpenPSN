@@ -1,0 +1,89 @@
+% === ARCHIVED FRAGMENT — removed from main.tex Study II on 2026-09-15 ===
+% Original location: Study II, between 'The slender water gap' and 'Quasi-square tiling of the full geometries'
+% Now lives in: notes/single_pin_quasi_square_6x6_validation.md (human-readable record)
+
+\paragraph{Single-pin validation on the quasi-square ($6\times6$) split.}
+As a controlled experiment we take the single UO$_2$ pin cell of the same
+rectangularised layout and split the equal-area fuel square $6\times6$
+instead of $3\times3$, giving an $8\times8$ base grid per pin cell
+($6\times6$ fuel sub-nodes of side $s/6=0.15952$~cm plus water strips of
+$0.15952\!\times\!0.15144$~cm, aspect ratio $1.05{:}1$ --- every node of the
+cell is now close to square\textbf{, as illustrated in
+Figure~\ref{fig:pin6split}}). The single cell with all-reflective
+boundaries is converged to $10^{-10}$ in $|\Delta\keff|$ on a
+$S\times M$ sweep of 60 points ($S=1\ldots6$, $M=2\ldots192$), against an
+independently computed OpenMC reference on the same $8\times8$ geometry
+(4000 batches, $k=1.3267918\pm8.2$~pcm). Table~\ref{tab:pin6} and
+Figure~\ref{fig:pin6} summarise the sweep.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{pin6_manual_split.png}
+\caption{Single UO$_2$ pin cell ($1.26$~cm pitch, all-reflective): tiling of
+the equal-area fuel square $s^2=\pi r^2$. (a) Base $3\times3$ tiling: edge
+water strips $s\times w = 0.9571\times0.1514$~cm (aspect $6.3{:}1$).
+(b) The same tiling with $S{=}2$ subdivision: $36$ nodes, strips
+$(s/2)\times(w/2)$, aspect unchanged --- $S$ refines but never reshapes the
+nodes. (c) Manual $6\times6$ fuel split: $8\times8$ base grid
+($64$ nodes), strips $s/6\times w = 0.15952\times0.15144$~cm, aspect
+$1.05{:}1$; every node is now close to square.}
+\label{fig:pin6split}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\caption{Single UO$_2$ pin cell, $6\times6$ fuel split ($8\times8$ base
+grid, all-reflective): $\Delta k$ in pcm versus the OpenMC reference
+$1.3267918\pm8.2$. Green ring = best point $M{=}192$, $S{=}6$
+($-8.7$~pcm, inside the reference's own standard error).}
+\label{tab:pin6}
+\small
+\begin{tabular}{l|rrrrrrrrrr}
+\toprule
+ & $M{=}2$ & $M{=}4$ & $M{=}8$ & $M{=}12$ & $M{=}16$ & $M{=}24$ & $M{=}48$ & $M{=}72$ & $M{=}96$ & $M{=}192$ \\
+\midrule
+$S{=}1$ & $-73.0$ & $-182.9$ & $-208.2$ & $-165.1$ & $-132.0$ & $-88.0$ & $-41.6$ & $-28.2$ & $-22.6$ & $-16.5$ \\
+$S{=}2$ & $-72.9$ & $-178.1$ & $-197.7$ & $-154.5$ & $-119.7$ & $-78.6$ & $-36.3$ & $-23.0$ & $-17.3$ & $-10.7$ \\
+$S{=}3$ & $-72.6$ & $-176.8$ & $-195.1$ & $-151.9$ & $-116.7$ & $-75.9$ & $-35.1$ & $-21.8$ & $-16.2$ & $-9.6$ \\
+$S{=}4$ & $-72.5$ & $-176.3$ & $-193.9$ & $-150.8$ & $-115.4$ & $-74.7$ & $-34.3$ & $-21.1$ & $-15.7$ & $-9.1$ \\
+$S{=}5$ & $-72.4$ & $-176.0$ & $-193.4$ & $-150.2$ & $-114.7$ & $-74.1$ & $-33.9$ & $-20.7$ & $-15.4$ & $-8.9$ \\
+$S{=}6$ & $-72.4$ & $-175.8$ & $-193.0$ & $-149.9$ & $-114.3$ & $-73.7$ & $-33.6$ & $-20.5$ & $-15.2$ & $-8.7$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{pin6_sm.png}
+\caption{Single-pin $6\times6$-split $S\times M$ sweep, $\Delta k$ in pcm
+versus the OpenMC same-geometry reference; green ring = best point
+($M{=}192$, $S{=}6$, $\Delta=-8.7$~pcm).}
+\label{fig:pin6}
+\end{figure}
+
+On the quasi-square single pin the model converges to within the
+reference's own Monte Carlo standard error ($-8.7$~pcm at $M{=}192$,
+$S{=}6$) --- and the spatial field agrees even more tightly: at the best
+configuration the node-level fission-rate map differs from OpenMC by
+$0.05\%$ RMS (max $0.10\%$) and the scalar flux by $0.01\%$ RMS
+(max $0.03\%$) over the fuel nodes (Figure~\ref{fig:pin6flux}). The
+convergence is smooth in $M$ once the $M{=}8$ angular damped-oscillation
+dip is passed, and $S$ contributes a further $\sim8$~pcm of improvement
+from $S{=}1$ to $S{=}6$ that is still active at $M{=}192$ --- i.e.\ on a
+quasi-square mesh both knobs are effective. This contrasts with the
+$3\times3$ tiling, where the $S{=}1\to2$ change buys at most a factor of
+three on the MOX bias and the best subdivision is geometry-dependent
+(Table~\ref{tab:rectsm}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{pin6_flux_compare_M192S6.png}
+\caption{Single-pin $6\times6$ split, best configuration ($M{=}192$,
+$S{=}6$): node-level ($8\times8$) fission rate $\Sigma_f\phi$ (top) and
+scalar flux $\sum_g\phi_g$ (bottom), OpenPSN vs.\ OpenMC (7-group,
+collision estimator) with the pin-by-pin relative error on the fuel nodes;
+deviation from the fuel-node mean, maps normalised to unit fuel sum.
+Fission: mean $-0.00\%$, RMS $0.05\%$, max $0.10\%$; flux: RMS $0.01\%$,
+max $0.03\%$.}
+\label{fig:pin6flux}
+\end{figure}

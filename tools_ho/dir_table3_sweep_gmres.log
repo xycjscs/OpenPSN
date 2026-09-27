@@ -1,0 +1,14 @@
+--- DIR TABLE3 GMRES SWEEP start (A=3, closure=directional_matrix, inner=gmres static-shard pool, rtol=1e-11, maxiter=800) ---
+NOTE: core points blocked (vacuum boundary not validated for A>0); legacy LU points (S1 M2/M4/M8) inherited from dir_table3_sweep.log (keff path-independent to ~1e-14)
+DIRUO2 M2_S1 INHERITED (legacy LU keff, not re-run)
+DIRUO2 M4_S1 INHERITED (legacy LU keff, not re-run)
+DIRUO2 M8_S1 INHERITED (legacy LU keff, not re-run)
+--- DIRUO2 M12_S1 start (fresh subprocess, gmres pool) t=0s
+DIRUO2 M12_S1 keff=1.3353176 A=3 K=4 inner=gmres nodes=2601 iters=218 matvecs=78206 dref=+59.2pcm wall=1611s peak=0.67GB elapsed=1615s
+--- DIRUO2 M16_S1 start (fresh subprocess, gmres pool) t=1615s
+DIRUO2 M16_S1 keff=1.3353457 A=3 K=4 inner=gmres nodes=2601 iters=218 matvecs=78584 dref=+62.0pcm wall=2371s peak=0.85GB elapsed=3990s
+--- DIRUO2 M24_S1 start (fresh subprocess, gmres pool) t=3990s
+DIRUO2 M24_S1 keff=1.3353649 A=3 K=4 inner=gmres nodes=2601 iters=218 matvecs=78611 dref=+63.9pcm wall=3598s peak=1.20GB elapsed=7590s
+--- DIRUO2 M2_S2 start (fresh subprocess, gmres pool) t=7590s
+DIRUO2 M2_S2 keff=1.3335522 A=3 K=4 inner=gmres nodes=10404 iters=218 matvecs=150854 dref=-117.4pcm wall=2323s peak=0.77GB elapsed=9916s
+--- DIRUO2 M4_S2 start (fresh subprocess, gmres pool) t=9916s
