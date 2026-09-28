@@ -446,6 +446,70 @@ reference.  A computation at $M\le192$ thus knows its distance to the
 angular limit within $\sim1$~pcm and can allocate remaining budget to
 the correct axis.
 
+\subsection{Reference-free selection of $(S,M)$}
+\label{sec:protocol}
+The preceding subsection supplies the pieces; this states them as a
+protocol an analyst can run on a problem with no reference at all,
+given a target tolerance~$\tau$ (say $5$~pcm).  Every quantity below
+is produced by the strict runs themselves.
+
+\emph{Step 1: skeleton.}  Pick two adjacent angular levels
+$S_1<S_2$ (we used $2,3$) and a triple $M_0,2M_0,4M_0$ with
+$M_0\ge48$ (six runs).  $M_0$ is not chosen small on purpose: the
+Richardson second-order assumption behind
+$\hat d_\infty=(4d_{2M}-d_M)/3$ is not established below
+$M\approx48$ on these grids, and a premature extrapolation
+under-reports its own bar.
+
+\emph{Step 2: set $M$ by the bar.}  For each row compute
+$\hat d_\infty(S)$ and $E_M(S)=|\hat d_\infty(M_0,2M_0)-
+\hat d_\infty(2M_0,4M_0)|$.  Accept the row when $E_M\le\tau/3$;
+otherwise slide the window one doubling up and re-extrapolate.  This
+step is licensed by the strict theorem only: fixed-$S$ refinement is
+$O(M^{-2})$ toward a single limit (Sec.~\ref{sec:pred}), so $E_M$
+measures a true convergence remainder.  It is not licensed for the
+legacy operator, whose $E_M$ self-consistency ($1.6$~pcm at
+$S{=}12$) coexists with a $50$~pcm limit error --- self-consistency
+of an extrapolation is not evidence of its validity.
+
+\emph{Step 3: the separability gate.}  Evaluate the rectangle
+mixed second difference of $d$ over the $(S,M)$ grid computed so far
+(test of Eq.~\eqref{eq:split}), or its
+cheap surrogate $|\hat d_\infty(S_1)-
+\hat d_\infty(S_2)|$.  Small residual (UO2:
+$1.2$~pcm) licenses treating the two axis-errors as independent and
+Step~4 proceeds.  Large residual (MOX at $M\le48$: $46$~pcm) is not a
+failure of the protocol but its \emph{output}: it says a slow
+non-separable component is still inside the window, and the correct
+response is Step~2 again with a larger $M$ window.  The same
+conditions on legacy report a $-1.4$~pcm ``excellent'' point with no
+alarm --- the gate's value is exactly that it fires.
+
+\emph{Step 4: set $S$ by the row limit.}  With the angular channel
+extrapolated away, $\hat d_\infty(S)$ \emph{is} the spatial residual
+$a(S)$ at that $S$.  Its measured shape (Sec.~\ref{sec:pred}:
+$c_1S^{-2}$ decay, a sign change near $S\approx11$, $O(S^{-1})$ tail)
+lets one accept the smallest $S^*$ with $|\hat d_\infty(S^*)|\le
+\tau/3$ after one confirming extra level $S_3$ (or, equivalently,
+extrapolate along $S$ and run one confirmation point).  No external
+solution enters at any step.
+
+\emph{Step 5: report the budget} $|d|\le|\hat d_\infty(S)|+E_M(S)+
+|a(S)|$ with each term at its measured value.
+
+\emph{What the protocol does not promise.}  It does not promise that
+every problem enters the separable asymptotic regime by $M\le192$
+--- MOX shows it need not --- it promises that when the regime has
+not been reached, the gate detects this and points at the axis to
+refine.  It does not promise point accuracy at finite $(S,M)$: the
+correct output of a strict run is the triple $(\hat d_\infty,
+E_M,a)$, not the raw point value, and quoting raw values inside the
+valley band is a use the framework explicitly disclaims.  With those
+two readings, the guarantee the protocol offers is precise: at every
+computed point the distance to the angular limit is known to
+$\sim1$~pcm and the remaining budget is attributed to the correct
+axis, both without a reference.
+
 \subsection{Cost to accuracy}
 Reaching $|\Delta k|<5$~pcm on the strong checkerboard: strict at
 $S{=}12, M{=}48$; legacy requires $S{=}20, M{=}96$ (an order of
