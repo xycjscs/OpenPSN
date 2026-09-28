@@ -476,8 +476,9 @@ of an extrapolation is not evidence of its validity.
 mixed second difference of $d$ over the $(S,M)$ grid computed so far
 (test of Eq.~\eqref{eq:split}), or its
 cheap surrogate $|\hat d_\infty(S_1)-
-\hat d_\infty(S_2)|$.  Small residual (UO2:
-$1.2$~pcm) licenses treating the two axis-errors as independent and
+\hat d_\infty(S_2)|$.  Small residual (UO2: three row limits within
+$5.2$~pcm, pairwise $1.2$ to $5.2$) licenses treating the two
+axis-errors as independent and
 Step~4 proceeds.  Large residual (MOX at $M\le48$: $46$~pcm) is not a
 failure of the protocol but its \emph{output}: it says a slow
 non-separable component is still inside the window, and the correct
@@ -552,8 +553,8 @@ The S{=}1 row shows the pathology in its pure form: legacy crosses
 zero through the cancellation valley
 ($-101.0\to-37.2\to+1.2$~pcm at $M=8/16/24$); strict sits at $-264$
 to $-285$~pcm, which \emph{is} the true spatial error of an assembly
-model with unresolved fuel-pin rings.  Rows $S=2,3$ over
-$M=8/16/24/48$ (sixteen runs) give the quantitative contrast:
+model with unresolved fuel-pin rings.  Rows $S=2,3,4$ over
+$M=8/16/24/48$ (twenty-four runs) give the quantitative contrast:
 \begin{center}
 \begin{tabular}{lrrrrr}
 \multicolumn{6}{l}{$\Delta k_\mathrm{eff}$ (pcm) vs.\ Monte Carlo reference}\\[2pt]
@@ -564,6 +565,8 @@ legacy $S{=}2$ & $-99.4$ & $-50.1$ & $-21.0$ & $+7.5$ & $+21.9$ \\
 strict\ $S{=}2$ & $-125.3$ & $-85.0$ & $-56.8$ & $-27.9$ & $-17.3$ \\
 legacy $S{=}3$ & $-102.6$ & $-60.1$ & $-33.9$ & $-6.3$ & $+5.3$ \\
 strict\ $S{=}3$ & $-113.3$ & $-75.6$ & $-52.6$ & $-29.0$ & $-18.5$ \\
+legacy $S{=}4$ & $-103.7$ & $-64.3$ & $-38.9$ & $-11.1$ & $-0.9$ \\
+strict\ $S{=}4$ & $-109.0$ & $-72.4$ & $-48.8$ & $-22.7$ & $-13.3$ \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -575,15 +578,22 @@ material-interface flux kinks that a Cartesian node grid resolves only
 linearly.  The four-point least-squares fit to $1/M$ has rms
 $5$--$7$~pcm versus $11$--$14$ for a forced $1/M^2$ fit; using the
 measured law is what makes the row limits meaningful.  With it:
-(1)~The two \emph{strict} row limits agree to $1.2$~pcm ($-17.3$,
-$-18.5$): the angular residual is removed and a single
-$S$-independent spatial constant $b\approx-18$~pcm remains --- the
-separability signature, now on a real assembly.  The
+(1)~The three \emph{strict} row limits stay on one side of zero and
+within a $5.2$~pcm band ($-17.3$, $-18.5$, $-13.3$ for $S=2,3,4$)
+--- the same size as their own fit rms ($5$--$7$~pcm), i.e.\ the
+$S$-dependence of the limit is at noise level: the angular residual
+is removed and a single $S$-independent spatial constant
+$b\approx-16$~pcm remains --- the separability signature, now on a
+real assembly with three rows instead of two.  The
 $S{=}2{\to}3$ shift decays with $M$ for strict
-($+12.0,+9.4,+4.2,-1.1$~pcm: pure $a(S)$ vanishing into $b$) but
-\emph{grows} for legacy ($-3.2,-10.0,-12.9,-13.8$~pcm: angular and
-cancellation channels entangle), and the legacy limits disagree by
-$16.6$~pcm with unstable sign.
+($+12.0,+9.4,+4.2,-1.1$~pcm: pure $a(S)$ vanishing into $b$), as
+does the new $S{=}3{\to}4$ shift
+($+4.3,+3.2,+3.8,+6.3$~pcm, same size as its own fit rms ---
+$a(S)$ near-exhausted by $S{=}4$).  Legacy does neither: its
+$S{=}2{\to}3$ shift \emph{grows} with $M$
+($-3.2,-10.0,-12.9,-13.8$~pcm: angular and
+cancellation channels entangle), and its three limits wander across
+$23$~pcm with unstable sign ($+21.9$, $+5.3$, $-0.9$).
 (2)~The valley trap in production dress: legacy $S{=}2$ at $M{=}24$
 is $-21$~pcm and at $M{=}48$ has crossed zero to $+7.5$ ---
 $|d|$ halving toward the reference all the way, published as
