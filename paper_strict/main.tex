@@ -193,13 +193,19 @@ d(S,M) \;=\; a(S) + b(M) + \text{h.o.t.},
 b(M)\asymp c_M M^{-2},
 \label{eq:split}
 \end{equation}
+(no bound on the h.o.t.\ is available; \eqref{eq:split} is an
+empirical asymptotic separability hypothesis, and the rectangle
+diagnostic below is its test, not a corollary of a theorem)
 with $c_S c_M < 0$ for the checkerboard at moderate $S$ (measured:
 $a>0$ up to $S\approx10$, $b<0$, for the strong absorber; the
 $S^{-2}$ rate is a leading-order statement, the measured $a(S)$
 crossing zero near $S\approx11$ is discussed in
-Sec.~\ref{sec:pred}).  A zero contour $a(S)+b(M)=0$ then exists in
+Sec.~\ref{sec:pred}).  With the error surface continuous in the
+interpolated arguments (discrete here, so read this as the
+interpolation of the measured map) a zero contour
+$a(S)+b(M)=0$ then exists in
 \emph{every} consistent two-parameter method --- it is a consequence of
-the intermediate value theorem, not a defect.  The defect is when the
+the intermediate value theorem applied to the interpolated split, not a defect.  The defect is when the
 contour \emph{drifts with $M$} (here $S^{*}\approx M/2$, because
 $b(M)$ is a wrong-operator bias that decays in $M$ while $a$ does not)
 and the per-row limits are nonzero: the method's own asymptotics point
@@ -213,9 +219,18 @@ $(S,M)$ grid vanishes iff the two axis-errors are separable.  Over
 all $6840$ rectangles ($\binom{20}{2}\binom{9}{2}$) of the
 $20{\times}9$ sweep, the strict map is separable to a median residual
 of $1.5$~pcm (strong; grid $|d|$ median $196$~pcm) and $0.3$~pcm
-(weak), versus $16.9$ and $3.3$~pcm for legacy --- a
+(weak), versus $16.9$ and $3.3$~pcm for legacy --- an
 $11\times$ violation of separability by the inconsistent operator on
-both absorbers.  Non-separable cross
+both absorbers.  The full distribution matters more than the median:
+rectangles are ranked, and the residual is dominated by coarse
+corners of the sweep (rows through $S{=}1$ or columns through
+$M{=}2$, where the leading-order split~\eqref{eq:split} carries large
+higher-order terms by construction).  Excluding those two rows and
+columns: strict strong median~$0.9$, p95~$23.9$, max~$45.5$~pcm
+against legacy $9.6$/$117.4$/$309.5$; strict weak
+$0.2$/$4.4$/$9.9$ against legacy $1.8$/$25.8$/$70.8$.  The
+qualification budget below uses the exclusion-window maxima, not the
+medians.  Non-separable cross
 coupling is the algebraic fingerprint of the valley: in a separable
 map, refining either axis can only shrink its own term, and the
 per-axis residuals $c_S S^{-2}$, $c_M M^{-2}$ can be estimated
@@ -269,7 +284,11 @@ the legacy additive family it responds to cross-derivative
 The source particular solution
 $\phi_p = [q_0 + q_{1x}P_1 + q_{1y}P_1 + q_{2x}P_2 + q_{2y}P_2]/
 \Sigma_t + C_p$, $C_p = 3(D_{xx}q_{2x}/a^2 + D_{yy}q_{2y}/b^2)/
-\Sigma_t^2$, satisfies the tensor equation pointwise.
+\Sigma_t^2$, satisfies the tensor equation pointwise; here
+$P_1,P_2$ are the coordinate-linear and coordinate-quadratic
+polynomials in the node frame whose $\Sigma_t$-scaled moments are
+$q_{1x},q_{1y}$ and $q_{2x},q_{2y}$, so pointwise exactness is over
+the degree-$\le$2 polynomial source basis at constant $D_m$.
 
 \subsection{Node map and the $M=2$ anchor}
 The closure is unchanged: four face net currents $J_4$ determine four
@@ -286,8 +305,11 @@ $k$, and the node map coincides with the production legacy rect node to
 $2.8\times10^{-15}$ relative on random $(J_4,q)$ (kernel), and the
 global checkerboard $k_{\mathrm{eff}}$ to $8.9\times10^{-11}$~pcm
 (solver noise).  The strict method is therefore a conservative
-generalization: the legacy method is not discarded, it is the $M{=}2$
-slice of the strict family where the two operators happen to agree.
+generalization: within the restricted polar model, the legacy method
+is not discarded, it is the $M{=}2$
+slice of the strict family where the two operators happen to agree
+(this slice statement is restricted-model only --- the next paragraph
+shows legacy-generic is no slice of the strict family).
 (For the generic polar model the legacy body decay is
 $k=\sqrt{3}\,\Sigma_t$, i.e.\ it projects the \emph{full-angle} $P_1$
 second moment before the sector restriction, so its body operator
@@ -315,14 +337,17 @@ tensor than the face currents}.  The strict closure removes A5 and
 only A5: steps A1--A4 are retained verbatim, which is why the node
 size, closure equations, conditioning profile and $M{=}2$ node are
 unchanged.  In this precise sense the strict node is
-\emph{approximation-free within its own assumed angular structure}:
-its homogeneous modes solve the body equation pointwise
+\emph{internally operator-consistent relative to the retained
+approximations A1--A4} --- not approximation-free in any absolute
+sense, since A1--A4 remain: its homogeneous modes solve the body equation pointwise
 (Lemma~1), its source particular solution is pointwise exact, and its
 face currents are exactly the divergence-theorem currents of its own
 body operator --- nothing inside the node is fitted, blended, or
 projected twice.  What remains wrong at finite $M$ is then
 \emph{one} thing --- the angular truncation A1--A4 --- and it is
-$M$-dependent with a known order.  Legacy PSN has two simultaneous,
+$M$-dependent with an order that must be measured or validated row by
+row (Sec.~\ref{sec:c5g7} finds $O(M^{-1})$, not $O(M^{-2})$, on
+material-interface grids).  Legacy PSN has two simultaneous,
 opposite-sign error channels (A1--A4 truncation $\propto M^{-2}$ and
 the A5 operator mismatch $b_\mathrm{face}{-}b_\mathrm{body}$ with its
 own $M$-decay); their sum is what the valley hides.  A single-channel
@@ -439,52 +464,64 @@ limit $\hat d_\infty(S)$ with its self-bar $E_M(S)$ estimates the
 angular-axis residual $b(M)$ at every computed point; the
 $S$-difference $|d(S{+}\Delta S,M)-d(S,M)|$ bounds the spatial term
 $a(S)$ (with $E_M$ subtracted); and separability --- itself verifiable
-at zero cost from the rectangle test above --- licenses adding the two
+at zero cost from the rectangle test above --- supports adding the two
 into a budget $|d| \lesssim |\hat d_\infty| + E_M + |a|$.  Every term
 in that budget is produced by the method's own runs; none requires a
-reference.  A computation at $M\le192$ thus knows its distance to the
-angular limit within $\sim1$~pcm and can allocate remaining budget to
-the correct axis.
+reference.  On the checkerboard, a strict computation at $M\le192$
+thus knows its distance to the angular limit within $\sim1$~pcm and
+can allocate remaining budget to the correct axis --- a statement
+about the benchmarks tested here; Sec.~\ref{sec:mox} exhibits an
+assembly (MOX) where the same self-checks correctly refuse to
+certify at $M\le48$, and the protocol of Sec.~\ref{sec:protocol} is
+written so that such refusals are an output, not a silent pass.
 
 \subsection{Reference-free selection of $(S,M)$}
 \label{sec:protocol}
 The preceding subsection supplies the pieces; this states them as a
-protocol an analyst can run on a problem with no reference at all,
+protocol an analyst can run on a problem with no reference,
 given a target tolerance~$\tau$ (say $5$~pcm).  Every quantity below
-is produced by the strict runs themselves.
+is produced by the strict runs themselves; ``reference-free'' here
+means no external solution is needed to \emph{compute} the
+diagnostics --- physical validity is a separate question, and it is
+what the gate of Step~2 tests.
 
-\emph{Step 1: skeleton.}  Pick two adjacent angular levels
-$S_1<S_2$ (we used $2,3$) and a triple $M_0,2M_0,4M_0$ with
-$M_0\ge48$ (six runs).  $M_0$ is not chosen small on purpose: the
-Richardson second-order assumption behind
+\emph{Step 1: skeleton.}  Six runs: two adjacent angular levels
+$S_1<S_2$ (we used $2,3$) by the triple $M_0,2M_0,4M_0$ with
+$M_0\ge48$.  From these one estimates, per row: the row limit
+$\hat d_\infty$ (fit or $(4d_{2M}-d_M)/3$ on a measured law), the
+successive-extrapolation bar $E_M$, and the rectangle mixed second
+difference over the $2{\times}3$ window.  $M_0$ is not chosen small
+on purpose: the Richardson second-order assumption behind
 $\hat d_\infty=(4d_{2M}-d_M)/3$ is not established below
 $M\approx48$ on these grids, and a premature extrapolation
 under-reports its own bar.
 
-\emph{Step 2: set $M$ by the bar.}  For each row compute
-$\hat d_\infty(S)$ and $E_M(S)=|\hat d_\infty(M_0,2M_0)-
-\hat d_\infty(2M_0,4M_0)|$.  Accept the row when $E_M\le\tau/3$;
-otherwise slide the window one doubling up and re-extrapolate.  This
-step is licensed by the strict theorem only: fixed-$S$ refinement is
-$O(M^{-2})$ toward a single limit (Sec.~\ref{sec:pred}), so $E_M$
-measures a true convergence remainder.  It is not licensed for the
-legacy operator, whose $E_M$ self-consistency ($1.6$~pcm at
-$S{=}12$) coexists with a $50$~pcm limit error --- self-consistency
-of an extrapolation is not evidence of its validity.
+\emph{Step 2: the separability gate --- before any acceptance.}
+Evaluate the rectangle mixed second difference of $d$ over the
+window (test of Eq.~\eqref{eq:split}).  This ordering is deliberate:
+$\hat d_\infty$ is a \emph{diagnostic whose physical identity depends
+on separability}, so no row may be accepted on its bar before the
+gate has passed --- otherwise the protocol would walk straight into
+the trap this paper documents for legacy (self-consistent to
+$1.6$~pcm and $50$~pcm wrong).  Small residual (UO2: pairwise
+row-limit differences $1.2$ to $5.2$~pcm with same-$M$ differences
+shrinking) licenses treating the axis-errors as independent.  Large
+residual (MOX at $M\le48$: $46$~pcm) has two admissible responses
+and no third: enlarge the $M$ window and re-test, or return
+\emph{unqualified --- residuals coupled at affordable cost}, which is
+an output of the protocol, not a failure of it.
 
-\emph{Step 3: the separability gate.}  Evaluate the rectangle
-mixed second difference of $d$ over the $(S,M)$ grid computed so far
-(test of Eq.~\eqref{eq:split}), or its
-cheap surrogate $|\hat d_\infty(S_1)-
-\hat d_\infty(S_2)|$.  Small residual (UO2: three row limits within
-$5.2$~pcm, pairwise $1.2$ to $5.2$) licenses treating the two
-axis-errors as independent and
-Step~4 proceeds.  Large residual (MOX at $M\le48$: $46$~pcm) is not a
-failure of the protocol but its \emph{output}: it says a slow
-non-separable component is still inside the window, and the correct
-response is Step~2 again with a larger $M$ window.  The same
-conditions on legacy report a $-1.4$~pcm ``excellent'' point with no
-alarm --- the gate's value is exactly that it fires.
+\emph{Step 3: set $M$ by the bar.}  For each gated row accept $M$
+when $E_M\le\tau/3$; otherwise slide the window one doubling up and
+re-extrapolate.  The $\tau/3$ split is a sufficient heuristic, not a
+theorem: it is valid only if each term in Step~5 is independently
+bounded by its share; a user may distribute $\tau$ by any rule
+keeping every term bounded, and the reported triple makes any such
+repartition possible after the fact.  The bar step is licensed by
+the strict operator only: fixed-$S$ refinement converges toward a
+single limit with a row-measured order (checkerboard $O(M^{-2})$,
+C5G7 $O(M^{-1})$), so $E_M$ measures a convergence remainder.
+Legacy self-consistency carries no such licence.
 
 \emph{Step 4: set $S$ by the row limit.}  With the angular channel
 extrapolated away, $\hat d_\infty(S)$ \emph{is} the spatial residual
@@ -495,8 +532,14 @@ lets one accept the smallest $S^*$ with $|\hat d_\infty(S^*)|\le
 extrapolate along $S$ and run one confirmation point).  No external
 solution enters at any step.
 
-\emph{Step 5: report the budget} $|d|\le|\hat d_\infty(S)|+E_M(S)+
-|a(S)|$ with each term at its measured value.
+\emph{Step 5: report the triple, not a point} $(\hat d_\infty(S),
+E_M(S), a(S))$ with the budget $|d|\le|\hat d_\infty(S)|+E_M(S)+
+|a(S)|$, each term at its measured value.  The budget bounds the
+deterministic solution against whatever reference is later chosen;
+if that reference is itself a Monte Carlo run, its statistical
+uncertainty ($\pm3.6$~pcm for the C5G7 OpenMC references of this
+paper) adds incoherently to the bound and should be stated
+separately.
 
 \emph{What the protocol does not promise.}  It does not promise that
 every problem enters the separable asymptotic regime by $M\le192$
@@ -554,7 +597,11 @@ zero through the cancellation valley
 ($-101.0\to-37.2\to+1.2$~pcm at $M=8/16/24$); strict sits at $-264$
 to $-285$~pcm, which \emph{is} the true spatial error of an assembly
 model with unresolved fuel-pin rings.  Rows $S=2,3,4$ over
-$M=8/16/24/48$ (twenty-four runs) give the quantitative contrast:
+$M=8/16/24/48$ (twenty-four runs) give the quantitative contrast
+(reference $k_\mathrm{ref}=1.3347260$, OpenMC statistical
+uncertainty $\pm3.6$~pcm: common to all $24$ rows at fixed geometry
+and XS, it cancels exactly in same-$M$ row differences and enters
+absolute limits at that floor):
 \begin{center}
 \begin{tabular}{lrrrrr}
 \multicolumn{6}{l}{$\Delta k_\mathrm{eff}$ (pcm) vs.\ Monte Carlo reference}\\[2pt]
@@ -583,16 +630,23 @@ measured law is what makes the row limits meaningful.  With it:
 must be read honestly: the three rows share one $M$ grid, their fit
 residual vectors are the same shape (pairwise correlation $>0.99$),
 so the spread carries a large common-mode component and is not an
-independent-draw noise band.  The bias-immune statistic is the
-same-$M$ row difference, which cancels any error common to all rows:
+independent-draw noise band --- three correlated fits cannot
+establish that any part of it is noise.  The informative statistic
+is the same-$M$ row difference, a \emph{common-grid cancellation}
+that removes whatever is row-independent under the additive split
+(assumed, and itself what the gate tests), leaving only $a(S)$
+variation:
 strict $S{=}3{-}2$ shrinks from $+12.0$~pcm at $M{=}8$ to $-1.1$ at
 $M{=}48$, and $S{=}4{-}3$ is already at noise size throughout
 ($+4.3$ to $+6.3$); legacy's differences instead \emph{grow} with $M$
 ($S{=}3{-}2$: $-3.2\to-13.8$; $S{=}4{-}3$: $+9.6\to+17.9$).  The
 raw limits tell the same story once their trend is read correctly:
 strict limits approach zero monotonically in $S$ (residual
-$a(S){+}b$, angular channel removed), legacy limits cross zero
-($+21.9$, $+5.3$, $-0.9$ across $23$~pcm) --- crossing being the
+$a(S){+}b$, angular channel removed, $a(S)$ still faint visible
+at $S{=}4$ --- the 3-row data cannot separate a few-pcm trend from
+correlated fit error, which is why Step~4 of Sec.~\ref{sec:protocol}
+demands a confirming level), legacy limits cross zero nonmonotonically
+(range $23$~pcm: $+21.9$, $+5.3$, $-0.9$) --- crossing being the
 signature of a cancellation channel, not of convergence.
 (2)~The valley trap in production dress: legacy $S{=}2$ at $M{=}24$
 is $-21$~pcm and at $M{=}48$ has crossed zero to $+7.5$ ---
@@ -612,7 +666,8 @@ decaying to a same-signed limit.
 
 \subsection{Second assembly: MOX, and where the budget degrades}
 \label{sec:mox}
-The MOX assembly ($k_\mathrm{ref}=1.1851053$, strong Pu peaks,
+The MOX assembly ($k_\mathrm{ref}=1.1851053$, OpenMC uncertainty
+$\pm3.3$~pcm, strong Pu peaks,
 $4.4\times$ leakage of UO$_2$) stress-tests the transferability
 claim, and the answer is split.
 
