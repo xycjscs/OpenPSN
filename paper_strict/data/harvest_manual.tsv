@@ -11,3 +11,6 @@
 2026-09-29	c5g7_uo2_assembly	uo2	48	6	strict_phase_space	1.3344477	-20.8	r11d job 45511113 mmd-serial t=27242s
 2026-09-29	c5g7_mox_assembly	mox	96	3	strict_phase_space	1.1845349	-48.1	r13a job 45530119 task0 mmd t=7422s
 2026-09-29	c5g7_uo2_assembly	uo2	16	6	strict_phase_space	1.3337890	-70.2	r13a job 45530119 task1 mmd t=6862s
+r13b	mox	strict	48	4	-54.6	6087
+r13b	mox	strict	48	5	-54.6	11289
+r13b	mox	strict	96	4	-25.8	13135
