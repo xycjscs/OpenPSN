@@ -506,7 +506,9 @@ the trap this paper documents for legacy (self-consistent to
 $1.6$~pcm and $50$~pcm wrong).  Small residual (UO2: pairwise
 row-limit differences $1.2$ to $5.2$~pcm with same-$M$ differences
 shrinking) licenses treating the axis-errors as independent.  Large
-residual (MOX at $M\le48$: $46$~pcm) has two admissible responses
+residual (MOX at $M\le48$: row-limit spread $38$~pcm, and Sec.~\ref{sec:mox}
+shows the enlarged-$M$ re-test reducing it not at all --- $35.4$~pcm
+on $M=48/96/192$, now attributed to the $S$ axis) has two admissible responses
 and no third: enlarge the $M$ window and re-test, or return
 \emph{unqualified --- residuals coupled at affordable cost}, which is
 an output of the protocol, not a failure of it.
@@ -521,7 +523,18 @@ repartition possible after the fact.  The bar step is licensed by
 the strict operator only: fixed-$S$ refinement converges toward a
 single limit with a row-measured order (checkerboard $O(M^{-2})$,
 C5G7 $O(M^{-1})$), so $E_M$ measures a convergence remainder.
-Legacy self-consistency carries no such licence.
+Legacy self-consistency carries no such licence.  Two honesty
+conditions attach to the bar.  (i)~When the window is slid, the
+window-to-window drift of $\hat d_\infty$ is part of the reported
+bar, not a superseded value: on MOX the $1/M$ limit moves $35$~pcm
+between the $M\le48$ and $M\ge48$ windows while each window fits
+itself to rms $\le2$~pcm.  (ii)~$E_M$ bounds the distance to the
+method's \emph{own angular limit}, never to an external reference;
+$\tau$ must not be set below the spatial term's plausible size on
+an untested geometry, or a point several pcm from truth passes on a
+few-pcm angular bar (MOX M192/$S{=}2$: $-5.3$~pcm from the Monte
+Carlo reference, angular bar a few pcm --- the false pass this
+condition forbids).
 
 \emph{Step 4: set $S$ by the row limit.}  With the angular channel
 extrapolated away, $\hat d_\infty(S)$ \emph{is} the spatial residual
@@ -596,10 +609,10 @@ The S{=}1 row shows the pathology in its pure form: legacy crosses
 zero through the cancellation valley
 ($-101.0\to-37.2\to+1.2$~pcm at $M=8/16/24$); strict sits at $-264$
 to $-285$~pcm, which \emph{is} the true spatial error of an assembly
-model with unresolved fuel-pin rings.  Rows $S=2,3,4$ over
-$M=8/16/24/48$ (twenty-four runs) give the quantitative contrast
+model with unresolved fuel-pin rings.  Rows $S=2,\dots,6$ over
+$M=8/16/24/48$ (thirty-two runs) give the quantitative contrast
 (reference $k_\mathrm{ref}=1.3347260$, OpenMC statistical
-uncertainty $\pm3.6$~pcm: common to all $24$ rows at fixed geometry
+uncertainty $\pm3.6$~pcm: common to all $32$ points at fixed geometry
 and XS, it cancels exactly in same-$M$ row differences and enters
 absolute limits at that floor):
 \begin{center}
@@ -614,6 +627,8 @@ legacy $S{=}3$ & $-102.6$ & $-60.1$ & $-33.9$ & $-6.3$ & $+5.3$ \\
 strict\ $S{=}3$ & $-113.3$ & $-75.6$ & $-52.6$ & $-29.0$ & $-18.5$ \\
 legacy $S{=}4$ & $-103.7$ & $-64.3$ & $-38.9$ & $-11.1$ & $-0.9$ \\
 strict\ $S{=}4$ & $-109.0$ & $-72.4$ & $-48.8$ & $-22.7$ & $-13.3$ \\
+strict\ $S{=}5$ & $-107.4$ & $-71.2$ & $-47.8$ & $-22.0$ & $-12.7$ \\
+strict\ $S{=}6$ & $-106.4$ & $-70.2$ & $-46.9$ & $-20.8$ & $-11.6$ \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -639,13 +654,27 @@ variation:
 strict $S{=}3{-}2$ shrinks from $+12.0$~pcm at $M{=}8$ to $-1.1$ at
 $M{=}48$, and $S{=}4{-}3$ is already at noise size throughout
 ($+4.3$ to $+6.3$); legacy's differences instead \emph{grow} with $M$
-($S{=}3{-}2$: $-3.2\to-13.8$; $S{=}4{-}3$: $+9.6\to+17.9$).  The
-raw limits tell the same story once their trend is read correctly:
+($S{=}3{-}2$: $-3.2\to-13.8$; $S{=}4{-}3$: $-1.1\to-4.8$, or
+$+9.6\to+17.9$ against the strict row at the same $M$).  The new
+$S{=}5$ and $S{=}6$ rows settle the question the three-row data left
+open: is the $-4$~pcm rise from $S{=}2/3$ to $S{=}4$ real $a(S)$
+residual or common-mode fit drift?  The same-$M$ differences answer
+without any fit --- strict $S{=}5{-}4$ is $+1.6$ to $+0.7$~pcm
+across $M=8$ to $48$ and $S{=}6{-}5$ is $+1.2$ to $+0.9$, i.e.\ beyond
+$S{=}4$ the spatial term has decayed into the reference floor and fit
+noise, while legacy's $S{=}4$ row at the same $M$ still sits $9.6$
+to $17.9$~pcm \emph{above} strict's $S{=}3$.  On this assembly the
+spatial axis is functionally exhausted at $S{=}4$ and the residual
+budget is the spatial constant $b\approx-13$ to $-18$~pcm (row
+limits $-17.3$, $-18.5$, $-13.3$, $-12.7$, $-11.6$ for $S=2$ to $6$:
+monotone, sub-$19$, converging as $a(S)$ drains out of the limit).
+The raw limits tell the same story once their trend is read
+correctly:
 strict limits approach zero monotonically in $S$ (residual
-$a(S){+}b$, angular channel removed, $a(S)$ still faint visible
-at $S{=}4$ --- the 3-row data cannot separate a few-pcm trend from
-correlated fit error, which is why Step~4 of Sec.~\ref{sec:protocol}
-demands a confirming level), legacy limits cross zero nonmonotonically
+$a(S){+}b$, angular channel removed; the confirming extra levels
+required by Step~4 of Sec.~\ref{sec:protocol} are exactly the
+$S{=}5,6$ runs, and they return the $a(S)$-settles verdict stated
+above), legacy limits cross zero nonmonotonically
 (range $23$~pcm: $+21.9$, $+5.3$, $-0.9$) --- crossing being the
 signature of a cancellation channel, not of convergence.
 (2)~The valley trap in production dress: legacy $S{=}2$ at $M{=}24$
@@ -676,25 +705,39 @@ trajectory: $-392.3$, $-125.1$, $-28.3$, $+49.8$~pcm at
 $M=8/16/24/48$ --- at $M{=}24$ the ``error'' has entered the 30~pcm
 band a qualification review would accept, and one doubling later it
 flips sign. Strict stays one-sided and monotone at every one of its
-16 points ($-461$ to $-41$): the sign guarantee holds even where the
-quantitative budget gets hard. Legacy's $S{=}2{\to}3$ shift grows
+twelve points, $-461$ to $-5.3$~pcm over $M=8$ to $192$: the sign
+guarantee holds even where the quantitative budget gets hard.
+Legacy's $S{=}2{\to}3$ shift grows
 systematically with $M$ ($-31.6$ to $-51.2$~pcm), the entangled
 pattern seen on UO$_2$.
 
-\textbf{What degrades.} The row Richardson limits no longer agree:
-with the measured $1/M$ factor, strict $\hat d_\infty$ from
-$(24,48)$ is $+38$~pcm ($S{=}2$) vs $-7$ ($S{=}3$), a spread of
-$46$~pcm against $1.2$ on UO$_2$, and the $S$ shift no longer decays
-with $M$ (from $+14.7$ to $-32.6$~pcm). The increments give the
-reason: $245$, $96$, $79$~pcm --- the second ratio is $1.2$, not the
-$\approx 2$ of the UO$_2$ rows, i.e.\ MOX pin-by-pin heterogeneity
-has an additional slowly-decaying spatial component in the
-$M\le48$ window, and \eqref{eq:split}'s single-$b(M)$ form is only
-asymptotically valid. The honest statement: at $M\le48$ the strict
-budget on MOX carries a $\ge50$~pcm bar and its two-row
-cross-check correctly \emph{flags} that (a $46$~pcm limit spread is
-itself the separability violation signal); tightening it requires
-$M\ge96$, outside this study's budget. Legacy carries no flag at
+\textbf{What degrades, and where the fix lies.} The row Richardson
+limits no longer agree: with the measured $1/M$ factor over
+$M=8$ to $48$, strict $\hat d_\infty$ is $+43.7$~pcm ($S{=}2$) vs
+$+5.7$ ($S{=}3$) --- a spread of $38$~pcm against $1.2$ to $5.2$ on
+UO$_2$ --- and the $S$ shift no longer decays with $M$.  The
+increments give the reason: $245$, $96$, $79$~pcm --- the second
+ratio is $1.2$, not the $\approx 2$ of the UO$_2$ rows, i.e.\ MOX
+pin-by-pin heterogeneity has an additional slowly-decaying component
+in the $M\le48$ window.  The $M\ge96$ extension isolates which axis
+carries it, and the answer is not the one a M-window fix would want:
+beyond $M{=}48$ the angular axis \emph{recovers} clean behavior
+(S2 increments $28.1$, $7.6$~pcm --- ratios $2.8$, $3.7$, converging
+to the $2$ of a $1/M$ law; fits with rms $1.2$ to $2.0$~pcm), yet
+the two-row limit disagreement \emph{survives} the extension
+($+8.7$ vs $-26.7$~pcm on the shared $M=48/96/192$ window, spread
+$35.4$) and the $S{=}2{\to}3$ shift saturates rather than decays
+($-32.6$, $-35.2$, $-34.1$~pcm at $M=48/96/192$).  A
+$\approx$$34$~pcm $M$-independent inter-row offset is $a(S)$
+structure --- spatial, invisible to any $M$ refinement --- and its
+MOX size ($34$~pcm at $S{=}2$, where UO$_2$'s same-$M$ inter-row
+offset has decayed to $-1.1$) is the pin-by-pin Pu kink field saying
+that this assembly needs $S$, not $M$.  The strict machinery reports
+exactly this, gate and cross-check firing and attributing the
+surviving term to the spatial axis; the honest output for MOX at
+affordable $M$ is \emph{unqualified --- spatial term dominant},
+with the direction to refine now correctly stated as $S$.
+Legacy carries no flag at
 all --- its M48/$S{=}3$ error of $-1.4$~pcm looks superb and is pure
 cancellation.
 

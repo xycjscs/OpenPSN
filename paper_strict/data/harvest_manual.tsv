@@ -1,0 +1,13 @@
+# date	case	material	M	S	closure	keff	dref_vs_kref	note
+2026-09-28	c5g7_uo2_assembly	strong	8	5	strict_phase_space	1.3332922	-107.4	r11 job 45460858
+2026-09-28	c5g7_uo2_assembly	strong	16	5	strict_phase_space	1.3337759	-71.2	r11
+2026-09-28	c5g7_uo2_assembly	strong	8	6	strict_phase_space	1.3333059	-106.4	r11
+2026-09-28	c5g7_mox_assembly	mox	96	2	strict_phase_space	1.1849523	-12.9	dref recomputed vs 1.1851053 (log printed bogus -11221: c5g7_one.py kref fallback bug, kref looked up by M; UO2 rows unaffected)
+2026-09-28	c5g7_mox_assembly	mox	192	2	strict_phase_space	1.1850431	-5.3	same recomputation
+2026-09-29	c5g7_uo2_assembly	uo2	24	5	strict_phase_space	1.3340875	-47.8	r11c job 45485111 (mmd not used; plain LU t=16415s)
+2026-09-29	c5g7_uo2_assembly	uo2	24	6	strict_phase_space	1.3341005	-46.9	r11c job 45485111 task2 serial plain-LU t=23148s
+2026-09-29	c5g7_mox_assembly	mox	192	3	strict_phase_space	1.1846380	-39.4	r12c job 45493906 mmd-backend t=17151s (plain-LU 2x OOM at 865G)
+2026-09-29	c5g7_uo2_assembly	uo2	48	5	strict_phase_space	1.3344328	-22.0	r11c job 45485111 task1 serial plain-LU t=35607s
+2026-09-29	c5g7_uo2_assembly	uo2	48	6	strict_phase_space	1.3344477	-20.8	r11d job 45511113 mmd-serial t=27242s
+2026-09-29	c5g7_mox_assembly	mox	96	3	strict_phase_space	1.1845349	-48.1	r13a job 45530119 task0 mmd t=7422s
+2026-09-29	c5g7_uo2_assembly	uo2	16	6	strict_phase_space	1.3337890	-70.2	r13a job 45530119 task1 mmd t=6862s
