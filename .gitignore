@@ -22,3 +22,6 @@ tmp_*.py
 paper_strict/*.aux
 paper_strict/*.out
 paper_strict/pg*.png
+paper_strict/main_r8*.pdf
+paper_strict/xycjscs@*
+tools/hpc_watch_state.json
