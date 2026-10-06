@@ -1,0 +1,1012 @@
+{
+ "45726545": {
+  "name": "r16.sh",
+  "script": "~/psn_strict/r16.sh",
+  "profile": "whole-node",
+  "array": "1-4",
+  "node": "",
+  "ts": "2026-10-02 06:15",
+  "note": "M96_S5+M48sanity(旧配置存活)"
+ },
+ "45728306": {
+  "name": "r16.sh",
+  "script": "~/psn_strict/r16.sh",
+  "profile": "whole-node",
+  "array": "3",
+  "node": "",
+  "ts": "2026-10-02 06:15",
+  "note": "M192_S4"
+ },
+ "45729985": {
+  "name": "slurm_mnz.sh",
+  "script": "~/psn_strict/slurm_mnz.sh",
+  "profile": "probe",
+  "array": "2-3",
+  "node": "",
+  "ts": "2026-10-02 06:15",
+  "note": "MNZ M96_S5/M192_S4"
+ },
+ "45731061": {
+  "name": "slurm_mnz.sh",
+  "script": "~/psn_strict/slurm_mnz.sh",
+  "profile": "probe",
+  "array": "0-1",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:15",
+  "note": "MNZ M96_S6/M192_S5 良节点"
+ },
+ "45731062": {
+  "name": "r16.sh",
+  "script": "~/psn_strict/r16.sh",
+  "profile": "whole-node",
+  "array": "2",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:15",
+  "note": "M96_S6 良节点"
+ },
+ "45731630": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "0-3",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:17",
+  "note": "M96_S6-goodnode"
+ },
+ "45731636": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "0-3",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:17",
+  "note": "M192_S5-goodnode"
+ },
+ "45731637": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "0-3",
+  "node": "",
+  "ts": "2026-10-02 06:17",
+  "note": "M96_S5-any"
+ },
+ "45731642": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "0-3",
+  "node": "",
+  "ts": "2026-10-02 06:17",
+  "note": "M192_S4-any"
+ },
+ "45731665": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:17",
+  "note": "M96_S6-good"
+ },
+ "45731668": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:17",
+  "note": "M192_S5-good"
+ },
+ "45731674": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:17",
+  "note": "M96_S5-any"
+ },
+ "45731681": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:17",
+  "note": "M192_S4-any"
+ },
+ "45731722": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:17",
+  "note": "M96_S6-good"
+ },
+ "45731728": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:17",
+  "note": "M192_S5-good"
+ },
+ "45731732": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:17",
+  "note": "M96_S5-any"
+ },
+ "45731738": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:17",
+  "note": "M192_S4-any"
+ },
+ "45732007": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:21",
+  "note": "M96_S6-good v3-mnz-after-free"
+ },
+ "45732013": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "b10r2n26",
+  "ts": "2026-10-02 06:21",
+  "note": "M192_S5-good v3-mnz-after-free"
+ },
+ "45732016": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:21",
+  "note": "M96_S5-any v3-mnz-after-free"
+ },
+ "45732019": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:21",
+  "note": "M192_S4-any v3-mnz-after-free"
+ },
+ "45733055": {
+  "name": "r16/mnz3",
+  "script": "~/psn_strict",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:32",
+  "note": "M96_S6-any"
+ },
+ "45733059": {
+  "name": "r16/mnz3",
+  "script": "~/psn_strict",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:32",
+  "note": "M192_S5-any"
+ },
+ "45733089": {
+  "name": "slurm_r16.sh",
+  "script": "~/psn_strict/slurm_r16.sh",
+  "profile": "whole-node",
+  "array": "2",
+  "node": "auto",
+  "ts": "2026-10-02 06:32",
+  "note": "M96_S6 official unpinned"
+ },
+ "45734054": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:42",
+  "note": "M96_S5-iparm"
+ },
+ "45734057": {
+  "name": "mnz_probe.py",
+  "script": "~/psn_strict/mnz_probe.py",
+  "profile": "probe",
+  "array": "",
+  "node": "",
+  "ts": "2026-10-02 06:42",
+  "note": "M192_S4-iparm"
+ },
+ "45735063": {
+  "name": "nodescan.sbatch",
+  "script": "~/psn_strict/nodescan.sbatch",
+  "profile": "serial-scan",
+  "array": "",
+  "node": "all-109",
+  "ts": "2026-10-02 06:53",
+  "note": "node typing M96_S6"
+ },
+ "45736045": {
+  "ts": "2026-10-02 07:05:43",
+  "script": "iparm_test",
+  "note": "iparm14/MNZ export test",
+  "jobname": "iparmtest",
+  "res": "probe"
+ },
+ "iparmtest_v2": {
+  "ts": "2026-10-02 07:08:24",
+  "note": "iparm test v2 submitted (see stdout for id)"
+ },
+ "45768841": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n01",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768843": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n02",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768845": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n03",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768848": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n04",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768850": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n05",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768851": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n06",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768853": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n07",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768854": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n08",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768857": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n09",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768859": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n10",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768860": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n11",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768862": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n12",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768863": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n13",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768866": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n14",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768869": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n15",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768870": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n17",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768872": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n18",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768874": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n19",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768877": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n20",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768879": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n21",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768880": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n22",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768881": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n23",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768885": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n24",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768886": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n25",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768888": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n26",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768890": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n27",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768893": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n28",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768894": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n29",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768896": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n30",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768897": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n31",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768898": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n32",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768901": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n33",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768904": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n34",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768905": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n36",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768906": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n37",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768910": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n38",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768911": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r1n39",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768912": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n01",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768914": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n03",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768915": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n04",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768918": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n05",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768920": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n06",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768922": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n07",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768923": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n08",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768927": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n09",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768929": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n10",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768933": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n11",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768934": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n12",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768935": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n13",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768940": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n14",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768941": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n15",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768942": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n16",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768944": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n17",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768947": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n18",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768948": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n19",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768951": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n20",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768952": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n21",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768953": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n22",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768956": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n23",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768958": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n24",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768959": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n25",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768961": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n26",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768964": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n27",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768965": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n28",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768967": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n29",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768969": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n30",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768970": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n31",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768976": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n32",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768978": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n33",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768979": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n34",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768980": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n35",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768983": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n36",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768985": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n37",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768987": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n38",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768988": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r2n39",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768989": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n00",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768993": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n01",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768994": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n02",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768995": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n03",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45768997": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n04",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769001": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n07",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769002": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n08",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769003": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n09",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769005": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n13",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769006": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n14",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769009": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n15",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769011": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n16",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769013": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n17",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769014": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n18",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769016": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n19",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769019": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n20",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769021": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n21",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769022": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n22",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769025": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n23",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769028": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n24",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769030": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n25",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769032": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n26",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769033": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n27",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769036": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n28",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769038": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n29",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769039": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n30",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769040": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n31",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769041": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n34",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769044": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n35",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769046": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n36",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769047": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n37",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769050": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n38",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ },
+ "45769053": {
+  "script": "nodescan3",
+  "profile": "probe",
+  "node": "b10r3n39",
+  "note": "node-typing M96_S6 sys(0,0)",
+  "submitted": "2026-10-02 13:06:43"
+ }
+}

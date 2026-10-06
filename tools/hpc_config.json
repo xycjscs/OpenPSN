@@ -1,0 +1,22 @@
+{
+  "ssh": {
+    "host": "wuzh02.hpccube.com",
+    "port": 65091,
+    "user": "xycjscs",
+    "key": "/opt/data/.ssh/hpccube_new.key",
+    "remote_root": "psn_strict"
+  },
+  "runs_glob": "~/psn_runs/*.out",
+  "default_profile": "whole-node",
+  "profiles": {
+    "probe":    { "partition": "wzacnormal02", "nodes": 1, "cpus": 32, "mem": "96G",  "time": "08:00:00" },
+    "single":   { "partition": "wzacnormal02", "nodes": 1, "cpus": 64, "mem": "0",    "time": "40:00:00" },
+    "whole-node": { "partition": "wzacnormal02", "nodes": 1, "cpus": 64, "mem": "0",  "time": "40:00:00" },
+    "good-node":{ "partition": "wzacnormal02", "nodes": 1, "cpus": 64, "mem": "0",    "time": "40:00:00" }
+  },
+  "notes": {
+    "good-node": "b10r2n26 = rc2 全探针 21/21 通过的良节点（CPU 舍入路径稳），M96_S6/M192_S5 钉它",
+    "mem-0": "--mem=0 = 整机独占 1007GB",
+    "PD_THREADS": "PARDISO 生产值 32（64 触发近奇异矩阵 rc=-2）"
+  }
+}
