@@ -7,9 +7,9 @@ Spec schema (see examples/):
   description:      free text
   angular:
     model: generic | ty3
-    closure: legacy | strict_phase_space | directional_matrix | sector_diffusion
+    closure: legacy | strict_phase_space | directional_matrix | sector_diffusion | sector_average
     I: 30           # generic: even polar order, I/2 independent nodes
-    A: 3            # sector_diffusion: A+1 Gauss points per azimuth sector
+    A: 3            # sector_diffusion: A+1 Gauss points; sector_average: 0
     M: 24           # azimuthal segments (must be even)
   geometry:
     # square mode (default):
@@ -79,11 +79,11 @@ def load_spec(path):
             raise ValueError("angular.A must be a nonnegative integer")
     closure = ang.get("closure", "legacy")
     if closure not in ("legacy", "directional_matrix", "original_azimuth",
-                       "strict_phase_space", "sector_diffusion"):
+                       "strict_phase_space", "sector_diffusion", "sector_average"):
         raise ValueError(
             f"angular.closure must be one of 'legacy', "
             f"'directional_matrix', 'original_azimuth', "
-            f"'strict_phase_space', 'sector_diffusion', got {closure!r}")
+            f"'strict_phase_space', 'sector_diffusion', 'sector_average', got {closure!r}")
     ang["closure"] = closure
 
     geom = spec["geometry"]

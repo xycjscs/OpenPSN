@@ -82,7 +82,7 @@ def main():
     parser.add_argument("model", choices=INPUTS)
     parser.add_argument("--sm", nargs="+", type=spatial_and_angular, required=True)
     parser.add_argument("--closure", default="sector_diffusion",
-                        choices=["sector_diffusion", "legacy", "strict_phase_space"])
+                        choices=["sector_average", "sector_diffusion", "legacy", "strict_phase_space"])
     parser.add_argument("--opt", default="off",
                         choices=["off", "chol-rs", "chol-packed-rs"])
 
@@ -104,7 +104,9 @@ def main():
         _remesh_core(spec["geometry"], args.core_step)
     reference = 1.187217554586068 if rect else expand_cases(spec)[0]["kref"]
     i = (8 if rect else 30) if args.polar_order is None else args.polar_order
-    a = (1 if rect else 3) if args.azimuth_degree is None else args.azimuth_degree
+    a = args.azimuth_degree
+    if a is None:
+        a = 0 if args.closure == "sector_average" else (1 if rect else 3)
     for s, m in args.sm:
         case = dict(name=f"{args.model}_S{s}_M{m}", model="generic",
                     I=i, A=a, M=m, subdivide=s, closure=args.closure,

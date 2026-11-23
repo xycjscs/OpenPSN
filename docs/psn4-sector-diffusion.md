@@ -1,5 +1,69 @@
 # PSN-4 扇区扩散验证
 
+## 有限角区平均闭合
+
+`sector_average` 在每个有限极角带与方位扇区的交集上保留一个偶宇称场，
+直接积分二阶张量 `⟨Ω Ωᵀ⟩` 和真空边界系数 `⟨|Ω·n|⟩`，
+角区之间通过标量通量源和镜面反射边界耦合。极角带沿 θ 等宽，
+积分权重按 `d(cos θ) dφ` 计算。体扩散和材料界面法向流共用完整张量的
+双二次弱式。有限宽角区的二维扩散张量有两个正特征值。
+
+原版节点的体内形函数使用标量扩散，界面电流使用扇区各向异性系数。
+`strict_phase_space` 将体内形函数改为同一张量的精确模态，保留原有四模态
+及面平均匹配。强吸收棋盘格固定 `I=30, S=2`，原版从 `M=4` 的
+−790.22 pcm 到 `M=8` 的 +807.92 pcm，`strict_phase_space` 则分别为
+−1363.03 和 +76.41 pcm。这个对照显示，修正体内张量之后，原有的空间
+节点闭合仍允许误差随 M 改变符号。
+
+`sector_average` 固定 `I=30`，计算 `S=2,4,6,8,12` × `M=4,8,12,24`
+以及 `S=12, M=48,96`。强、弱吸收共 44 个测点的误差均为负，
+固定 S 增大 M，或固定 M 增大 S，误差均单调向零靠近。所有测点通过独立
+复扫，最大源残差为 `1.81e-9`。
+
+| S | M | 强吸收 Δk (pcm) | 弱吸收 Δk (pcm) |
+|--:|--:|-----------------:|-----------------:|
+| 2 | 4 | −2138.16 | −393.13 |
+| 4 | 8 | −625.76 | −119.01 |
+| 8 | 12 | −309.02 | −59.51 |
+| 12 | 24 | −107.43 | −21.61 |
+| 12 | 48 | −51.66 | −11.16 |
+| 12 | 96 | −36.71 | −8.37 |
+
+在具有正去除截面的单群问题中，偶宇称弱式给出 `k_eff` 的广义 Rayleigh 商。
+二分空间单元或平分原角区产生嵌套试验空间，在精确积分下，细化所得的
+`k_eff` 非减并从下方逼近连续问题的特征值。七群问题的散射耦合一般不对称，
+表中观测也包含非嵌套细化，两者均超出这条变分结论。粗角区的横向平均扩散
+造成较大的低估，表中的绝对偏差随着角区进一步划分而下降。
+
+在输入文件中设 `angular.model: generic`、`angular.closure: sector_average`，
+`A` 使用默认值 0。棋盘格复现命令如下。
+
+```bash
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+samples=(2,4 2,8 2,12 2,24 4,4 4,8 4,12 4,24 6,4 6,8 6,12 6,24
+         8,4 8,8 8,12 8,24 12,4 12,8 12,12 12,24 12,48 12,96)
+python -m scripts.sector_diffusion_benchmark strong --sm "${samples[@]}" --closure sector_average --threads 8
+python -m scripts.sector_diffusion_benchmark weak --sm "${samples[@]}" --closure sector_average --threads 8
+python -m scripts.sector_diffusion_benchmark strong --sm 2,4 2,8 --closure strict_phase_space --threads 8
+```
+
+七群 C5G7 矩形四分之一堆芯固定 `I=8, S=1`，使用下文同一个 OpenMC
+参考值。三点均通过独立复扫，固定网格上的角向加密减小了低估。
+
+| M | k_eff | Δk (pcm) | 复扫源残差 |
+|--:|------:|---------:|-----------:|
+| 4 | 1.184351995607 | −286.56 | 9.44e−11 |
+| 8 | 1.184846881742 | −237.07 | 4.66e−11 |
+| 16 | 1.185759916068 | −145.76 | 4.53e−10 |
+
+当前七群测试固定 S，验证了这三个方位角分辨率上的趋势，距约 1 pcm 的目标仍有差距。
+
+```bash
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENPSN_PREFACTOR_WORKERS=5
+python -m scripts.sector_diffusion_benchmark rect --closure sector_average \
+    --opt chol-packed-rs --sm 1,4 1,8 1,16 --threads 60
+```
+
 ## 离散
 
 在材料常数的空间节点内，把输运方程写成方向反转下的偶、奇宇称方程。

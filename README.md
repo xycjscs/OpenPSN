@@ -209,7 +209,9 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 - 支持真空和镜面反射边界。可用 `--opt off`、`--opt chol-rs` 或
   `--opt chol-packed-rs`，其中 Rust 后端的编译方式见上文。
   `factor_bytes` 是常驻因子池的大小，`sweeps_executed` 包含独立复扫。
-- 方形棋盘格的比较见 [PSN-4 收敛记录](docs/psn4-sector-diffusion.md)。
+- 固定 `model: generic` 时，可选 `closure: sector_average` 和 `A: 0`，
+  在每个有限角区保留一个场并解析积分扩散张量。
+- 两种扇区闭合的比较见 [PSN-4 收敛记录](docs/psn4-sector-diffusion.md)。
 
 **高序方向闭合的内层求解器（`solver.inner`，YAML `solver:` 段，默认 `lu`）**
 

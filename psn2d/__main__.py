@@ -57,12 +57,14 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
     bnd = spec["boundaries"]
     boundary = (bnd["left"], bnd["bottom"], bnd["right"], bnd["top"])
     generic = case["model"] == "generic"
-    strict = case.get("closure", "legacy") == "strict_phase_space"
+    closure = case.get("closure", "legacy")
+    strict = closure == "strict_phase_space"
     cls, options = PSN2D, {"strict": strict}
-    if case.get("closure") == "sector_diffusion":
-        from .sector_diffusion import SectorDiffusion
-        cls = SectorDiffusion
-        options = {"azimuth_degree": case.get("A", 3), "backend": opt}
+    if closure in ("sector_diffusion", "sector_average"):
+        from .sector_diffusion import SectorAverage, SectorDiffusion
+        averaged = closure == "sector_average"
+        cls = SectorAverage if averaged else SectorDiffusion
+        options = {"azimuth_degree": case.get("A", 0 if averaged else 3), "backend": opt}
     return cls(mat_map, h, St, Sgg, nuSf, chi=chi, boundary=boundary,
                generic=generic, I=int(case.get("I", 30)), M=int(case["M"]),
                widths=widths, threads=threads, mem_limit_gb=mem_limit_gb,
@@ -76,7 +78,7 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
              cmfd_current=False, ritz=False):
     t0 = time.time()
     closure = case.get("closure", "legacy")
-    if closure == "sector_diffusion":
+    if closure in ("sector_diffusion", "sector_average"):
         if cmfd or extrapolate or anderson:
             raise ValueError("sector diffusion uses Ritz and is exclusive with "
                              "--cmfd, --extrapolate and --anderson")
@@ -84,10 +86,10 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
         sol = spec["solver"]
         k, _, _ = psn.keff(max_outer=int(sol["max_outer"]),
                            outer_tol=float(sol["keff_tol"]), verbose=verbose)
+        degree = case.get("A", 0 if closure == "sector_average" else 3)
         out = dict(name=case["name"], model=case["model"], I=int(case.get("I", 30)),
                    polar_nodes=psn.I, phase_systems=psn.ng * len(psn.angles),
-                   M=psn.M, A=case.get("A", 3),
-                   K=case.get("A", 3) + 1, closure=closure,
+                   M=psn.M, A=degree, K=degree + 1, closure=closure,
                    subdivide=int(case["subdivide"]), nodes=psn.nodes,
                    keff=float(k), time_s=round(time.time() - t0, 2),
                    factor_time_s=round(psn.factor_seconds, 2),

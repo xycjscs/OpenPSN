@@ -4,8 +4,10 @@ For isotropic sources, eliminating the odd flux gives
     -div(omega omega^T / Sigma_t grad u) + Sigma_t u = q.
 Take the weak form in each angular sector with a Gauss nodal basis. Quadrature
 diagonalizes the angular mass, streaming tensor and vacuum term together.
-Opposite ordinates share their even flux. Reflected ordinates share spatial
-trace DOFs at specular faces, so their normal currents sum to zero there.
+The finite-sector closure instead retains a single average per angular cell
+and integrates the streaming tensor and vacuum coefficient over that cell.
+In both closures, reflected fields share spatial trace degrees of freedom
+at specular faces, so their normal currents sum to zero there.
 """
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -56,6 +58,34 @@ def _directions(sectors, azimuth_degree, mu, polar_weights, transpose_symmetry):
                multiplicity * polar_weights[polar] * w[j] / (2 * sectors))
 
 
+def _sector_averages(sectors, polar_bands, transpose_symmetry):
+    """Coefficients and weight of each finite polar-band/azimuth cell."""
+    polar_edges = np.cos(np.linspace(0.0, np.pi / 2, polar_bands + 1))
+    polar_edges[-1] = 0.0
+    polar_width = polar_edges[:-1] - polar_edges[1:]
+    a, b = polar_edges[1:], polar_edges[:-1]
+    mean_mu2 = 1 - (a * a + a * b + b * b) / 3
+    primitive = (polar_edges * np.sqrt(1 - polar_edges**2) + np.arcsin(polar_edges)) / 2
+    mean_mu = -np.diff(primitive) / polar_width
+
+    step = np.pi / sectors
+    samples = sectors // 2
+    keep = (samples + 1) // 2 if transpose_symmetry else samples
+    sinc = np.sinc(1 / sectors)
+    half_sinc = np.sinc(0.5 / sectors)
+    for polar, sample in product(range(polar_bands), range(keep)):
+        phi = (sample + 0.5) * step
+        square = mean_mu2[polar] / 2
+        contrast = sinc * np.cos(2 * phi)
+        multiplicity = 2 if transpose_symmetry and 2 * sample + 1 != samples else 1
+        yield (square * (1 + contrast),
+               square * sinc * np.sin(2 * phi),
+               square * (1 - contrast),
+               mean_mu[polar] * half_sinc * np.cos(phi),
+               mean_mu[polar] * half_sinc * np.sin(phi),
+               multiplicity * polar_width[polar] / sectors)
+
+
 class _QuadraticMesh:
     def __init__(self, nx, ny, hx, hy, boundaries):
         grid = np.arange((2 * ny + 1) * (2 * nx + 1), dtype=np.int32)
@@ -67,7 +97,7 @@ class _QuadraticMesh:
         self.area = hx * hy
         self.aspect = hy / hx
 
-        # Identify specular traces of the two angles. A single ID at a
+        # Identify specular traces of the two fields. A single ID at a
         # reflecting corner also handles two intersecting mirror faces.
         edges = (grid[:, 0], grid[0], grid[:, -1], grid[-1])
         reflected = np.zeros(grid.size, dtype=bool)
@@ -89,11 +119,14 @@ class _QuadraticMesh:
         self.grid_size = grid.size
 
     def matrix(self, st, x, y):
+        return self.tensor_matrix(st, x * x, x * y, y * y, x, y)
+
+    def tensor_matrix(self, st, xx, xy, yy, vacuum_x, vacuum_y):
         h = self.aspect
         mass = (st * self.area)[:, None, None] * _CELL_MASS
-        x_term = (x * x * h / st)[:, None, None] * _GRAD_X
-        y_term = (y * y / (h * st))[:, None, None] * _GRAD_Y
-        cross = (x * y / st)[:, None, None] * _CROSS
+        x_term = (xx * h / st)[:, None, None] * _GRAD_X
+        y_term = (yy / (h * st))[:, None, None] * _GRAD_Y
+        cross = (xy / st)[:, None, None] * _CROSS
         diagonal = mass + x_term + y_term
 
         data, rows, cols = [], [], []
@@ -106,7 +139,7 @@ class _QuadraticMesh:
         add(self.cells, diagonal + cross)
         add(self.mirror[self.cells], diagonal - cross)
         for axis, face, length in self.vacuum:
-            robin = ((y if axis else x) * length)[:, None, None] * _MASS
+            robin = ((vacuum_y if axis else vacuum_x) * length)[:, None, None] * _MASS
             add(face, robin)
             add(self.mirror[face], robin)
         mat = coo_matrix((np.concatenate(data),
@@ -135,10 +168,11 @@ class SectorDiffusion(PSN2D):
                  generic=False, **kwargs):
         if M < 2 or M % 2 or kwargs.get("full_2pi", False):
             raise ValueError("sector diffusion needs even M >= 2 on the half-plane")
-        if isinstance(azimuth_degree, bool) or not isinstance(azimuth_degree, int)                 or azimuth_degree < 0:
+        if (isinstance(azimuth_degree, bool) or not isinstance(azimuth_degree, int)
+                or azimuth_degree < 0):
             raise ValueError("sector diffusion needs a nonnegative integer A")
         if generic and (I < 2 or I % 2):
-            raise ValueError("sector diffusion needs even I >= 2 for polar Gauss integration")
+            raise ValueError("sector diffusion needs even I >= 2 for the generic polar model")
         super().__init__(mat_map, h, st, scatter, nu_fission, M=M, I=I,
                          generic=generic, **kwargs)
         if len(self.bnd) != 4 or any(mode not in ("reflect", "vacuum")
@@ -153,12 +187,6 @@ class SectorDiffusion(PSN2D):
         if np.any(~np.isfinite(hx) | ~np.isfinite(hy) | (hx <= 0) | (hy <= 0)):
             raise ValueError("sector diffusion needs positive finite cell widths")
         self.mesh = _QuadraticMesh(self.nx, self.ny, hx, hy, self.bnd)
-        if self.generic:
-            z, w = leggauss(self.I)
-            mu = np.sqrt(1 - ((1 + z) / 2) ** 2)
-            polar_weights = w / 2
-        else:
-            mu, polar_weights = self.mu, self.W
         # The fundamental mode is in the transpose-even subspace when the
         # physical model has that symmetry. Fold complementary azimuths there.
         self.transpose_symmetry = (
@@ -166,12 +194,24 @@ class SectorDiffusion(PSN2D):
             and np.array_equal(self.mat, self.mat.T)
             and np.array_equal(hx.reshape(self.mat.shape), hy.reshape(self.mat.shape).T)
         )
-        self.angles = list(_directions(self.M, azimuth_degree, mu, polar_weights,
-                                       self.transpose_symmetry))
+        self.angles = list(self._angular_cells(azimuth_degree))
         self.backend = backend
         self._factors = []
         self._pool = None
         self.factor_bytes = 0
+
+    def _angular_cells(self, azimuth_degree):
+        if self.generic:
+            z, w = leggauss(self.I)
+            mu = np.sqrt(1 - ((1 + z) / 2) ** 2)
+            polar_weights = w / 2
+        else:
+            mu, polar_weights = self.mu, self.W
+        return _directions(self.M, azimuth_degree, mu, polar_weights,
+                           self.transpose_symmetry)
+
+    def _angular_matrix(self, st, cell):
+        return self.mesh.matrix(st, *cell[:-1])
 
     def _build_topology(self):
         self.nodes = self.nx * self.ny
@@ -203,15 +243,15 @@ class SectorDiffusion(PSN2D):
                     chol = RustChol(matrix)
                     return chol.solve, chol.diag()[4]
 
-        jobs = [(g, x, y, w) for g in range(self.ng) for x, y, w in self.angles]
+        jobs = [(g, cell) for g in range(self.ng) for cell in self.angles]
         self._factors = []
         self.factor_bytes = 0
 
         def build(job):
-            g, x, y, w = job
-            matrix = self.mesh.matrix(self.St[g, matidx], x, y)
+            g, cell = job
+            matrix = self._angular_matrix(self.St[g, matidx], cell)
             solve, size = factor(matrix)
-            return (g, w, solve), size
+            return (g, cell[-1], solve), size
 
         started = perf_counter()
         worker_cap = int(os.environ.get("OPENPSN_PREFACTOR_WORKERS", "4"))
@@ -226,11 +266,10 @@ class SectorDiffusion(PSN2D):
                     self._factors.append(entry)
                     self.factor_bytes += size
                     self._check_mem_gate()
-                if self.factor_bytes / len(self._factors) * len(jobs)                         > self.mem_limit_gb * 2**30:
-                    projected_gb = self.factor_bytes / len(self._factors) \
-                        * len(jobs) / 2**30
+                projected_gb = self.factor_bytes / len(self._factors) * len(jobs) / 2**30
+                if projected_gb > self.mem_limit_gb:
                     raise MemoryError(
-                        f"projected sector diffusion factor pool {estimated_bytes / 2**30:.2f} GiB "
+                        f"projected sector diffusion factor pool {projected_gb:.2f} GiB "
                         f"exceeds cap {self.mem_limit_gb:.2f} GiB")
         self.factor_seconds = perf_counter() - started
         self._start_sweep_pool()
@@ -268,7 +307,7 @@ class SectorDiffusion(PSN2D):
             return g, self.mesh.moments(field)
 
         # Fixed contiguous blocks preserve the reduction order across thread
-        # counts and avoid returning one cell-moment array per ordinate.
+        # counts and avoid returning one cell-moment array per angular field.
         block_size = 4
         n = len(self.angles)
         blocks = [self._factors[g * n + i:g * n + min(i + block_size, n)]
@@ -289,3 +328,18 @@ class SectorDiffusion(PSN2D):
                              project_source=project)
         finally:
             self._factors.clear()
+
+
+class SectorAverage(SectorDiffusion):
+    """Finite-angle-cell PSN with one even field per sector and polar band."""
+
+    def __init__(self, *args, generic=True, azimuth_degree=0, **kwargs):
+        if not generic or azimuth_degree != 0:
+            raise ValueError("sector_average requires angular.model=generic and A=0")
+        super().__init__(*args, generic=generic, azimuth_degree=azimuth_degree, **kwargs)
+
+    def _angular_cells(self, azimuth_degree):
+        return _sector_averages(self.M, self.I, self.transpose_symmetry)
+
+    def _angular_matrix(self, st, cell):
+        return self.mesh.tensor_matrix(st, *cell[:-1])
