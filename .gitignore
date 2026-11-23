@@ -4,6 +4,8 @@ examples/c5g7_run.log
 
 # compiled C++ Cholesky bridge (build on demand: psn2d/memopt_cxx/build.py)
 psn2d/memopt_cxx/libeigen_chol.so
+rust/libpsn_chol.so
+rust/linklibs/
 
 # Python
 __pycache__/

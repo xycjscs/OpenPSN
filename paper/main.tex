@@ -1066,10 +1066,10 @@ is $153\times153=23409$.}
 \end{figure}
 
 \paragraph{$S\times M$ convergence of the $3\times3$ tiling.}
-Table~\ref{tab:rectsm} and Figure~\ref{fig:rectsm} give the full
+Table~\ref{tab:rectsm} and Figure~\ref{fig:rectsm} give the original
 $S\times M$ sweep (UO$_2$/MOX assemblies: $S{=}1\ldots6$; 1/4 core:
 $S{=}1,2$, the $S{=}3$ core grid being $9\times$ larger in node count and
-only covered to $M{=}8$; un-homogenised material XS, every point
+initially covered to $M{=}8$; un-homogenised material XS, every point
 converged to $10^{-10}$ in relative eigenvalue change
 $|\Delta k|/k$) against the directly computed OpenMC run
 on the \emph{identical} rectangular-rod geometry
@@ -1083,7 +1083,8 @@ on the symmetry edges, vacuum on the open edges, ref.\ $k=1.1872176$).
 \centering
 \caption{Rectangular-node OpenPSN, $3\times3$ pin tiling: UO$_2$/MOX
 assemblies at $S{=}1\ldots6$, 1/4 core at $S{=}1,2$ (at $S{=}3$ the core
-grid grows $9\times$, only $M{=}2,4,8$ were computed). $\Delta k$ in pcm
+grid grows $9\times$, and the original campaign covered $M{=}2,4,8$).
+$\Delta k$ in pcm
 versus the same-geometry pure-XS OpenMC reference (UO$_2$ assembly
 $1.3347260$, MOX assembly $1.1851053$, 1/4 core $1.1872176$). Green
 marker in Figure~\ref{fig:rectsm} = smallest $|\Delta k|$.}
@@ -1185,6 +1186,36 @@ subdivision --- best $S{=}2$, degrading again for $S{\ge}3$ (strong
 fuel--water coupling in the gap) --- and the 1/4 core, whose $S{=}2$ row
 is uniformly worse than $S{=}1$ across all $M$.
 
+
+\paragraph{Performance at $M{=}24$, $S{=}3$ on the rectangular core.}
+This configuration has $459\times459=210{,}681$ nodes and the same
+material geometry and pure seven-group cross sections as the
+rectangular OpenMC reference. OpenPSN uses a diffusion-preconditioned
+Ritz projection and a shared sparse Cholesky preconditioner. The
+non-diagonal Cholesky entries use column-scaled 16-bit integers and
+variable-length row deltas. The diagonal, matrix-vector products and
+residual checks use double precision. Each angular sweep assembles and
+reduces one azimuth at a time.
+
+At a budget of 60 parallel units, the median fine-grid transport sweep
+time for sweeps 2--11 decreased from 160.16~s with the earlier hybrid
+incomplete-Cholesky/PCG implementation to 19.17~s, corresponding to a
+speedup of \textbf{$8.35\times$ per sweep}. The hybrid run reached the
+45-minute time limit after 11 sweeps. The standard CLI run completed 22 sweeps
+including one independent verification sweep in 1261.48~s end to end.
+Factor and operator setup took 691.31~s.
+Peak host memory was 28.83~GiB and the compressed factors and
+double-precision operator pool occupied 9.419~GiB.
+
+The converged eigenvalue is $\keff=1.186767156487$.
+The same-geometry OpenMC reference is $1.187217554586$
+(one standard error of $3.41\pcm$), giving a signed difference of
+$-45.04\pcm$ under the convention $\Delta k=10^{5}(\keff-k_\mathrm{ref})$.
+The independently recomputed fine-grid relative source residual is
+$2.57\times10^{-12}$. The reported relative eigenvalue residual is
+$9.43\times10^{-12}$, the maximum of the last Ritz eigenvalue change
+and the verification difference. The example directory includes the
+timed sweep series and the configuration used for this comparison.
 
 \input{studyIII.tex}
 \clearpage

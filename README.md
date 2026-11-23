@@ -123,18 +123,20 @@ python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core.yaml -
 | `off`（默认） | 原始路径 | COLAMD SuperLU，位级可复现 |
 | `auto` | 共享 Cholesky → 角度 Schur → tile → 紧凑 MMD-LU → 原路径 | 内存感知：按 `--mem-limit-gb` 估算各后端因子池，选装得下且最小的；全部装不下才 fail-loud（不构造装不下的因子） |
 | `chol` | 紧凑组装 + SPD 行缩放 + xy 转置因子共享 + Eigen 稀疏 Cholesky（METIS） | 需编译 `psn2d/memopt_cxx/libeigen_chol.so`；C5G7 1/4 芯 M16 实测峰值 RSS ≈ 1/9，keff 不变（≤1e-15） |
+| `chol-rs` | 共享稀疏 Cholesky，使用 Rust 求解核 | 需要编译仓库内的 Rust 内核，依赖 Rust 工具链和 METIS |
+| `chol-packed-rs` | 共享稀疏 Cholesky，使用 int16 压缩预条件器和 FP64 PCG | 支持同一共享几何条件。每次 PCG 都检查原 FP64 块残差，未过门限即报错 |
 | `angschr` | 角度 Schur 剖分：系统按方位角方向块对角化（M/2 个 2D 网格 Cholesky，填充与 M 无关）+ 镜反射行的小角度 Schur 分量（M/2 个 544² 级连通分量） | 因子池 ∝ M 线性（tile 缝合面 ∝ M²）：rect M192 组件 21 系统全池 ~48GB，62GB 机器可行（tile 缝合面 185GB）；keff 与共享 Cholesky 逐位一致（M16 实测 Δk=2.2×10⁻¹⁶）；S 形成 8 路并行（实测 6.5×，位级一致）；池超预算或几何非方向块对角时 fail-loud 证书 |
 | `tile` | Schur 分块 + 每块 Eigen Cholesky（METIS）+ 稀疏多右端核 | 内存回退后端：按 `--mem-limit-gb` 自动选块大小（几何周期 P0），用户无需指定 tile 或 assembly；纯几何块划分，无 assembly 概念也能用（如棋盘基准）；keff 与原路径位级一致（实测 Δ=0.0000 pcm）；最细块仍超预算时 fail-loud（不静默 OOM） |
 | `mmd` | 紧凑组装 + 对称型 MMD 排序 SuperLU | 无 C 依赖 |
 | `lu` | 紧凑组装 + COLAMD SuperLU | 无 C 依赖 |
 
-几何闸门（`chol`/`auto` 安装期检查，1e-12 精度，不过即 `ValueError`）：
-材料图转置对称（`mat == mat.T`）、方格网（nx==ny）、x/y 边界匹配、
+共享 Cholesky 的几何闸门在安装期检查，匹配精度为 1e-12。
+要求材料图转置对称（`mat == mat.T`）、方格网（nx==ny）、x/y 边界匹配、
 半平面 M%4==0、vacuum alpha 有限非零；**矩形节点（`rect: true`）额外要求
 宽度序列转置匹配（hx[j,i] == hy[i,j]）**——行缩放按面长加权（x 面乘
 hy、y 面乘 hx，方形退化为常数 h），asym 压到 ~1e-16 后与方形同一链路；
-另有每系统随机 RHS 残差 ≤1e-11 的原方程校验。不符合的几何自动落回紧凑
-MMD-LU。
+另有每系统随机 RHS 残差 ≤1e-11 的原方程校验。
+若条件不满足，显式指定的共享 Cholesky 后端会报错，`auto` 会评估后续后端。
 
 C++ 桥编译（Eigen 头文件必须；METIS 可选，缺则用 AMD 排序）：
 
@@ -142,6 +144,54 @@ C++ 桥编译（Eigen 头文件必须；METIS 可选，缺则用 AMD 排序）�
 python psn2d/memopt_cxx/build.py \
     --eigen-include /path/to/eigen3 \
     --metis-include /path/to/include --metis-lib /path/to/lib/libmetis.so
+```
+
+**C5G7 四分之一堆芯加速**
+
+在 Linux x86-64 上编译 Rust 内核。若 METIS 安装在自定义目录，
+用 `OPENPSN_METIS_LIB` 指定共享库，再运行对应的几何和后端。
+
+```bash
+PSN_CHOL_CPU=native sh rust/build.sh
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  OPENPSN_NUMA=pool PSN_PAR=16 OPENPSN_PREFACTOR_WORKERS=5 \
+  OPENPSN_TABLE_WORKERS=4 PSN_METIS_SEED=1 OPENPSN_TRACE=1 \
+  python -m psn2d run examples/c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml \
+  --case M24_S3 --threads 60 --mem-limit-gb 32 --opt chol-packed-rs --ritz --quiet --json
+```
+
+`--ritz` 用粗网扩散预条件构造搜索方向，并用细网输运扫描计算和验证本征对。
+它支持标量扫描的真空及反射边界，可替代 Anderson、Dombey 或 CMFD 外迭代。
+`sweeps_executed` 包含最终验证扫描，`OPENPSN_TRACE=1` 记录逐次扫描时间。
+压缩后端保留 Cholesky 对角项和原算子的 FP64 精度，仅量化预条件器的非对角项。
+扫描逐方位角构造面源与累加矩，减少每个进程的工作内存。
+
+**矩形 `M24_S3` 实测。** 459×459 节点，60 个并行单位，同一输入的第 2–11 次
+细网扫描中位耗时从 160.16 秒降到 19.17 秒，**提速 8.35 倍**。
+旧混合 IC/PCG 路径在 45 分钟时已完成 11 次扫描，随后达到时限。
+标准 CLI 的压缩 Cholesky + Ritz 在 1261.48 秒内完成 22 次扫描，其中 1 次为最终验证。
+预分解与算子准备耗时 691.31 秒。
+整机峰值使用量 28.83 GiB，压缩因子和 FP64 算子池 9.419 GiB。
+`--mem-limit-gb` 检查常驻因子池，实测整机峰值来自独立监控。
+
+同一矩形几何和纯 7 群截面的 OpenMC 参考为
+`1.187217554586068`（标准误约 3.41 pcm）。
+OpenPSN `k_eff = 1.1867671564869706`，偏差 **−45.04 pcm**
+（`(k_eff - k_ref) × 10⁵`），独立细网验证的源残差为 `2.57e-12`。
+逐次用时和测量口径见 [矩形基准记录](examples/c5g7/study2_rectangular/m24_s3_benchmark.json)。
+
+**均质 `M16_S2`。** 仓库原始均质输入上的 60 并行单位求解计时为
+99.03 → 30.25 秒（**3.27 倍**，319 → 34 次扫描），Ritz 运行的端到端
+时间为 31.31 秒。基线是 Dombey + Anderson，源停止条件较宽。
+该输入的结果用于性能回归。
+做 OpenMC 误差对照时使用 Study I 的 BWW 均质输入和其同几何参考
+`1.1868230110346432`。该 BWW 输入本次复测为 30.31 秒，偏差 −23.60 pcm。
+
+```bash
+OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  OPENPSN_NUMA=pool PSN_METIS_SEED=1 \
+  python -m psn2d run examples/c5g7/study1_homogenised/c5g7_2d_quarter_core_bww_om.yaml \
+  --case M16_S2 --threads 60 --mem-limit-gb 32 --opt chol-rs --ritz --quiet --json
 ```
 
 **高序方向闭合的内层求解器（`solver.inner`，YAML `solver:` 段，默认 `lu`）**

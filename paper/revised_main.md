@@ -327,7 +327,7 @@ Study I isolates the discretisation error of the nodal PSN model, but its eigenv
 
 #### $S\times M$ convergence of the $3\times3$ tiling.
 
-Table [3](#tab:rectsm){reference-type="ref" reference="tab:rectsm"} and Figure [4](#fig:rectsm){reference-type="ref" reference="fig:rectsm"} give the full $S\times M$ sweep (UO$_2$/MOX assemblies: $S{=}1\ldots6$; 1/4 core: $S{=}1,2$, the $S{=}3$ core grid being $9\times$ larger in node count and only covered to $M{=}8$; un-homogenised material XS, every point converged to $10^{-10}$ in relative eigenvalue change $|\Delta k|/k$) against the directly computed OpenMC run on the *identical* rectangular-rod geometry (100k particles $\times$ 20200 batches, collision estimator, fixed seed): the single UO$_2$ assembly ($51\times51$ rect. nodes, all edges reflective, ref. $k=1.3347260$), the MOX assembly (same size, ref. $k=1.1851053$), and the 1/4 core ($153\times153$ rect. nodes, reflective on the symmetry edges, vacuum on the open edges, ref. $k=1.1872176$).
+Table [3](#tab:rectsm){reference-type="ref" reference="tab:rectsm"} and Figure [4](#fig:rectsm){reference-type="ref" reference="fig:rectsm"} give the original $S\times M$ sweep (UO$_2$/MOX assemblies: $S{=}1\ldots6$; 1/4 core: $S{=}1,2$, the $S{=}3$ core grid being $9\times$ larger in node count and initially covered to $M{=}8$; un-homogenised material XS, every point converged to $10^{-10}$ in relative eigenvalue change $|\Delta k|/k$) against the directly computed OpenMC run on the *identical* rectangular-rod geometry (100k particles $\times$ 20200 batches, collision estimator, fixed seed): the single UO$_2$ assembly ($51\times51$ rect. nodes, all edges reflective, ref. $k=1.3347260$), the MOX assembly (same size, ref. $k=1.1851053$), and the 1/4 core ($153\times153$ rect. nodes, reflective on the symmetry edges, vacuum on the open edges, ref. $k=1.1872176$).
 
 +---------+----------+----------+----------+----------+----------+----------+
 |         | $M{=}2$  | $M{=}4$  | $M{=}8$  | $M{=}12$ | $M{=}16$ | $M{=}24$ |
@@ -367,7 +367,7 @@ Table [3](#tab:rectsm){reference-type="ref" reference="tab:rectsm"} and Figure�
 | $S{=}2$ | $-269.5$ | $-266.7$ | $-201.0$ | $-122.7$ | $-71.3$  | $-18.8$  |
 +---------+----------+----------+----------+----------+----------+----------+
 
-: Rectangular-node OpenPSN, $3\times3$ pin tiling: UO$_2$/MOX assemblies at $S{=}1\ldots6$, 1/4 core at $S{=}1,2$ (at $S{=}3$ the core grid grows $9\times$, only $M{=}2,4,8$ were computed). $\Delta k$ in pcm versus the same-geometry pure-XS OpenMC reference (UO$_2$ assembly $1.3347260$, MOX assembly $1.1851053$, 1/4 core $1.1872176$). Green marker in Figure [4](#fig:rectsm){reference-type="ref" reference="fig:rectsm"} = smallest $|\Delta k|$. {#tab:rectsm}
+: Rectangular-node OpenPSN, $3\times3$ pin tiling: UO$_2$/MOX assemblies at $S{=}1\ldots6$, 1/4 core at $S{=}1,2$ (at $S{=}3$ the core grid grows $9\times$, and the original campaign covered $M{=}2,4,8$). $\Delta k$ in pcm versus the same-geometry pure-XS OpenMC reference (UO$_2$ assembly $1.3347260$, MOX assembly $1.1851053$, 1/4 core $1.1872176$). Green marker in Figure [4](#fig:rectsm){reference-type="ref" reference="fig:rectsm"} = smallest $|\Delta k|$. {#tab:rectsm}
 
 <figure id="fig:rectsm" data-latex-placement="H">
 <img src="rect_b4_sm_heatmap.png" style="width:98.0%" />
@@ -386,6 +386,14 @@ The sweep shows three things. (i) On the UO$_2$ assembly the best point ($S{=}1
 #### The slender water gap.
 
 The $S$-saturation pattern above points to a geometric cause. In the $3\times3$ tiling the water-gap nodes are intrinsically slender: each edge strip node measures $s \times w = 0.9571\times0.1514$ cm, an aspect ratio of $6.3{:}1$ (the corner nodes, $w\times w$, are square but carry little physics). The uniform $S$ subdivision divides *both* dimensions by $S$, so every sub-node inherits the parent's aspect ratio --- $S$-subdivision shrinks the strip size and optical thickness but never reshapes the strips. The residual eigenvalue bias of Table [3](#tab:rectsm){reference-type="ref" reference="tab:rectsm"} is therefore plausibly anchored in the strip nodes; within the tested range, $S$-subdivision alone does not remove the deviation from the reference, which is consistent with the UO$_2$ rows that degrade smoothly and monotonically as $S$ grows at fixed $M$ (weak water coupling: subdivision adds nodes but never re-shapes the strips), the MOX rows whose only relief is a single subdivision --- best $S{=}2$, degrading again for $S{\ge}3$ (strong fuel--water coupling in the gap) --- and the 1/4 core, whose $S{=}2$ row is uniformly worse than $S{=}1$ across all $M$.
+
+#### Performance at $M{=}24$, $S{=}3$ on the rectangular core.
+
+This configuration has $459\times459=210{,}681$ nodes and the same material geometry and pure seven-group cross sections as the rectangular OpenMC reference. OpenPSN uses a diffusion-preconditioned Ritz projection and a shared sparse Cholesky preconditioner. The non-diagonal Cholesky entries use column-scaled 16-bit integers and variable-length row deltas. The diagonal, matrix-vector products and residual checks use double precision. Each angular sweep assembles and reduces one azimuth at a time.
+
+At a budget of 60 parallel units, the median fine-grid transport sweep time for sweeps 2–11 decreased from 160.16 s with the earlier hybrid incomplete-Cholesky/PCG implementation to 19.17 s, corresponding to a speedup of **$8.35\times$ per sweep**. The hybrid run reached the 45-minute time limit after 11 sweeps. The standard CLI run completed 22 sweeps including one independent verification sweep in 1261.48 s end to end. Factor and operator setup took 691.31 s. Peak host memory was 28.83 GiB and the compressed factors and double-precision operator pool occupied 9.419 GiB.
+
+The converged eigenvalue is $k_\mathrm{eff}=1.186767156487$. The same-geometry OpenMC reference is $1.187217554586$ (one standard error of 3.41 pcm), giving a signed difference of $-45.04$ pcm under the convention $\Delta k=10^{5}(k_\mathrm{eff}-k_\mathrm{ref})$. The independently recomputed fine-grid relative source residual is $2.57\times10^{-12}$. The reported relative eigenvalue residual is $9.43\times10^{-12}$, the maximum of the last Ritz eigenvalue change and the verification difference. The example directory includes the timed sweep series and the configuration used for this comparison.
 
 ## Study III --- the segmentwise angular-moment variant at $A{=}3$
 

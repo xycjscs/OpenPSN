@@ -3,7 +3,7 @@
 # (equal area to r=0.54 cm); water gap w=0.1514375 cm
 # 2x2 fuel (UO2 diag / MOX anti-diag) + L water reflector
 # XS: c5g7_materials_pure.yaml (unhomogenized, c5g7-mgxs.h5)
-# kref 1.18646 = MCNP5 7-group (C5G7-TD Part I 2D steady)
+# kref is from the same-geometry OpenMC run (omc_rect_core/statepoint.20200.h5).
 problem: c5g7_rect_quarter_core
 description: C5G7-2D 1/4 core, 153x153 rectangular nodes (51x51 pins x 3x3), PURE
   material XS, mirror L/bottom, vacuum R/top
@@ -70252,7 +70252,7 @@ solver:
   keff_tol: 1.0e-10
   max_outer: 6000
 # Study II (paper Tab: rectsm): 1/4 core, rectangular nodes.
-# S=1,2 x M=2..24; S=3 only M=2,4,8 (grid grows 9x). kref = 1.1872176.
+# S=1,2 x M=2..24; S=3 includes M=2,4,8 and the packed benchmark M=24.
 # Legacy names M8/M12/M16 = S=1 points (regression baseline).
 cases:
 - name: M2
@@ -70309,3 +70309,7 @@ cases:
   M: 8
   subdivide: 3
   kref: 1.1872176
+- name: M24_S3
+  M: 24
+  subdivide: 3
+  kref: 1.187217554586068

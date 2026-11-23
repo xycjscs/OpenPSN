@@ -63,6 +63,7 @@ from __future__ import annotations
 
 import ctypes
 import os
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -71,6 +72,9 @@ from scipy.sparse import csc_matrix, coo_matrix
 from scipy.sparse.linalg import splu
 
 _HERE = Path(__file__).resolve().parent
+
+# dlopen'd C++ Cholesky bridge (see _load_eigen_chol); None until first use.
+_CHOL_LIB = None
 
 
 # --------------------------------------------------------------------------- #
@@ -396,6 +400,38 @@ def _find_eigen_chol():
     return None
 
 
+def _preload_metis(bridge_dir):
+    """dlopen a METIS library the dynamic loader could not find by itself.
+
+    The C++ bridge carries ``NEEDED libmetis.so`` — the *development* name,
+    which distro packages ship only in ``libmetis-dev``; a runtime-only host
+    has ``libmetis.so.5`` and the plain dlopen fails even though METIS is
+    installed.  Search order: ``OPENPSN_METIS_LIB``, a library sitting next
+    to the bridge (self-contained deployment), the ``metisx/lib`` directory
+    beside the kernel deployment this checkout uses (``_RUST_DIR_DEFAULT``'s
+    sibling -- without it ``--opt chol`` dies here on a host that has no
+    ``libmetis-dev``, which is exactly how the Rust backend failed before its
+    own loader was fixed), then the distro SONAME on the normal search path.
+    Returns the path loaded, or None if nothing matched.
+    """
+    cands = []
+    env = os.environ.get("OPENPSN_METIS_LIB")
+    if env:
+        cands.append(env)
+    cands += sorted(str(p) for p in Path(bridge_dir).glob("libmetis.so*"))
+    for d in (os.path.join(os.path.dirname(_RUST_DIR_DEFAULT), "metisx", "lib"),
+              os.path.join(_RUST_DIR_DEFAULT, "..", "metisx", "lib")):
+        cands += sorted(str(p) for p in Path(d).glob("libmetis.so*"))
+    cands += ["libmetis.so.5", "libmetis.so.4"]
+    for c in cands:
+        try:
+            ctypes.CDLL(c, mode=ctypes.RTLD_GLOBAL)
+        except OSError:
+            continue
+        return c
+    return None
+
+
 def _load_eigen_chol():
     path = _find_eigen_chol()
     if path is None:
@@ -404,7 +440,22 @@ def _load_eigen_chol():
             "build it with:  python psn2d/memopt_cxx/build.py "
             "[--eigen-include DIR --metis-include DIR --metis-lib DIR]\n"
             "(or point OPENPSN_EIGEN_CHOL at an existing .so)")
-    lib = ctypes.CDLL(path)
+    global _CHOL_LIB
+    if _CHOL_LIB is not None:
+        return _CHOL_LIB
+    try:
+        lib = ctypes.CDLL(path)
+    except OSError as exc:
+        if "metis" not in str(exc).lower():
+            raise
+        loaded = _preload_metis(str(Path(path).parent))
+        if loaded is None:
+            raise RuntimeError(
+                f"{path} needs libmetis.so but none was found: install "
+                f"libmetis-dev, drop a libmetis.so* next to the bridge, or "
+                f"set OPENPSN_METIS_LIB=/path/to/libmetis.so.5 "
+                f"(loader said: {exc})") from exc
+        lib = ctypes.CDLL(path)
     ip, dp = ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double)
     lib.chol_factor.argtypes = [ctypes.c_int, ctypes.c_int, ip, ip, dp,
                                 ctypes.c_int, ctypes.POINTER(ctypes.c_int)]
@@ -415,7 +466,124 @@ def _load_eigen_chol():
     lib.chol_nnz.restype = ctypes.c_longlong
     lib.chol_free.argtypes = [ctypes.c_void_p]
     lib.chol_free.restype = None
+    _CHOL_LIB = lib        # one dlopen + one argtype setup per process
     return lib
+
+
+_RUST_DIR_ENV = "OPENPSN_RUST_CHOL"
+_RUST_DIR_DEFAULT = str(Path(__file__).resolve().parents[1] / "rust")
+
+
+def _load_rust_shared_chol():
+    """Import the Rust Cholesky bridge (``rustchol.RustSharedChol``).
+
+    The compiled kernel is a Rust cdylib (``libpsn_chol.so``) plus a thin
+    ctypes layer, built in the repository's ``rust/`` directory by default.
+    ``OPENPSN_RUST_CHOL`` can point to the directory holding both files or
+    the shared object itself. It fails LOUD when either piece
+    is missing: quietly falling back to the C++ bridge would let a run report
+    the solve timings of a kernel it never used.
+
+    Same contract as ``SharedChol`` -- ``solve(b)`` solves A x = b for the
+    ORIGINAL unscaled A, ``factor_nnz``/``symmetry_errors``/
+    ``scaled_asymmetry`` are published the same way -- so everything
+    downstream (the per-system residual gate in ``lu_opt``, the pool
+    accounting, the forked sweep workers reading the factor COW read-only)
+    is unchanged.  Measured on M16_S2: the fused solve is 1.60x the Eigen
+    one, the prefactor is 8% slower (its single-threaded rate is 0.53x, so
+    this backend is for the pooled path, not a 1-worker factorisation).
+
+    METIS is a requirement here too -- the Rust kernel asks for the same
+    ordering library as the C++ bridge -- so the library is dlopened
+    RTLD_GLOBAL before the import, which is what ``rustchol`` then finds
+    through RTLD_DEFAULT.  Left to itself the kernel only searches
+    ``$OPENPSN_METIS_LIB`` and the distro SONAMEs, so a self-contained
+    deployment (METIS sitting next to the kernel, or in ``metisx/lib``
+    beside it) would fail deep inside a prefactor worker; here it either
+    resolves or fails loud at install time, which is the same rule as above.
+    """
+    import sys as _sys
+    p = os.environ.get(_RUST_DIR_ENV) or _RUST_DIR_DEFAULT
+    # Either spelling is accepted: a directory holding the bridge, or the shared
+    # object itself.  ``rustchol`` reads the SAME variable as a library path, so
+    # the documented "set it to the directory" used to die inside ctypes with
+    # "cannot read file data: Is a directory" -- the override only ever worked
+    # while it pointed at the default.
+    d = p if os.path.isdir(p) else os.path.dirname(os.path.abspath(p))
+    missing = [f for f in ("rustchol.py", "libpsn_chol.so")
+               if not os.path.exists(os.path.join(d, f))]
+    if missing:
+        raise RuntimeError(
+            f"Rust Cholesky bridge incomplete in {d!r}: missing "
+            f"{', '.join(missing)} (set {_RUST_DIR_ENV})")
+    if not os.environ.get("OPENPSN_METIS_LIB"):
+        for cand in (d, os.path.join(os.path.dirname(d), "metisx", "lib")):
+            if _preload_metis(cand) is not None:
+                break
+        else:
+            raise RuntimeError(
+                f"the Rust Cholesky backend needs METIS (AMG ordering) and "
+                f"none was found next to {d!r}; install libmetis-dev or set "
+                f"OPENPSN_METIS_LIB=/path/to/libmetis.so")
+    if d not in _sys.path:
+        _sys.path.insert(0, d)
+    # ... and pin the variable to the shared object it resolved to.  `rustchol`
+    # dlopens lazily, on the first factor, long after this function returned --
+    # restoring the directory here would put the ctypes error back one level
+    # down.  Both readers accept the file spelling, and forked sweep workers
+    # inherit it, so one resolution is enough for the whole run.
+    os.environ[_RUST_DIR_ENV] = os.path.join(d, "libpsn_chol.so")
+    from rustchol import RustSharedChol         # noqa: E402
+    return RustSharedChol
+
+
+def install_fused_source_update(psn):
+    """Fuse the B.3 source update into the Rust library (``psn_src_update``).
+
+    ``PSN2D._source_update`` runs once per outer iteration and is pure data
+    motion: NumPy builds the whole ``(ng, ng, nodes)`` coefficient array (5.8
+    MiB on the quarter core) before reducing over the input group with a stride
+    of ``nodes``, i.e. seven streams through 12 MiB.  In situ that is ~19 ms of
+    the ~48 ms an iteration spends outside the sweep (``dev/runphase.py`` times
+    it in place).  The kernel folds the coefficient build into the reduction and
+    takes the two scatter tables node-major -- one contiguous ``ng x ng`` per
+    node instead of a stride-``nodes`` walk -- which is affordable because the
+    node -> material map is fixed for the whole run, so that pack is paid once.
+    Each array is then touched exactly once and ``out`` is written once instead
+    of fifty temporaries.
+
+    The arithmetic per output element is deliberately unchanged -- ascending
+    input-group accumulation from exact zero, no FMA -- because this loop feeds
+    an accelerator whose sweep count is chaotic in the last ulp: check
+    ``dev/srcident.py`` (byte-for-byte against the Python loop) and the three
+    gate cases before believing any timing.  Returns False, keeping the NumPy
+    path, when the loaded library predates the symbol; ``OPENPSN_SRC_RS=0`` is
+    the A/B knob that keeps the NumPy path in a build that has it.
+    """
+    try:
+        from rustchol import has_source_update, source_update   # noqa: E402
+    except ImportError:
+        return False
+    if not has_source_update():
+        return False
+    tab = [None, None, None]                    # [matidx, base, nu]
+    chi = np.ascontiguousarray(psn.chi, dtype=np.float64)
+    shape, ng, nodes = (psn.ng, psn.nodes, 5), psn.ng, psn.nodes
+
+    def _fused(qim, lam, matidx):
+        if tab[0] is not matidx:                # node -> material map, fixed
+            tab[:] = [matidx,
+                      np.ascontiguousarray(psn.Sgg.transpose(2, 0, 1)[matidx]),
+                      np.ascontiguousarray(psn.nuSf[:, matidx].T)]
+        q = qim if (qim.dtype == np.float64 and qim.flags.c_contiguous) \
+            else np.ascontiguousarray(qim, dtype=np.float64)
+        out = np.empty(shape, dtype=np.float64)
+        source_update(ng, nodes, tab[1], tab[2], chi, lam, q, out)
+        return out
+
+    psn._source_update = _fused
+    psn._fused_src_update = True
+    return True
 
 
 class EigenChol:
@@ -524,14 +692,184 @@ class SharedChol:
 # installs (instance-level monkey patches, same contract as the solver)
 # --------------------------------------------------------------------------- #
 
-def install_shared_chol(psn, verify=True, ordering=1):
+_TAB_PSN = None   # the solver forked table workers see, see ``_fast_tab_one``
+
+
+def _fast_tab_one(ig):
+    """One ``(i, g)`` entry of ``fast_sweep_tables``.
+
+    Module-level and reading a module global rather than taking ``psn`` as an
+    argument, because a forked worker inherits the parent's vectorised solver
+    by COW: pickling it into the task would serialise the whole mesh to get
+    tables the size of a few hundred kilobytes.
+    """
+    psn = _TAB_PSN
+    i, g = ig
+    M = psn.M
+    T, Ac, Bs, idx = [], [], [], []
+    for grp in psn._groups:
+        S = [psn._state_matrix(i, g, m, grp) for m in range(M)]
+        idx.append(np.flatnonzero(psn._grp_sel[grp]))
+        T.append(np.stack([x[:4, 4:] for x in S]))
+        Ac.append(np.stack([x[4:9, :4] for x in S]))
+        Bs.append(np.sum([x[4:9, 4:9] for x in S], axis=0))
+    w = psn.W[i] / M
+    return np.array(T), w * np.array(Ac), w * np.array(Bs), idx
+
+
+# How many forked workers build the b-tables.  That build is I*ng independent
+# one-time ``_state_matrix`` constructions -- 3.22 s of this solver's ~24 s of
+# fixed cost on M16_S2, and pure cache replay afterwards (0.03 s for the same
+# tables a second time), which makes it the one fixed-cost phase that forks
+# cleanly: 0.58 s at 8 workers (5.5x), flat to 16 because 21 systems is all
+# there is to hand out.  Nothing about the answer depends on the split (each
+# system is built from its own inputs) and dev/btablewall.py compares the
+# forked tables against the serial ones byte for byte.  0 = build in place.
+TABLE_WORKERS = int(os.environ.get("OPENPSN_TABLE_WORKERS", "8"))
+
+
+def fast_sweep_tables(psn, *, streamed=False):
+    """Class-collapsed tables for the vectorised sweep core (see
+    ``PSN2D._sweep_o``), built in the parent BEFORE the fork so no worker
+    ever fills a cache in its COW copy.
+
+    ``_state_matrix`` only depends on (i, g, m, class) where class is the
+    (material, shape) group, so per class we stack the M azimuthal blocks
+    into one array and let einsum do what used to be M x n_class masked
+    matmuls per phase (``_grp_sel`` is a boolean mask, so every one of
+    those rescanned all nodes).  Returns, per (i, g):
+
+      T  (nc, M, 4, 5)  raw[n,m,:]     = q[n,:] @ T[c,m,:,:].T
+      Ac (nc, M, 5, 4)  o[n,0:5]      = sum_m Ac[c,m] @ J4[n,m,:]
+      Bs (nc, 5, 5)     o[n,0:5]     += (sum_m S[4:9,4:9])[c] @ q[n,:]
+      idx list of intp node indices per class (the mask, precomputed)
+
+    Ac and Bs carry the polar weight W[i]/M, exactly as the reference core
+    multiplies it into o; folding it in here costs nothing per sweep (it is
+    a property of the direction system, not of the source).
+
+    The (nodes, M, 9) X and Y temporaries of the reference implementation
+    are never formed: o is contracted straight out of J4 and q, which drops
+    ~25 MB of traffic per system sweep on the C5G7 core.
+    """
+    if not hasattr(psn, "_Scache"):
+        psn._vectorize_setup()
+    if not streamed:
+        psn._cidx_t = np.ascontiguousarray(psn._cidx.transpose(2, 0, 1))
+        psn._esgn_t = np.ascontiguousarray(psn._esgn.transpose(2, 0, 1))
+    keys = [(i, g) for i in range(psn.I) for g in range(psn.ng)]
+    global _TAB_PSN
+    prev, _TAB_PSN = _TAB_PSN, psn      # _fast_tab_one runs on THIS solver,
+    try:                                # in-process or in a forked helper
+        nw = min(TABLE_WORKERS, len(keys))
+        if nw < 2:
+            return {ig: _fast_tab_one(ig) for ig in keys}
+        try:
+            import multiprocessing as mp
+            ctx = mp.get_context("fork")
+            with ctx.Pool(nw) as pool:
+                tabs = pool.map(_fast_tab_one, keys)
+        except Exception as exc:        # a machine without fork, or a denied
+            # clone: the serial build is the same arithmetic, only slower, so
+            # this is not a correctness fallback -- but it costs ~2 s and the
+            # run should say so.  stderr, because --quiet and --json own
+            # stdout.
+            sys.stderr.write(f"psn2d: b-table workers failed ({exc!r}), "
+                             f"building in place\n")
+            return {ig: _fast_tab_one(ig) for ig in keys}
+        return dict(zip(keys, tabs))
+    finally:
+        _TAB_PSN = prev
+
+
+def sweep_o_fast(self, i, g, qnode):
+    """Vectorised ``PSN2D._sweep_o`` for the shared-Cholesky backend.
+
+    Same math, same (i, g) contract, no (nodes, M, 9) temporaries and
+    ~7 einsums instead of ~2 x M x n_class masked matmuls.  Falls back to
+    the reference core for any system without prebuilt tables, so a
+    partially installed table set can never produce a wrong answer.
+    """
+    tab = getattr(self, "_fast_tab", {}).get((i, g))
+    if tab is None:
+        return type(self)._sweep_o(self, i, g, qnode)
+    T_all, A_all, Bs_all, idx = tab
+    raw = np.empty((self.nodes, self.M, 4))
+    for c, ii in enumerate(idx):
+        raw[ii] = np.einsum("nj,mkj->nmk", qnode[ii], T_all[c],
+                            optimize=True)
+    # 64 unbuffered np.add.at calls, one per b-term: 12 ms of a 72-ms job on
+    # M16_S2, the most expensive non-solve phase.  Fusing them into ONE
+    # np.bincount over the terms concatenated in this same order IS bit-identical
+    # (dev/bincount_equiv.py checks it on the real tables -- bincount walks its
+    # input element by element, so every output slot sees the same sequence of
+    # additions) and it is 2.1-2.8x faster IN ISOLATION.  It is not used: the
+    # flattened gather index and its gathered values add 10.2 MiB per system
+    # (213 MiB on M16_S2) and ~20 MiB of traffic per job, and a 6-leg
+    # interleaved A/B of the sweep wall (dev/sweepms.py, fused on/off alternating)
+    # could not separate the two builds at all -- 223/261/335 vs 248/307/329 ms,
+    # overlapping ranges -- on a sweep whose 21-way concurrency is what its jobs
+    # disagree about.  So it would trade 213 MiB of resident memory, in the one
+    # resource this sweep is bound by, for a speed-up that cannot be measured.
+    b = np.zeros(self.ncol)
+    for (m, lf), (rws, sgns, nds) in self._bterms_for(i, g).items():
+        np.add.at(b, rws, sgns * raw[nds, m, lf])
+    lu, _ = self._lusys[(i, g)]
+    u = lu.solve(b)
+    J4 = self._esgn_t * u[self._cidx_t]
+    o = np.empty((self.nodes, 5))
+    for c, ii in enumerate(idx):
+        o[ii] = (np.einsum("nmj,mij->ni", J4[ii], A_all[c], optimize=True)
+                 + qnode[ii] @ Bs_all[c].T)
+    return self.W[i] / self.M, o        # o is already weighted (see tables)
+
+
+def sweep_o_streamed(self, i, g, qnode):
+    """Assemble and reduce one azimuth at a time to bound sweep workspace."""
+    tables, response, src, class_indices = self._fast_tab[(i, g)]
+    b = np.zeros(self.ncol)
+    raw = np.empty((self.nodes, 4))
+    terms = self._bterms_for(i, g)
+    for m in range(self.M):
+        for c, idx in enumerate(class_indices):
+            raw[idx] = qnode[idx] @ tables[c, m].T
+        for face in range(4):
+            term = terms.get((m, face))
+            if term is not None:
+                rows, signs, nodes = term
+                np.add.at(b, rows, signs * raw[nodes, face])
+    del raw
+    factor, _ = self._lusys[(i, g)]
+    u = factor.solve(b)
+    del b
+    out = np.empty((self.nodes, 5))
+    for c, idx in enumerate(class_indices):
+        out[idx] = qnode[idx] @ src[c].T
+    for m in range(self.M):
+        currents = self._esgn[m] * u[self._cidx[m]]
+        for c, idx in enumerate(class_indices):
+            out[idx] += currents[:, idx].T @ response[c, m].T
+    return self.W[i] / self.M, out
+
+
+def install_shared_chol(psn, verify=True, ordering=1, factor_cls=None, *,
+                        packed_workers=None):
     """Compact assembly + SPD row scaling + xy factor sharing + C++ Cholesky.
+
+    ``factor_cls`` selects the factor implementation
+    (``SharedChol`` -> the C++/Eigen bridge, ``RustSharedChol`` from
+    ``_load_rust_shared_chol()`` -> the Rust kernel, whose solve is 1.60x and
+    whose factor_nnz is bit-equal to Eigen's).  Everything else -- assembly,
+    row scaling, mirror-pair sharing, the residual gate -- is identical, so a
+    backend switch cannot move keff by more than solve rounding.
 
     Raises ValueError/RuntimeError when the geometry or the compiled bridge
     is not available — callers (``auto``) catch and fall back.
     """
     import types
     import time
+
+    cls = SharedChol if factor_cls is None else factor_cls
 
     install_compact_build(psn) if not hasattr(psn, "_compact_build") else None
     pairs = shared_pairs(psn)
@@ -553,7 +891,7 @@ def install_shared_chol(psn, verify=True, ordering=1):
             t = time.perf_counter()
             A, _bt = self._compact_build(i, g)
             del _bt
-            factor = SharedChol(A, ds[i], pairs, ordering=ordering, check=verify)
+            factor = cls(A, ds[i], pairs, ordering=ordering, check=verify)
             if verify:
                 # random non-symmetric RHS of the ORIGINAL unscaled A:
                 # the strongest available correctness gate per system
@@ -570,6 +908,7 @@ def install_shared_chol(psn, verify=True, ordering=1):
             self._chol_records.append(dict(
                 i=i, g=g, elapsed_s=time.perf_counter() - t,
                 factor_nnz=factor.factor_nnz,
+                pool_bytes=getattr(factor, "pool_bytes", factor.factor_nnz * 16),
                 scaled_asymmetry=getattr(factor, "scaled_asymmetry", None),
                 sharing_errors=factor.symmetry_errors,
             ))
@@ -596,6 +935,12 @@ def install_shared_chol(psn, verify=True, ordering=1):
     psn._lu = types.MethodType(lu_opt, psn)
     psn._bterms_for = types.MethodType(bterms_opt, psn)
     psn.solve_i = types.MethodType(solve_i_opt, psn)
+    # vectorised node-response core for the sweep (parent-side tables, so
+    # the fork pool inherits them read-only)
+    streamed = packed_workers is not None
+    psn._fast_tab = fast_sweep_tables(psn, streamed=streamed)
+    psn._sweep_o = types.MethodType(
+        sweep_o_streamed if streamed else sweep_o_fast, psn)
     # Prefactor every (i, g) system HERE, in the parent, before the fork
     # pool can exist: the forked _sweep_worker reads psn._lusys[(i, g)]
     # DIRECTLY (bypassing _lu), so a missing key in a child would silently
@@ -603,10 +948,37 @@ def install_shared_chol(psn, verify=True, ordering=1):
     # ever factors — the C++ factor is shared read-only (COW), and any
     # per-system verification failure surfaces in the parent before the
     # sweep starts.
-    for i in range(psn.I):
-        for g in range(psn.ng):
-            psn._lu(i, g)
-    psn._memopt_backend = "shared-chol"
+    #
+    # lu_opt only reads (topology, row scales, pair blocks) and writes its
+    # own ``_lusys[(i, g)]`` key, so the jobs are independent -- but how far
+    # they scale with width depends on who else is on the box.  The original
+    # Eigen-bridge numbers were taken while co-tenants were loading it (load
+    # ~70): 1 worker 76 s, 6 workers 24 s, 21 workers 27 s, per-system median
+    # 3.5 -> 5.0 -> 21.6 s -- a wide pool loses when the memory system is
+    # already shared, which is why 6 was the shipped default for that kernel
+    # and why it stays the default there.  ``OPENPSN_PREFACTOR_WORKERS``
+    # overrides either choice.
+    # ``PSN_METIS_SEED`` is fixed, so a worker's width changes no factor value
+    # -- the legs below are bit-identical across widths, only the wall moves.
+    # The Rust kernel takes one system per worker and parallelises nothing
+    # inside one factorisation, so wider is better up to ~one worker per
+    # system; the Eigen bridge already threads inside a factorisation and was
+    # measured to REGRESS past 6 (1/6/21 workers = 76/24/27 s).  Rust widths on
+    # M16_S2, phase-isolated in a fresh process each (dev/prefprobe.py), medians
+    # of 2-3 samples: 6 workers 10.0 s, 12 workers 8.4 s, 21 workers 8.0 s, at
+    # transient RSS 1.85 / 2.40 / 3.26 GiB -- the last 0.4 s is bought with
+    # 0.9 GiB, so 12 is the point worth shipping.
+    psn._prefactor_workers = (int(os.environ["OPENPSN_PREFACTOR_WORKERS"])
+                              if os.environ.get("OPENPSN_PREFACTOR_WORKERS")
+                              else min(psn.threads, 5 if streamed else
+                                       (6 if factor_cls is None else 12)))
+    if streamed:
+        psn._prefactor_workers = min(psn._prefactor_workers,
+                                     psn.threads // packed_workers)
+    psn._prefactor()
+    psn._memopt_backend = ("chol-packed-rs" if streamed else
+                           "shared-chol" if factor_cls is None else
+                           "shared-chol-rust")
 
 
 def install_compact_lu(psn, permc_spec="COLAMD", verify_topology=True):
@@ -658,7 +1030,29 @@ def install_compact_lu(psn, permc_spec="COLAMD", verify_topology=True):
     psn._lu = types.MethodType(lu_opt, psn)
     psn._bterms_for = types.MethodType(bterms_opt, psn)
     psn.solve_i = types.MethodType(solve_i_opt, psn)
+    # vectorised node-response core for the sweep (parent-side tables, so
+    # the fork pool inherits them read-only)
+    psn._fast_tab = fast_sweep_tables(psn)
+    psn._sweep_o = types.MethodType(sweep_o_fast, psn)
     psn._memopt_backend = f"compact-{permc_spec.lower()}"
+
+
+def _pool_bytes_measured(psn):
+    """Factor-pool bytes ``install_shared_chol`` ACTUALLY allocated, or None.
+
+    ``_tile.pool_estimate_shared_chol`` produces the same figure by factorising
+    one (i, g) system and scaling by the system count -- which costs a whole
+    factorisation, measured at 4.7 s of the 29 s fixed cost of an M16_S2 run
+    (16% of everything before the first sweep), and it is spent to print a
+    diagnostic for a backend the caller already named. This sums the measured
+    packed allocation sizes or the same 16 B/nnz accounting used by
+    ``_check_mem_gate`` for unpacked factors. ``auto`` still estimates its
+    pool size before building the factors.
+    """
+    rec = getattr(psn, "_chol_records", None)
+    if not rec:
+        return None
+    return sum(r["pool_bytes"] for r in rec)
 
 
 def install_optimized(psn, backend="auto", mem_limit_gb=None):
@@ -681,7 +1075,8 @@ def install_optimized(psn, backend="auto", mem_limit_gb=None):
     if backend in (None, "off"):
         psn._memopt_backend = "plain"
         return {"backend": "plain", "reason": "opt off"}
-    if backend in ("lu", "mmd", "chol", "auto", "tile", "angschr"):
+    if backend in ("lu", "mmd", "chol", "chol-rs", "chol-packed-rs", "auto", "tile",
+                   "angschr"):
         pass
     else:
         raise ValueError(f"unknown backend {backend!r}")
@@ -728,6 +1123,51 @@ def install_optimized(psn, backend="auto", mem_limit_gb=None):
         return {"backend": "angschr", "systems": rep,
                 "mem_limit_gb": mem_limit_gb}
 
+
+
+    if backend in ("chol-rs", "chol-packed-rs"):
+        # Explicit request: fail loud rather than degrade, exactly like
+        # "chol".  The pool size is read off the factors that were just built
+        # (see _pool_bytes_measured), so the memory contract is unchanged and
+        # the trial factorisation that used to precede this -- 4.7 s of the
+        # M16_S2 fixed cost -- is gone.
+        from time import perf_counter
+
+        start = perf_counter()
+        cls = _load_rust_shared_chol()
+        if backend == "chol-packed-rs":
+            from functools import partial
+            from .packedchol import PackedSharedChol, load_kernel
+            from .solver import _pool_size
+
+            processes = min(psn.threads, _pool_size(psn.I * psn.ng))
+            workers = min(2, psn.threads // processes)
+            cls = partial(PackedSharedChol, lib=load_kernel(), workers=workers)
+            install_shared_chol(psn, factor_cls=cls, packed_workers=workers)
+            trim = getattr(ctypes.CDLL(None), "malloc_trim", None)
+            if trim is not None:
+                trim(0)
+        else:
+            install_shared_chol(psn, factor_cls=cls)
+        if os.environ.get("OPENPSN_SRC_RS", "1") != "0":
+            install_fused_source_update(psn)
+        est = _pool_bytes_measured(psn)
+        if est is not None and est > mem_limit_gb * 2 ** 30:
+            raise RuntimeError(
+                f"shared-Cholesky pool {est / 2 ** 30:.3f} GB exceeds "
+                f"mem_limit_gb={mem_limit_gb}; use backend 'tile' or raise "
+                f"the limit")
+        rep = {"backend": psn._memopt_backend, "reason": "requested",
+               "mem_limit_gb": mem_limit_gb}
+        rep["fused_source_update"] = bool(getattr(psn, "_fused_src_update",
+                                                  False))
+        if backend == "chol-packed-rs":
+            rep["setup_s"] = round(perf_counter() - start, 2)
+        if est is not None:
+            rep["est_pool_gb"] = round(est / 2 ** 30, 3)
+            rep["pool_gb_measured"] = True
+        return rep
+
     if backend == "lu":
         install_compact_lu(psn, permc_spec="COLAMD")
         return {"backend": psn._memopt_backend, "reason": "requested"}
@@ -754,9 +1194,17 @@ def install_optimized(psn, backend="auto", mem_limit_gb=None):
                 install_shared_chol(psn)
                 reason = "requested" if backend == "chol" \
                     else "pool fits mem budget"
-                rep = {"backend": "shared-chol", "reason": reason,
+                rep = {"backend": psn._memopt_backend, "reason": reason,
                        "mem_limit_gb": mem_limit_gb}
-                if est_pool_gb is not None:
+                # prefer what was built over what was predicted (``auto``
+                # still needs the prediction to make its choice, so the
+                # estimate is not removed there -- it just stops being the
+                # reported number once the pool exists)
+                measured = _pool_bytes_measured(psn)
+                if measured is not None:
+                    rep["est_pool_gb"] = round(measured / 2 ** 30, 3)
+                    rep["pool_gb_measured"] = True
+                elif est_pool_gb is not None:
                     rep["est_pool_gb"] = round(est_pool_gb, 3)
                 return rep
             except (ValueError, RuntimeError, TypeError, AssertionError) as e:

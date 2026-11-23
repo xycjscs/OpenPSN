@@ -70,7 +70,10 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None):
 
 
 def run_case(spec, case, verbose=True, opt="off", threads=None,
-             mem_limit_gb=None):
+             mem_limit_gb=None, extrapolate=False, anderson=0, cmfd=0,
+             cmfd_merge=1,
+             cmfd_omega=1.0, cmfd_groups=0, cmfd_denom="prev",
+             cmfd_current=False, ritz=False):
     t0 = time.time()
     closure = case.get("closure", "legacy")
     _ALLOWED = ("legacy", "directional_matrix", "strict_phase_space")
@@ -85,6 +88,9 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
         closure_run = "legacy"
     else:
         closure_run = closure
+    if ritz and (closure_run != "legacy" or cmfd or extrapolate or anderson):
+        raise ValueError("--ritz requires the scalar sweep and is exclusive "
+                         "with --cmfd, --extrapolate and --anderson")
     if closure_run != "legacy":
         bnd = spec["boundaries"]
         if any(v not in ("reflect", "vacuum") for v in bnd.values()):
@@ -162,10 +168,21 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
         else:
             psn._memopt_backend = "plain"
             report = None
+        acc_obj = None
+        if cmfd:
+            from .cmfd import Cmfd
+            acc_obj = Cmfd(psn, block=int(cmfd), merge=int(cmfd_merge),
+                           omega=float(cmfd_omega), groups=int(cmfd_groups),
+                           denom=str(cmfd_denom), current=bool(cmfd_current),
+                           verbose=bool(verbose and -1))
+            psn._cmfd = acc_obj
         sol = spec["solver"]
         k, phi, qnode = psn.keff(max_outer=int(sol["max_outer"]),
                                  outer_tol=float(sol["keff_tol"]),
-                                 verbose=verbose and -1)
+                                 verbose=verbose and -1,
+                                 extrapolate=bool(extrapolate),
+                                 anderson=int(anderson),
+                                 ritz=ritz)
         dt = time.time() - t0
         out = {
             "name": case["name"],
@@ -178,7 +195,47 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
             "keff": float(k),
             "time_s": round(dt, 2),
             "nodes": psn.nodes,
+            "outer_iterations": int(getattr(psn, "outer_iterations", 0)),
+            "trial_sweeps": int(getattr(psn, "extra_sweeps", 0)),
+            "accel": "+".join([x for x in
+                               (f"cmfd{int(cmfd)}" if cmfd else "",
+                                "dombey" if extrapolate else "",
+                                "ritz" if ritz else "",
+                                f"anderson{int(anderson)}" if anderson else
+                                "") if x])
+                     or "none",
         }
+        if int(anderson):
+            out["anderson"] = getattr(psn, "aa_stats", {})
+        if ritz:
+            out.update(converged=True, sweeps_executed=psn.sweeps_executed,
+                       keff_residual=psn.keff_residual,
+                       source_residual=psn.source_residual)
+            if os.environ.get("OPENPSN_TRACE"):
+                out["ritz_sweep_seconds"] = psn.ritz_sweep_times
+        if os.environ.get("OPENPSN_TRACE"):
+            # (it, dkeff, r_src, mode, keff) per outer iteration -- the tail
+            # policy in solver.keff is tuned from this, not from cold runs
+            out["trace"] = [list(r) for r in getattr(psn, "trace", [])]
+        if acc_obj is not None:
+            out["cmfd"] = {"block": int(cmfd), "merge": int(cmfd_merge),
+                           "omega": float(cmfd_omega), "nG": acc_obj.nG,
+                           "denom": acc_obj.denom,
+                           "current": bool(acc_obj.current), "nC": acc_obj.nC,
+                           "coarse_iters": acc_obj.ncoarse_used,
+                           "applied": acc_obj.n_applied,
+                           "skipped": acc_obj.n_skip,
+                           "skip_reason": acc_obj.skip,
+                           "dev_last": acc_obj.dev_last,
+                           "dev_max": acc_obj.dev_max,
+                           "k_coarse": acc_obj.k_coarse,
+                           "clipped": acc_obj.n_clip}
+        if acc_obj is not None and acc_obj.n_applied == 0:
+            # a no-op accelerator is indistinguishable from a working one in
+            # the keff column, so say so out loud
+            print(f"WARNING: --cmfd {cmfd} applied no coarse step "
+                  f"({acc_obj.n_skip} skips, last reason: {acc_obj.skip})",
+                  file=sys.stderr)
         if report is not None:
             out["memopt"] = report
     kref = case.get("kref")
@@ -200,7 +257,14 @@ def cmd_run(args):
     results = []
     for case in cases:
         r = run_case(spec, case, verbose=not args.quiet, opt=args.opt,
-                     threads=args.threads, mem_limit_gb=args.mem_limit_gb)
+                     threads=args.threads, mem_limit_gb=args.mem_limit_gb,
+                     extrapolate=args.extrapolate, anderson=args.anderson,
+                     cmfd=args.cmfd,
+                     cmfd_merge=args.cmfd_merge,
+                     cmfd_omega=args.cmfd_omega,
+                     cmfd_groups=args.cmfd_groups,
+                     cmfd_denom=args.cmfd_denom,
+                     cmfd_current=args.cmfd_current, ritz=args.ritz)
         results.append(r)
         if args.quiet:
             closure = r.get("closure", "legacy")
@@ -213,6 +277,10 @@ def cmd_run(args):
                 line += f"  ref={r['kref']:.5f}  Δ={r['pcm']:+.1f} pcm"
             if "memopt" in r:
                 line += f"  [{r['memopt']['backend']}]"
+            if r.get("outer_iterations"):
+                line += (f"  {r['outer_iterations']} it"
+                         f"+{r.get('trial_sweeps', 0)} trial"
+                         f"[{r.get('accel', 'none')}]")
             if not r.get("converged", True):
                 line += "  NOT_CONVERGED"
             print(line, flush=True)
@@ -230,12 +298,14 @@ def main(argv=None):
     pr.add_argument("--json", action="store_true", help="print results as JSON")
     pr.add_argument("--quiet", action="store_true", help="no per-iteration output")
     pr.add_argument("--opt", default="off",
-                    choices=["off", "auto", "chol", "mmd", "lu", "tile",
-                             "angschr"],
+                    choices=["off", "auto", "chol", "chol-rs", "chol-packed-rs",
+                             "mmd", "lu", "tile", "angschr"],
                     help="memory-optimized factorization backend "
                          "(off = plain path, default; auto picks "
                          "shared-chol -> angschr -> tile from "
-                         "--mem-limit-gb)")
+                         "--mem-limit-gb; chol-rs = shared Rust Cholesky; "
+                         "chol-packed-rs = shared packed Cholesky with "
+                         "FP64 PCG refinement)")
     pr.add_argument("--threads", type=int, default=None,
                     help="total parallel-unit budget (default = half the "
                          "system core count; factor phase <= N threads, "
@@ -244,6 +314,70 @@ def main(argv=None):
                     help="factor-pool memory cap in GB (default 32; "
                          "fail-loud if the resident (i,g) factor pool "
                          "exceeds it)")
+    pr.add_argument("--cmfd", type=int, default=0, metavar="BLOCK",
+                    help="EXPERIMENTAL (default 0 = off): accelerate the "
+                         "outer fission-source iteration with a coarse-mesh "
+                         "finite-difference rebalance (BLOCK x BLOCK fine "
+                         "nodes per coarse cell).  Not shippable on "
+                         "heterogeneous lattices yet -- see psn2d/cmfd.py "
+                         "for the measured C5G7 numbers; use --extrapolate")
+    pr.add_argument("--cmfd-merge", type=int, default=1, metavar="MERGE",
+                    help="with --cmfd: merge MERGE x MERGE non-fissile base "
+                         "cells into one coarse cell, keeping one coarse cell "
+                         "per fissionable (pin) cell -- pin-wise in fuel, "
+                         "coarse in moderator/reflector")
+    pr.add_argument("--cmfd-current", action="store_true",
+                    help="EXPERIMENTAL, not convergent yet.  with --cmfd: "
+                         "close the coarse mesh with one-sided "
+                         "(discontinuity) face couplings routed so the "
+                         "collapsed fine flux satisfies the coarse balance "
+                         "exactly at the current k, instead of Fickian "
+                         "D*(phiA-phiB).  A positive Fickian face term cannot "
+                         "reproduce the fine leakage field on a pin mesh "
+                         "(>=6% worst-cell residual, measured); this does "
+                         "(2e-7 relative, mode/phiC 1.0000 at the converged "
+                         "solution) but the transport-split coarse operator "
+                         "is not an M-matrix mid-run, so the coupled "
+                         "iteration drifts (fine denominator: 1.2468 at "
+                         "1085 it) or diverges (prev denominator).  Default "
+                         "off; --cmfd without this flag keeps the Fickian "
+                         "operator and stays bit-exact")
+    pr.add_argument("--cmfd-groups", type=int, default=0, metavar="G",
+                    help="with --cmfd: condense the fine energy groups into G "
+                         "contiguous coarse groups for the CMFD solve (0 = "
+                         "keep one coarse group per fine group).  Reaction "
+                         "rates are conserved by the condensation")
+    pr.add_argument("--cmfd-denom", default="prev",
+                    choices=["prev", "fine"],
+                    help="with --cmfd: prolongation denominator.  prev = the "
+                         "previous converged coarse eigenmode (exactly "
+                         "unbiased, measured inert on C5G7); fine = the coarse "
+                         "average of the fine flux from the sweep just "
+                         "finished, the form OpenMOC uses")
+    pr.add_argument("--cmfd-omega", type=float, default=1.0, metavar="OMEGA",
+                    help="with --cmfd: under-relax the coarse multiplier, "
+                         "R <- 1 + OMEGA*(R-1) (default 1 = trust the coarse "
+                         "solve fully)")
+    pr.add_argument("--anderson", type=int, default=0, metavar="M",
+                    help="accelerate the outer fission-source iteration with "
+                         "Anderson acceleration of depth M on the same source "
+                         "map the power iteration uses (0 = off, default). "
+                         "Costs no extra sweep per attempt, unlike "
+                         "--extrapolate, and preserves the fixed point "
+                         "exactly, so it carries no bias of its own.  With "
+                         "--extrapolate also given it relays to Dombey once "
+                         "dkeff < 1e-4 (Anderson for the shape, Dombey for the "
+                         "tail), which inherits Dombey's sub-0.1 pcm bias")
+    pr.add_argument("--extrapolate", action="store_true",
+                    help="accelerate the outer fission-source iteration "
+                         "with Dombey two-point source extrapolation "
+                         "(~2.5x fewer sweeps on C5G7; the accepted keff "
+                         "carries a sub-0.1 pcm bias, inside the 1 pcm "
+                         "regression tolerance — see PSN2D.keff)")
+    pr.add_argument("--ritz", action="store_true",
+                    help="solve the outer eigenproblem with diffusion-"
+                         "preconditioned Ritz projection and verify it with "
+                         "a fresh transport sweep")
     pr.set_defaults(func=cmd_run)
     args = p.parse_args(argv)
     if not getattr(args, "func", None):
