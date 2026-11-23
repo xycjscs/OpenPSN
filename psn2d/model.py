@@ -7,7 +7,9 @@ Spec schema (see examples/):
   description:      free text
   angular:
     model: generic | ty3
-    I: 30           # generic: even number of polar segments over 0..pi
+    closure: legacy | strict_phase_space | directional_matrix | sector_diffusion
+    I: 30           # generic: even polar order, I/2 independent nodes
+    A: 3            # sector_diffusion: A+1 Gauss points per azimuth sector
     M: 24           # azimuthal segments (must be even)
   geometry:
     # square mode (default):
@@ -75,16 +77,13 @@ def load_spec(path):
         A = ang["A"]
         if isinstance(A, bool) or not isinstance(A, int) or A < 0:
             raise ValueError("angular.A must be a nonnegative integer")
-    else:
-        A = 0
     closure = ang.get("closure", "legacy")
     if closure not in ("legacy", "directional_matrix", "original_azimuth",
-                       "strict_phase_space"):
+                       "strict_phase_space", "sector_diffusion"):
         raise ValueError(
             f"angular.closure must be one of 'legacy', "
             f"'directional_matrix', 'original_azimuth', "
-            f"'strict_phase_space', got {closure!r}")
-    ang["A"] = A
+            f"'strict_phase_space', 'sector_diffusion', got {closure!r}")
     ang["closure"] = closure
 
     geom = spec["geometry"]
@@ -173,8 +172,9 @@ def expand_cases(spec):
         c.setdefault("model", ang.get("model", "generic"))
         c.setdefault("I", int(ang.get("I", 30)))
         c.setdefault("M", int(ang.get("M", 24)))
-        c.setdefault("A", int(ang.get("A", 0)))
         c.setdefault("closure", ang.get("closure", "legacy"))
+        default_A = 3 if c["closure"] == "sector_diffusion" else 0
+        c.setdefault("A", int(ang.get("A", default_A)))
         c.setdefault("subdivide", int(geom.get("subdivide", 1)))
         c["kref"] = c.get("kref", spec.get("kref"))
         out.append(c)

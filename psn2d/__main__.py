@@ -20,7 +20,7 @@ from . import model
 from .solver import PSN2D
 
 
-def build_solver(spec, case, threads=None, mem_limit_gb=None):
+def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
     geom = spec["geometry"]
     # runtime inputs: CLI > YAML solver.threads / solver.mem_limit_gb > default
     # (falsy guard: 0 / None both mean "not set"; 0 is not a valid budget)
@@ -58,15 +58,15 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None):
     boundary = (bnd["left"], bnd["bottom"], bnd["right"], bnd["top"])
     generic = case["model"] == "generic"
     strict = case.get("closure", "legacy") == "strict_phase_space"
-    if generic:
-        return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
-                     boundary=boundary, generic=True, I=int(case["I"]),
-                     M=int(case["M"]), widths=widths, threads=threads,
-                     mem_limit_gb=mem_limit_gb, strict=strict)
-    return PSN2D(mat_map, h, St, Sgg, nuSf, chi=chi,
-                 boundary=boundary, generic=False, M=int(case["M"]),
-                 widths=widths, threads=threads,
-                 mem_limit_gb=mem_limit_gb, strict=strict)
+    cls, options = PSN2D, {"strict": strict}
+    if case.get("closure") == "sector_diffusion":
+        from .sector_diffusion import SectorDiffusion
+        cls = SectorDiffusion
+        options = {"azimuth_degree": case.get("A", 3), "backend": opt}
+    return cls(mat_map, h, St, Sgg, nuSf, chi=chi, boundary=boundary,
+               generic=generic, I=int(case.get("I", 30)), M=int(case["M"]),
+               widths=widths, threads=threads, mem_limit_gb=mem_limit_gb,
+               **options)
 
 
 def run_case(spec, case, verbose=True, opt="off", threads=None,
@@ -76,6 +76,30 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
              cmfd_current=False, ritz=False):
     t0 = time.time()
     closure = case.get("closure", "legacy")
+    if closure == "sector_diffusion":
+        if cmfd or extrapolate or anderson:
+            raise ValueError("sector diffusion uses Ritz and is exclusive with "
+                             "--cmfd, --extrapolate and --anderson")
+        psn = build_solver(spec, case, threads, mem_limit_gb, opt=opt)
+        sol = spec["solver"]
+        k, _, _ = psn.keff(max_outer=int(sol["max_outer"]),
+                           outer_tol=float(sol["keff_tol"]), verbose=verbose)
+        out = dict(name=case["name"], model=case["model"], I=int(case.get("I", 30)),
+                   polar_nodes=psn.I, phase_systems=psn.ng * len(psn.angles),
+                   M=psn.M, A=case.get("A", 3),
+                   K=case.get("A", 3) + 1, closure=closure,
+                   subdivide=int(case["subdivide"]), nodes=psn.nodes,
+                   keff=float(k), time_s=round(time.time() - t0, 2),
+                   factor_time_s=round(psn.factor_seconds, 2),
+                   factor_bytes=psn.factor_bytes, backend=opt,
+                   sweeps_executed=psn.sweeps_executed, converged=True,
+                   outer_iterations=psn.outer_iterations,
+                   trial_sweeps=psn.extra_sweeps, accel="ritz",
+                   keff_residual=psn.keff_residual,
+                   source_residual=psn.source_residual)
+        if case.get("kref") is not None:
+            out.update(kref=float(case["kref"]), pcm=(k - float(case["kref"])) * 1e5)
+        return out
     _ALLOWED = ("legacy", "directional_matrix", "strict_phase_space")
     if closure not in _ALLOWED:
         raise ValueError(

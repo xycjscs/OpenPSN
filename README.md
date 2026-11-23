@@ -194,6 +194,23 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
   --case M16_S2 --threads 60 --mem-limit-gb 32 --opt chol-rs --ritz --quiet --json
 ```
 
+**扇区扩散闭合（`sector_diffusion`）**
+
+该闭合对每个方位扇区内的 Gauss 节点求解偶宇称二阶扩散方程
+`−∇·[(Ω Ωᵀ/Σₜ) ∇u] + Σₜu = q`。空间采用连续双二次节点，
+材料常数逐节点积分。扩散体项和面法向流来自同一个弱式。反射面共享镜像方向
+的迹值，真空面使用 `|Ω·n| u` 的 Robin 项。散射、裂变和最终复扫使用同一离散。
+角基只在各自扇区内定义，外层沿用 PSN-3 的扩散预条件 Ritz。
+
+- `S` 是每个原几何节点每轴的等分数。`M` 是半平面的方位扇区数。
+  `A+1` 是每扇区 Gauss 点数，默认 `A=3`。
+- `model: generic` 使用 `I/2` 个正半轴 Gauss 极角点。
+  `model: ty3` 使用既有三点极角积分。
+- 支持真空和镜面反射边界。可用 `--opt off`、`--opt chol-rs` 或
+  `--opt chol-packed-rs`，其中 Rust 后端的编译方式见上文。
+  `factor_bytes` 是常驻因子池的大小，`sweeps_executed` 包含独立复扫。
+- 方形棋盘格的比较见 [PSN-4 收敛记录](docs/psn4-sector-diffusion.md)。
+
 **高序方向闭合的内层求解器（`solver.inner`，YAML `solver:` 段，默认 `lu`）**
 
 A>0 的方向矩闭合（`closure: directional_matrix`）下，每个 (i,g) 系统可以

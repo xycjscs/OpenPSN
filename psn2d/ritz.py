@@ -88,7 +88,7 @@ def _coarse_setup(psn, shape):
     # If T is the diffusion loss before collisions and U=S+F/shift,
     # the source-space inverse is (I-U T^-1)^-1 = I+U(T-U)^-1.
     # Apply the correction to constant moments only; fine sweeps still
-    # evaluate all five moments and determine the eigenpair.
+    # evaluate all spatial moments and determine the eigenpair.
     shift = _SHIFT_RATIO * k
     solve_shifted = splu(loss - fission / shift, permc_spec="MMD_AT_PLUS_A").solve
     coupling = mesh.Sca + mesh.Fis / shift
@@ -167,12 +167,14 @@ class _RitzSpace:
         self.production[:m, :m] = self.basis[:m] @ self.right[:m].T
 
 
-def keff_ritz(psn, max_sweeps, outer_tol, verbose):
+def keff_ritz(psn, max_sweeps, outer_tol, verbose, *, moment_count=5,
+              factor_threads=None, project_source=None):
     """Solve Bq = kAq using exact sweeps for A=I-S*T and B=F*T.
 
     T maps a source to its transport flux moments. The coarse diffusion
     operator proposes a starting source and directions. A fresh full
     transport sweep certifies the final source residual and fission balance.
+    A source projector may restrict the search to an invariant subspace.
     """
     if max_sweeps < 2 or not np.isfinite(outer_tol) or outer_tol <= 0.0:
         raise ValueError("Ritz requires at least two sweeps and a positive tolerance")
@@ -184,7 +186,7 @@ def keff_ritz(psn, max_sweeps, outer_tol, verbose):
     reference_rate = float(rate_weights.sum())
     if reference_rate <= 0 or psn.chi.sum() <= 0:
         raise ValueError("Ritz requires positive fission production")
-    shape = (psn.ng, psn.nodes, 5)
+    shape = (psn.ng, psn.nodes, moment_count)
     previous_threads = runtime.get_thread_limit()
     sweeps = 0
     verification_sweeps = 0
@@ -192,7 +194,7 @@ def keff_ritz(psn, max_sweeps, outer_tol, verbose):
     last_k = None
     residual = np.inf
     try:
-        runtime.set_thread_limit(psn.threads)
+        runtime.set_thread_limit(factor_threads or psn.threads)
         psn._prefactor()
         psn._check_mem_gate()
         runtime.set_thread_limit(1)
@@ -200,7 +202,7 @@ def keff_ritz(psn, max_sweeps, outer_tol, verbose):
         packed = getattr(psn, "_memopt_backend", None) == "chol-packed-rs"
         if packed:
             psn._start_sweep_pool()
-        direction = initial.ravel()
+        direction = (project_source(initial) if project_source else initial).ravel()
         depth = min(_SPACE_SIZE, direction.size)
         space = _RitzSpace(depth, direction.size)
         source_tol = _SOURCE_TOL_FACTOR * outer_tol
@@ -255,6 +257,8 @@ def keff_ritz(psn, max_sweeps, outer_tol, verbose):
                 balance = production - loss
                 last_k = None
             direction = precondition(balance)
+            if project_source is not None:
+                direction = project_source(direction.reshape(shape)).ravel()
             if space.count == depth:
                 space.restart(vectors)
     finally:

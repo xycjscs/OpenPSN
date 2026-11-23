@@ -44,8 +44,10 @@ def encode_rows(matrix):
 
 
 class _PackedFactor:
-    def __init__(self, matrix, lib):
+    def __init__(self, matrix, lib, *, rtol=8e-13, maxiter=45):
         self.lib = lib
+        self.rtol = rtol
+        self.maxiter = maxiter
         self.handle = None
         self.size = matrix.shape[0]
         if max(self.size, matrix.nnz) > np.iinfo(np.int32).max:
@@ -77,7 +79,7 @@ class _PackedFactor:
             self.size, self.width, self.codes.ctypes.data,
             self.offsets.ctypes.data, self.values.ctypes.data,
             self.handle, rhs.ctypes.data, out.ctypes.data,
-            8e-13, 45, ctypes.byref(residual))
+            self.rtol, self.maxiter, ctypes.byref(residual))
         if steps < 0:
             raise RuntimeError(f"packed Cholesky PCG residual "
                                f"{residual.value:.2e} after {-steps} steps")

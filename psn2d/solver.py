@@ -1148,7 +1148,7 @@ class PSN2D:
 
     def _source_update(self, qim, lam, matidx):
         """Plain B.3 paraboloidal source update for the whole spectrum.
-        qim: (ng, nodes, 5) paraboloidal moments of the current flux.
+        qim: (ng, nodes, moments) spatial moments of the current flux.
 
         Pure data motion, and the most expensive piece of an iteration after the
         sweep itself: 49 Python steps, 98 per-node gathers out of the
@@ -1166,9 +1166,8 @@ class PSN2D:
         difference at all once the arrays were cold -- 18-23 ms either way.
         """
         ng = self.ng
-        s = np.empty((ng, self.nodes, 5))
+        s = np.zeros_like(qim, dtype=float)
         for g in range(ng):
-            s[g] = np.zeros((self.nodes, 5))
             for g2 in range(ng):
                 s[g] += (self.Sgg[g, g2, matidx]
                          + self.chi[g] * self.nuSf[g2, matidx] / lam
