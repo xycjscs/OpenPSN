@@ -21,6 +21,7 @@ Spec schema (see examples/):
                              # columns run left (x-) -> right (x+)
     unit_size: 1.0           # cm, per grid cell
     subdivide: 4             # PSN sub-nodes per grid cell per axis
+    interface_grading: 0.0   # opt-in clustering at material and vacuum interfaces
     # rectangular mode (geometry.rect: true): nodes carry their own widths
     rect: false
     mat_grid: [[...]]        # (ny x nx) material index per node
@@ -41,6 +42,8 @@ Spec schema (see examples/):
 `materials_file: path` pulls materials (+fission_spectrum) from another YAML.
 """
 import os
+from numbers import Real
+
 import yaml
 import numpy as np
 
@@ -99,6 +102,7 @@ def load_spec(path):
         raise ValueError("angular.azimuth_grid must be uniform or axis")
 
     geom = spec["geometry"]
+    interface_grading(geom.get("interface_grading", 0.0))
     if bool(geom.get("rect", False)):
         # rectangular node grid: per-node widths, corners meet corners only
         mg = np.array(geom["mat_grid"], dtype=int)
@@ -192,9 +196,43 @@ def expand_cases(spec):
                 if option in ang:
                     c.setdefault(option, ang[option])
         c.setdefault("subdivide", int(geom.get("subdivide", 1)))
+        if "interface_grading" in c or "interface_grading" in geom:
+            value = c.get("interface_grading", geom.get("interface_grading"))
+            c["interface_grading"] = interface_grading(value)
         c["kref"] = c.get("kref", spec.get("kref"))
         out.append(c)
     return out
+
+
+def interface_grading(value):
+    if isinstance(value, bool) or not isinstance(value, Real) or not 0 <= value < 1:
+        raise ValueError("interface_grading must be a number in [0, 1)")
+    return float(value)
+
+
+def graded_axis(widths, interfaces, subdivisions, strength):
+    """Split each interval, taking smaller steps at its marked endpoints."""
+    t = np.arange(subdivisions + 1) / subdivisions
+    left = np.diff(t - strength * t * (1 - t))
+    both = np.diff(t - strength * np.sin(2 * np.pi * t) / (2 * np.pi))
+    both = (both + both[::-1]) / 2
+    patterns = np.array([np.full(subdivisions, 1 / subdivisions), left, left[::-1], both])
+    choices = interfaces[:-1].astype(int) + 2 * interfaces[1:]
+    return (widths[:, None] * patterns[choices]).ravel()
+
+
+def graded_widths(material, hx, hy, boundaries, subdivisions, strength):
+    """Return conforming widths with the original material interfaces fixed."""
+    x_interfaces = np.r_[boundaries["left"] == "vacuum",
+                         np.any(material[:, :-1] != material[:, 1:], axis=0),
+                         boundaries["right"] == "vacuum"]
+    y_interfaces = np.r_[boundaries["bottom"] == "vacuum",
+                         np.any(material[:-1, :] != material[1:, :], axis=1),
+                         boundaries["top"] == "vacuum"]
+    x = graded_axis(hx, x_interfaces, subdivisions, strength)
+    y = graded_axis(hy, y_interfaces, subdivisions, strength)
+    shape = (y.size, x.size)
+    return np.broadcast_to(x, shape), np.broadcast_to(y[:, None], shape)
 
 
 def arrays(spec):

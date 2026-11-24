@@ -27,6 +27,9 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
     sol = spec.get("solver", {})
     threads = threads or sol.get("threads")
     mem_limit_gb = mem_limit_gb or sol.get("mem_limit_gb") or None
+    bnd = spec["boundaries"]
+    S = int(case.get("subdivide", geom.get("subdivide", 1)))
+    grading = model.interface_grading(case.get("interface_grading", geom.get("interface_grading", 0.0)))
     if bool(geom.get("rect", False)):
         # rectangular nodes: per-node widths.  An optional per-case
         # `subdivide` S splits every node into S x S sub-nodes (widths / S,
@@ -36,11 +39,12 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
         hx0 = np.asarray(geom["widths_x"], float)
         hy0 = np.asarray(geom["widths_y"], float)
         # scalar widths broadcast to the grid shape
-        if hx0.ndim == 0:
-            hx0 = np.full(mat_map0.shape, float(hx0))
-            hy0 = np.full(mat_map0.shape, float(hy0))
-        S = int(case.get("subdivide", 1))
-        if S != 1:
+        hx0 = np.broadcast_to(hx0, mat_map0.shape)
+        hy0 = np.broadcast_to(hy0, mat_map0.shape)
+        if grading and S > 1:
+            mat_map = mat_map0.repeat(S, axis=0).repeat(S, axis=1)
+            widths = model.graded_widths(mat_map0, hx0[0], hy0[:, 0], bnd, S, grading)
+        elif S != 1:
             f = np.full((S, S), 1.0 / S)
             mat_map = np.kron(mat_map0, np.ones((S, S), int))
             widths = (np.kron(hx0, f), np.kron(hy0, f))
@@ -49,12 +53,14 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
         h = float(widths[0].ravel()[0])     # representative (unused by rect)
     else:
         grid = np.array(geom["grid"], dtype=int)
-        S = int(case["subdivide"])
         mat_map = np.kron(grid, np.ones((S, S), int))
-        h = float(geom["unit_size"]) / S
+        unit_size = float(geom["unit_size"])
+        h = unit_size / S
         widths = None
+        if grading and S > 1:
+            widths = model.graded_widths(grid, np.full(grid.shape[1], unit_size),
+                                        np.full(grid.shape[0], unit_size), bnd, S, grading)
     St, Sgg, nuSf, chi = model.arrays(spec)
-    bnd = spec["boundaries"]
     boundary = (bnd["left"], bnd["bottom"], bnd["right"], bnd["top"])
     generic = case["model"] == "generic"
     closure = case.get("closure", "legacy")
@@ -83,6 +89,7 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
              cmfd_current=False, ritz=False):
     t0 = time.time()
     closure = case.get("closure", "legacy")
+    grading = case.get("interface_grading", spec["geometry"].get("interface_grading", 0.0))
     if opt == "sector-cholmod" and closure not in ("sector_diffusion", "sector_average"):
         raise ValueError("--opt sector-cholmod requires sector_diffusion or sector_average")
     if closure in ("sector_diffusion", "sector_average"):
@@ -107,6 +114,8 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
                    trial_sweeps=psn.extra_sweeps, accel="ritz",
                    keff_residual=psn.keff_residual,
                    source_residual=psn.source_residual)
+        if grading:
+            out["interface_grading"] = grading
         if closure == "sector_average":
             if psn.angular_modes > 1:
                 out["slope_space"] = psn.slope_space
@@ -287,6 +296,8 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
     if kref is not None:
         out["kref"] = float(kref)
         out["pcm"] = float((k - kref) * 1e5)   # paper convention: absolute
+    if grading:
+        out["interface_grading"] = grading
     return out
 
 

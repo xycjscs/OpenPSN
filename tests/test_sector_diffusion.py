@@ -8,9 +8,12 @@ from scipy.integrate import quad
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from psn2d.__main__ import run_case
+from psn2d.__main__ import build_solver, run_case
 from psn2d.model import expand_cases, load_spec
 from psn2d.sector_diffusion import SectorAverage, SectorDiffusion, _directions, _sector_averages
+from scripts.sector_diffusion_benchmark import (
+    ASSEMBLIES, C5G7_EXAMPLES, INPUTS, _redistribute_core, _redistribute_pin_strips,
+)
 
 
 class SectorDiffusionTests(TestCase):
@@ -78,6 +81,44 @@ class SectorDiffusionTests(TestCase):
 
 
 class SectorAverageTests(TestCase):
+    def test_interface_grading_changes_widths_without_moving_checkerboard_interfaces(self):
+        spec = load_spec(INPUTS["strong"])
+        case = dict(expand_cases(spec)[0], closure="sector_average", M=4, I=4, subdivide=4)
+        uniform = build_solver(spec, case, threads=1)
+        graded = build_solver(spec, dict(case, interface_grading=0.65), threads=1)
+        np.testing.assert_array_equal(graded.mat, uniform.mat)
+        np.testing.assert_array_equal(graded.hx, graded.hy.T)
+        hx = graded.hx[0].reshape(-1, 4)
+        np.testing.assert_allclose(hx.sum(axis=1), 4 * uniform.h, rtol=0, atol=1e-14)
+        self.assertLess(hx[0, -1], uniform.h)
+        self.assertLess(hx[1, 0], uniform.h)
+        self.assertTrue(graded.transpose_symmetry)
+
+    def test_core_redistribution_preserves_material_areas_at_fixed_budget(self):
+        geom = load_spec(INPUTS["rect"])["geometry"]
+
+        def areas():
+            area = np.asarray(geom["widths_x"]) * geom["widths_y"]
+            return np.bincount(np.asarray(geom["mat_grid"]).ravel(), area.ravel())
+
+        original = np.asarray(geom["widths_x"])
+        expected_areas = areas()
+        _redistribute_core(geom, 18)
+        self.assertEqual(geom["widths_x"].shape, original.shape)
+        np.testing.assert_array_equal(geom["widths_x"], np.asarray(geom["widths_y"]).T)
+        np.testing.assert_allclose(areas(), expected_areas, rtol=1e-13, atol=1e-12)
+        self.assertLess(geom["widths_x"][0, :-18].max(), 0.48)
+
+    def test_pin_redistribution_preserves_pin_dimensions_and_fuel_width(self):
+        path, _ = ASSEMBLIES["rect_mox"]
+        geometry = load_spec(C5G7_EXAMPLES / path)["geometry"]
+        balanced = _redistribute_pin_strips(geometry, 2)
+        old = np.asarray(geometry["widths_x"])[0].reshape(-1, 3)
+        new = balanced["widths_x"][0].reshape(-1, 6)
+        np.testing.assert_allclose(new[:, 1:5].sum(axis=1), old[:, 1], rtol=0, atol=1e-15)
+        np.testing.assert_allclose(new[:, ::5], old[:, ::2], rtol=0, atol=1e-15)
+        self.assertEqual(balanced["mat_grid"].shape, (102, 102))
+
     def test_finite_sector_tensor_and_boundary_average(self):
         # The first azimuth contains a finite interval of positive directions.
         sectors, bands = 6, 3

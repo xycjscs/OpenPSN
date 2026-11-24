@@ -255,6 +255,34 @@ python -m scripts.sector_diffusion_benchmark rect --closure sector_average --opt
 每个小角区的扩散张量由方向直接给出。对称几何上，互余方位角只分解一侧，应用
 空间转置恢复角积分。PSN-3 的 Ritz 投影仍由细网扩散扫描组装本征问题，并用新扫描复核。
 
+### 等节点数空间加密
+
+`geometry.interface_grading` 可在 `S>1` 时将原有子节点向材料界面和真空边界移动。
+取值范围 `[0, 1)`，默认 0 对应均匀划分，也可用同名 case 参数覆盖。每个原区间
+仍含 S 个子区间，原有物理界面坐标保持不动。棋盘格上可以用以下命令比较。
+
+```bash
+python -m scripts.sector_diffusion_benchmark strong --closure sector_average \
+  --polar-order 30 --azimuth-degree 1 --slope-space bilinear --sm 6,16 10,24
+python -m scripts.sector_diffusion_benchmark strong --closure sector_average \
+  --polar-order 30 --azimuth-degree 1 --slope-space bilinear --sm 6,16 10,24 \
+  --interface-grading 0.65
+```
+
+C5G7 显式材料网格也可以在固定预算内重新分配子节点。矩形组件的 `--balance-pin`
+保持每个棒元每轴的 `3S` 个子区间，优先减小最宽的子区间。四分之一堆芯的
+`--core-reflector-cells 18` 将均质外反射层的 34 个区间转给堆芯中的宽区间，保留
+原 153×153 网格预算、材料面积和材料界面。空间重分配会改变离散本征对和 Ritz
+收敛所需的扫掠次数。可用下列命令复算同角区预算的测点。
+
+```bash
+python -m scripts.sector_diffusion_benchmark rect_mox --closure sector_average \
+  --azimuth-degree 1 --slope-space bilinear --balance-pin --sm 2,4 2,8 2,16
+python -m scripts.sector_diffusion_benchmark rect --closure sector_average \
+  --azimuth-degree 1 --slope-space bilinear --azimuth-grid axis --core-reflector-cells 18 \
+  --opt sector-cholmod --threads 60 --mem-limit-gb 43 --sm 1,8 1,16
+```
+
 ## 方形棋盘格
 
 用论文 Fig. 3 对应的二维棋盘格几何，比较强吸收基线以及强、弱两种吸收的新闭合。
