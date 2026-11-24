@@ -155,6 +155,7 @@ def main():
     parser.add_argument("--polar-degree", type=int, choices=(0, 1))
     parser.add_argument("--azimuth-grid", choices=("uniform", "axis"))
     parser.add_argument("--slope-space", choices=("quadratic", "bilinear", "quadratic-linear"))
+    parser.add_argument("--node-response", action="store_true", help="eliminate the interior moments locally")
     parser.add_argument("--threads", type=int)
     parser.add_argument("--mem-limit-gb", type=float)
     args = parser.parse_args()
@@ -168,6 +169,8 @@ def main():
         spec = load_spec(INPUTS[args.model])
         reference = 1.187217554586068 if rect else expand_cases(spec)[0]["kref"]
     spec["solver"]["keff_tol"] = 1e-9
+    if args.node_response and args.closure != "sector_average":
+        parser.error("--node-response requires --closure sector_average")
     if args.balance_pin and args.model not in ("rect_uo2", "rect_mox"):
         parser.error("--balance-pin requires rect_uo2 or rect_mox")
 
@@ -190,6 +193,8 @@ def main():
         case = dict(name=f"{args.model}_S{s}_M{m}", model="generic",
                     I=i, A=a, M=m, subdivide=s, closure=args.closure,
                     kref=reference)
+        if args.node_response:
+            case["node_response"] = True
         if args.interface_grading is not None:
             case["interface_grading"] = args.interface_grading
         if args.slope_space is not None:

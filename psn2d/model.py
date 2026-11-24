@@ -14,6 +14,7 @@ Spec schema (see examples/):
     slope_space: quadratic  # quadratic, bilinear, or quadratic-linear
     reflection_reduction: false # require symmetric material, widths and reflecting boundaries
     azimuth_grid: uniform # sector_average: uniform or axis
+    node_response: false # sector_average: eliminate element interiors exactly
     M: 24           # azimuthal segments (must be even)
   geometry:
     # square mode (default):
@@ -98,6 +99,8 @@ def load_spec(path):
         raise ValueError("angular.polar_degree must be 0 or 1")
     if "reflection_reduction" in ang and not isinstance(ang["reflection_reduction"], bool):
         raise ValueError("angular.reflection_reduction must be a boolean")
+    if "node_response" in ang and not isinstance(ang["node_response"], bool):
+        raise ValueError("angular.node_response must be a boolean")
     if "azimuth_grid" in ang and ang["azimuth_grid"] not in ("uniform", "axis"):
         raise ValueError("angular.azimuth_grid must be uniform or axis")
 
@@ -192,7 +195,7 @@ def expand_cases(spec):
         default_A = 3 if c["closure"] == "sector_diffusion" else 0
         c.setdefault("A", int(ang.get("A", default_A)))
         if c["closure"] == "sector_average":
-            for option in ("slope_space", "polar_degree", "reflection_reduction", "azimuth_grid"):
+            for option in ("slope_space", "polar_degree", "reflection_reduction", "azimuth_grid", "node_response"):
                 if option in ang:
                     c.setdefault(option, ang[option])
         c.setdefault("subdivide", int(geom.get("subdivide", 1)))

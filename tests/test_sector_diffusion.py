@@ -81,6 +81,67 @@ class SectorDiffusionTests(TestCase):
 
 
 class SectorAverageTests(TestCase):
+    def test_node_response_matches_full_matrix_on_rectangles_and_mirrors(self):
+        from scipy.sparse.linalg import splu
+
+        material = np.array([[0, 1, 0], [0, 1, 0]])
+        hx = np.broadcast_to([0.21, 0.87, 0.21], material.shape)
+        hy = np.full(material.shape, 0.48)
+        rng = np.random.default_rng(73)
+        for azimuth, polar, space, reflect in (
+            (0, 0, "quadratic", False), (1, 1, "quadratic", False),
+            (1, 1, "quadratic-linear", True), (1, 1, "bilinear", True),
+        ):
+            with self.subTest(azimuth=azimuth, polar=polar, space=space, reflect=reflect):
+                boundary = (("reflect",) * 4 if reflect
+                            else ("reflect", "vacuum", "vacuum", "reflect"))
+                psn = SectorAverage(material, 0.3, [[1.0, 1.3]], [[[0.6, 0.4]]], [[0.5, 0.0]],
+                                    widths=(hx, hy), boundary=boundary, M=4, I=4,
+                                    azimuth_degree=azimuth, polar_degree=polar, slope_space=space,
+                                    reflection_reduction=reflect, node_response=True)
+                st = psn.St[0, material.ravel()]
+                matrix = psn._angular_matrix(st, psn.angles[0])
+                condensation = psn.node_response
+                self.assertLess(condensation.trace.size, matrix.shape[0])
+                rhs = rng.normal(size=matrix.shape[0])
+                solve, _ = condensation.factor(matrix, lambda a: (splu(a).solve, 0))
+                np.testing.assert_allclose(solve(rhs), splu(matrix).solve(rhs), atol=2e-11, rtol=2e-12)
+                np.testing.assert_allclose(matrix @ solve(rhs), rhs, atol=2e-12, rtol=0)
+
+    def test_node_response_uses_same_sweep_and_eigenpair(self):
+        spec = load_spec(INPUTS["strong"])
+        case = dict(name="strong", model="generic", closure="sector_average",
+                    I=8, M=4, A=1, slope_space="bilinear", subdivide=3)
+        full = build_solver(spec, case, threads=1)
+        condensed = build_solver(spec, dict(case, node_response=True), threads=1)
+        expected = full.keff(outer_tol=1e-10, verbose=False)
+        actual = condensed.keff(outer_tol=1e-10, verbose=False)
+        for actual_field, expected_field in zip(actual, expected):
+            np.testing.assert_allclose(actual_field, expected_field, atol=1e-10, rtol=2e-9)
+
+    def test_node_response_preserves_symbolic_trace_pattern(self):
+        from scipy.sparse import csc_matrix
+
+        psn = SectorAverage(np.zeros((1, 1), dtype=int), 0.3, [[1.0]], [[[0.6]]], [[0.5]],
+                            M=4, I=4, node_response=True)
+        response = psn.node_response
+        matrix = np.eye(response.size)
+        inside = response.interior[0]
+        left, right = response.trace[:2]
+        matrix[left, inside] = matrix[inside, left] = 0.5
+        matrix[right, inside] = matrix[inside, right] = -0.25
+        matrix[left, right] = matrix[right, left] = -0.125
+
+        def check_pattern(trace):
+            self.assertEqual(trace.nnz, response.trace.size + 2)
+            dense = trace.toarray()
+            self.assertEqual(dense[0, 1], 0.0)
+            return lambda rhs: np.linalg.solve(dense, rhs), 0
+
+        solve, _ = response.factor(csc_matrix(matrix), check_pattern)
+        rhs = np.arange(response.size, dtype=float)
+        np.testing.assert_allclose(matrix @ solve(rhs), rhs, atol=2e-14)
+
     def test_interface_grading_changes_widths_without_moving_checkerboard_interfaces(self):
         spec = load_spec(INPUTS["strong"])
         case = dict(expand_cases(spec)[0], closure="sector_average", M=4, I=4, subdivide=4)

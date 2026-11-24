@@ -76,6 +76,7 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
             options["polar_degree"] = case.get("polar_degree", 0)
             options["reflection_reduction"] = case.get("reflection_reduction", False)
             options["azimuth_grid"] = case.get("azimuth_grid", "uniform")
+            options["node_response"] = case.get("node_response", False)
     return cls(mat_map, h, St, Sgg, nuSf, chi=chi, boundary=boundary,
                generic=generic, I=int(case.get("I", 30)), M=int(case["M"]),
                widths=widths, threads=threads, mem_limit_gb=mem_limit_gb,
@@ -127,6 +128,9 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
             if psn._phase_reduction is not None:
                 out["reflection_reduction"] = True
                 out["dofs_per_system"] = psn._phase_reduction.size
+            if psn.node_response is not None:
+                out.update(node_response=True, trace_dofs_per_system=psn.node_response.trace.size,
+                           interior_dofs_per_system=psn.node_response.interior.size)
         if case.get("kref") is not None:
             out.update(kref=float(case["kref"]), pcm=(k - float(case["kref"])) * 1e5)
         return out

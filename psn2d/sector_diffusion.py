@@ -327,6 +327,7 @@ class SectorDiffusion(PSN2D):
         self.angles = list(self._angular_cells(azimuth_degree))
         self.backend = backend
         self._phase_reduction = None
+        self.node_response = None
         self._factors = []
         self._pool = None
         self._homes = []
@@ -388,7 +389,10 @@ class SectorDiffusion(PSN2D):
         def build(job):
             g, cell = job
             matrix = self._angular_matrix(self.St[g, matidx], cell)
-            solve, size = factor(matrix)
+            if self.node_response is None:
+                solve, size = factor(matrix)
+            else:
+                solve, size = self.node_response.factor(matrix, factor)
             return (g, cell[-1], solve), size
 
         started = perf_counter()
@@ -495,7 +499,7 @@ class SectorAverage(SectorDiffusion):
 
     def __init__(self, *args, generic=True, azimuth_degree=0, polar_degree=0,
                  slope_space="quadratic", reflection_reduction=False,
-                 azimuth_grid="uniform", **kwargs):
+                 azimuth_grid="uniform", node_response=False, **kwargs):
         if (not generic or isinstance(azimuth_degree, bool) or not isinstance(azimuth_degree, int)
                 or not 0 <= azimuth_degree <= 4
                 or isinstance(polar_degree, bool) or not isinstance(polar_degree, int)
@@ -507,6 +511,8 @@ class SectorAverage(SectorDiffusion):
             raise ValueError("a restricted slope space requires at least one higher angular mode")
         if not isinstance(reflection_reduction, bool):
             raise ValueError("reflection_reduction must be a boolean")
+        if not isinstance(node_response, bool):
+            raise ValueError("node_response must be a boolean")
         if azimuth_grid not in ("uniform", "axis"):
             raise ValueError("azimuth_grid must be uniform or axis")
         self.azimuth_degree = azimuth_degree
@@ -520,6 +526,9 @@ class SectorAverage(SectorDiffusion):
         if reflection_reduction:
             from .phase_reflection import ReflectedAssembly
             self._phase_reduction = ReflectedAssembly(self)
+        if node_response:
+            from .phase_response import NodeResponse
+            self.node_response = NodeResponse(self)
 
     @property
     def angular_modes(self):
