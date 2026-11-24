@@ -171,6 +171,31 @@ class SectorAverageTests(TestCase):
         self.assertLess(linear["keff"], quadratic["keff"])
         self.assertLess(quadratic["pcm"], 0)
 
+    def test_bilinear_slope_is_a_conforming_restriction(self):
+        mat = np.array([[0, 1]])
+        args = (mat, 0.4, [[1.0, 1.2]], [[[0.6, 0.5]]], [[0.5, 0.0]])
+        options = dict(M=4, I=4, threads=1, azimuth_degree=1,
+                       boundary=("reflect", "vacuum", "vacuum", "reflect"))
+        quadratic = SectorAverage(*args, **options)
+        bilinear = SectorAverage(*args, **options, slope_space="bilinear")
+        mesh = bilinear.mesh
+        prolongation = np.zeros((mesh.size, mesh.bilinear_size))
+        points = (0.0, 0.5, 1.0)
+        shape = np.array([[(1-x) * (1-y), x * (1-y), (1-x) * y, x * y]
+                          for y in points for x in points])
+        for cells in (mesh.cells, mesh.mirror[mesh.cells]):
+            for cell in cells:
+                corners = mesh.bilinear_id[cell[[0, 2, 6, 8]]]
+                prolongation[np.ix_(cell, corners)] = shape
+        projection = np.zeros((2 * mesh.size, mesh.size + mesh.bilinear_size))
+        projection[:mesh.size, :mesh.size] = np.eye(mesh.size)
+        projection[mesh.size:, mesh.size:] = prolongation
+        st = quadratic.St[0, mat.ravel()]
+        full = quadratic._angular_matrix(st, quadratic.angles[0]).toarray()
+        reduced = bilinear._angular_matrix(st, bilinear.angles[0]).toarray()
+        np.testing.assert_allclose(reduced, projection.T @ full @ projection,
+                                   atol=5e-16, rtol=1e-13)
+
     def test_reflective_homogeneous_eigenpair(self):
         psn = SectorAverage(np.zeros((2, 2), dtype=int), 0.3,
                             [[1.0]], [[[0.6]]], [[0.5]],

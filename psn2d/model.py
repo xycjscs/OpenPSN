@@ -10,6 +10,7 @@ Spec schema (see examples/):
     closure: legacy | strict_phase_space | directional_matrix | sector_diffusion | sector_average
     I: 30           # generic: even polar order, I/2 independent nodes
     A: 3            # sector_diffusion: A+1 Gauss points; sector_average: 0, 1, 2
+    slope_space: quadratic  # sector_average with A>0: quadratic or bilinear
     M: 24           # azimuthal segments (must be even)
   geometry:
     # square mode (default):
@@ -85,6 +86,8 @@ def load_spec(path):
             f"'directional_matrix', 'original_azimuth', "
             f"'strict_phase_space', 'sector_diffusion', 'sector_average', got {closure!r}")
     ang["closure"] = closure
+    if "slope_space" in ang and ang["slope_space"] not in ("quadratic", "bilinear"):
+        raise ValueError("angular.slope_space must be quadratic or bilinear")
 
     geom = spec["geometry"]
     if bool(geom.get("rect", False)):
@@ -175,6 +178,8 @@ def expand_cases(spec):
         c.setdefault("closure", ang.get("closure", "legacy"))
         default_A = 3 if c["closure"] == "sector_diffusion" else 0
         c.setdefault("A", int(ang.get("A", default_A)))
+        if c["closure"] == "sector_average" and "slope_space" in ang:
+            c.setdefault("slope_space", ang["slope_space"])
         c.setdefault("subdivide", int(geom.get("subdivide", 1)))
         c["kref"] = c.get("kref", spec.get("kref"))
         out.append(c)

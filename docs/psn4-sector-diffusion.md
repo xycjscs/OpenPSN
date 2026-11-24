@@ -159,6 +159,60 @@ python -m scripts.sector_diffusion_benchmark "${rect[@]}" --azimuth-degree 1 --c
 python -m scripts.sector_diffusion_benchmark "${rect[@]}" --azimuth-degree 1 --core-step 0.2393 --sm 1,16
 ```
 
+## 扇区扩散性能
+
+`sector_average` 可将平均场留在双二次空间，把一次或二次方位形函数的
+系数放到同一网格的连续双线性空间。配置为 `angular.slope_space: bilinear`。
+单元体积分和真空面项都在这一子空间上组装，保留跨形函数的角区张量耦合。
+双线性空间嵌入双二次空间，独立矩阵对照验证了组装结果等于 `Pᵀ A P`。
+以 `I=30, A=1` 复算 `S=2,4,6,8,12` × `M=4,8,12,24` 的强、弱棋盘格。
+40 个双线性测点的误差均为负，固定 S 或 M 加密另一轴时均单调向零接近。
+`S=12, M=24` 时，强、弱吸收偏差分别为 −40.24、−8.94 pcm。
+另以同样的 8 线程预算和 `--opt off` 顺序计时强吸收 `S=12, M=24`，
+原版用时 37.44 秒，双线性方案用时 12.68 秒。
+
+对于支持 NUMA 内存绑定的 Linux 主机，`OPENPSN_NUMA=1` 将同一个能群和角区
+的矩阵分解与扫掠分配到相同的节点。每群先按固定次序累加角区的空间解，再投影
+到标量通量矩。分解和空间求解器只影响速度与内存，闭合张量和复扫判据沿用原定义。
+
+扇区闭合可选 FP64 超节点 Cholesky。它复用稀疏矩阵的符号分析和每个数值因子的
+求解工作区。Linux 上安装带 METIS 的 SuiteSparse 开发库后，可用以下命令构建。
+
+```bash
+cc -O3 -fPIC -shared -I/usr/include/suitesparse psn2d/sector_cholmod.c \
+    -lcholmod -o psn2d/libsector_cholmod.so
+```
+
+可用 `OPENPSN_SECTOR_CHOLMOD` 指定共享库的其他位置。
+
+同机端到端计时使用 C5G7 矩形 153×153 网格、`I=8`、`S=1`、60 线程上限、
+45 GiB 因子池上限及 `OPENPSN_NUMA=1`。`k_eff` 和独立复扫的源残差门槛分别为
+`1e-9` 和 `5e-9`。原版使用 `chol-packed-rs`，扇区闭合使用 `sector-cholmod`。
+各点依次运行，时间包含组装、分解、外层求解和复扫。
+
+| M | 原版耗时 / 偏差 | A=1 双线性耗时 / 偏差 | A=1 双二次耗时 / 偏差 |
+|--:|:--|:--|:--|
+| 8 | 60.21 s / −203.73 pcm | 50.26 s / −200.95 pcm | 59.12 s / −123.55 pcm |
+| 16 | 82.32 s / −78.52 pcm | 73.12 s / −114.13 pcm | 160.49 s / −82.27 pcm |
+
+双二次方案在 M=8 与原版耗时相近，M=16 耗时约为原版的 1.95 倍，因子池约
+41.64 GiB。双线性方案在两点均更快，M=16 的因子池为 22.56 GiB，偏差较原版多
+35.61 pcm。双二次方案的两个本征值都复现了已有扇区扩散结果。
+
+计时桥接库用 SuiteSparse 4.4.4 头文件构建，连接 CVXOPT 1.3.3 提供的
+CHOLMOD 3.0.6。一次 CHOLMOD 5.3.1 的双二次 M=8 运行在四分钟后终止，
+该版本的整程性能未得到验证。复现命令如下。
+
+```bash
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENPSN_NUMA=1 OPENPSN_PREFACTOR_WORKERS=12
+args=(--sm 1,8 1,16 --threads 60 --mem-limit-gb 45)
+python -m scripts.sector_diffusion_benchmark rect --closure legacy --opt chol-packed-rs "${args[@]}"
+python -m scripts.sector_diffusion_benchmark rect --closure sector_average --opt sector-cholmod \
+    --azimuth-degree 1 "${args[@]}"
+python -m scripts.sector_diffusion_benchmark rect --closure sector_average --opt sector-cholmod \
+    --azimuth-degree 1 --slope-space bilinear "${args[@]}"
+```
+
 ## 离散
 
 在材料常数的空间节点内，把输运方程写成方向反转下的偶、奇宇称方程。

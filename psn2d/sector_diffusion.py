@@ -19,6 +19,7 @@ from numpy.polynomial.legendre import leggauss, legvander
 from scipy.sparse import bmat, coo_matrix
 from scipy.sparse.linalg import splu
 
+from . import numa
 from .ritz import keff_ritz
 from .solver import PSN2D
 
@@ -42,6 +43,59 @@ _GRAD_X = np.kron(_MASS, _STIFF)
 _GRAD_Y = np.kron(_STIFF, _MASS)
 _CROSS = np.kron(_MIX.T, _MIX) + np.kron(_MIX, _MIX.T)
 _MOMENTS = np.kron(_PROJECT, _PROJECT)
+_LINEAR = np.array([[1.0, 0.0], [0.5, 0.5], [0.0, 1.0]])
+_BILINEAR = np.kron(_LINEAR, _LINEAR)
+_CORNERS = [0, 2, 6, 8]
+
+
+def _restricted_forms(row_bilinear, col_bilinear):
+    cell = (_CELL_MASS, _GRAD_X, _GRAD_Y, _CROSS)
+    face = _MASS
+    if row_bilinear:
+        cell = tuple(_BILINEAR.T @ form for form in cell)
+        face = _LINEAR.T @ face
+    if col_bilinear:
+        cell = tuple(form @ _BILINEAR for form in cell)
+        face = face @ _LINEAR
+    return (*cell, face)
+
+
+_FORMS = {pair: _restricted_forms(*pair) for pair in product((False, True), repeat=2)}
+
+
+class _PhasePool:
+    """Run each prefactor and its sweeps on the same NUMA node when enabled."""
+
+    def __init__(self, workers, homes):
+        if not homes:
+            self.pools = [ThreadPoolExecutor(max_workers=workers)]
+            return
+        per_node, extra = divmod(workers, len(homes))
+        self.pools = [ThreadPoolExecutor(max_workers=min(len(cpus), per_node + (i < extra)),
+                                         initializer=self._place, initargs=(node, cpus))
+                      for i, (node, cpus) in enumerate(homes)]
+
+    @staticmethod
+    def _place(node, cpus):
+        numa.set_cpu(cpus)
+        numa.set_mem(node)
+
+    def map(self, fn, jobs, offset=0):
+        if len(self.pools) == 1:
+            return self.pools[0].map(fn, jobs)
+        futures = [self.pools[index % len(self.pools)].submit(fn, job)
+                   for index, job in enumerate(jobs, start=offset)]
+
+        def ordered():
+            for index, future in enumerate(futures):
+                yield future.result()
+                futures[index] = None
+
+        return ordered()
+
+    def shutdown(self):
+        for pool in self.pools:
+            pool.shutdown()
 
 
 def _directions(sectors, azimuth_degree, mu, polar_weights, transpose_symmetry):
@@ -141,33 +195,46 @@ class _QuadraticMesh:
         self.size = grid.size + np.count_nonzero(~reflected)
         self.grid_size = grid.size
 
+    def prepare_bilinear(self):
+        corners = self.cells[:, _CORNERS]
+        ids = np.unique(np.stack((corners, self.mirror[corners])))
+        self.bilinear_id = np.full(self.size, -1, dtype=np.int32)
+        self.bilinear_id[ids] = np.arange(ids.size, dtype=np.int32)
+        self.bilinear_size = ids.size
+
     def matrix(self, st, x, y):
         return self.tensor_matrix(st, x * x, x * y, y * y, x, y)
 
-    def tensor_matrix(self, st, xx, xy, yy, vacuum_x, vacuum_y, *, mass_scale=1):
+    def tensor_matrix(self, st, xx, xy, yy, vacuum_x, vacuum_y, *, mass_scale=1,
+                      row_bilinear=False, col_bilinear=False):
         h = self.aspect
-        mass = (mass_scale * st * self.area)[:, None, None] * _CELL_MASS
-        x_term = (xx * h / st)[:, None, None] * _GRAD_X
-        y_term = (yy / (h * st))[:, None, None] * _GRAD_Y
-        cross = (xy / st)[:, None, None] * _CROSS
+        mass_form, x_form, y_form, cross_form, face_form = _FORMS[row_bilinear, col_bilinear]
+        mass = (mass_scale * st * self.area)[:, None, None] * mass_form
+        x_term = (xx * h / st)[:, None, None] * x_form
+        y_term = (yy / (h * st))[:, None, None] * y_form
+        cross = (xy / st)[:, None, None] * cross_form
         diagonal = mass + x_term + y_term
 
         data, rows, cols = [], [], []
 
-        def add(dofs, local):
-            rows.append(np.broadcast_to(dofs[:, :, None], local.shape).ravel())
-            cols.append(np.broadcast_to(dofs[:, None, :], local.shape).ravel())
+        def add(dofs, local, corners):
+            row_ids = self.bilinear_id[dofs[:, corners]] if row_bilinear else dofs
+            col_ids = self.bilinear_id[dofs[:, corners]] if col_bilinear else dofs
+            rows.append(np.broadcast_to(row_ids[:, :, None], local.shape).ravel())
+            cols.append(np.broadcast_to(col_ids[:, None, :], local.shape).ravel())
             data.append(local.ravel())
 
-        add(self.cells, diagonal + cross)
-        add(self.mirror[self.cells], diagonal - cross)
+        add(self.cells, diagonal + cross, _CORNERS)
+        add(self.mirror[self.cells], diagonal - cross, _CORNERS)
         for axis, face, length in self.vacuum:
-            robin = ((vacuum_y if axis else vacuum_x) * length)[:, None, None] * _MASS
-            add(face, robin)
-            add(self.mirror[face], robin)
+            robin = ((vacuum_y if axis else vacuum_x) * length)[:, None, None] * face_form
+            add(face, robin, [0, 2])
+            add(self.mirror[face], robin, [0, 2])
+        nrow = self.bilinear_size if row_bilinear else self.size
+        ncol = self.bilinear_size if col_bilinear else self.size
         mat = coo_matrix((np.concatenate(data),
                           (np.concatenate(rows), np.concatenate(cols))),
-                         shape=(self.size, self.size)).tocsc()
+                         shape=(nrow, ncol)).tocsc()
         mat.sort_indices()
         return mat
 
@@ -203,8 +270,8 @@ class SectorDiffusion(PSN2D):
             raise ValueError("sector diffusion supports reflect and vacuum boundaries")
         if np.any(~np.isfinite(self.St) | (self.St <= 0)):
             raise ValueError("sector diffusion needs positive finite total cross sections")
-        if backend not in ("off", "chol-rs", "chol-packed-rs"):
-            raise ValueError("sector diffusion supports --opt off, chol-rs or chol-packed-rs")
+        if backend not in ("off", "chol-rs", "chol-packed-rs", "sector-cholmod"):
+            raise ValueError("sector diffusion supports --opt off, chol-rs, chol-packed-rs or sector-cholmod")
         hx, hy = ((self.hx.ravel(), self.hy.ravel()) if self.rect else
                   (np.full(self.nodes, self.h), np.full(self.nodes, self.h)))
         if np.any(~np.isfinite(hx) | ~np.isfinite(hy) | (hx <= 0) | (hy <= 0)):
@@ -221,6 +288,7 @@ class SectorDiffusion(PSN2D):
         self.backend = backend
         self._factors = []
         self._pool = None
+        self._homes = []
         self.factor_bytes = 0
 
     def _angular_cells(self, azimuth_degree):
@@ -245,7 +313,10 @@ class SectorDiffusion(PSN2D):
 
     def _prefactor(self):
         matidx = self.mat.ravel()
-        if self.backend == "off":
+        if self.backend == "sector-cholmod":
+            from .sector_cholmod import SectorCholmod
+            factor = SectorCholmod()
+        elif self.backend == "off":
             def factor(matrix):
                 lu = splu(matrix, permc_spec="MMD_AT_PLUS_A",
                           diag_pivot_thresh=0, options={"SymmetricMode": True})
@@ -284,11 +355,17 @@ class SectorDiffusion(PSN2D):
         if worker_cap < 1:
             raise ValueError("OPENPSN_PREFACTOR_WORKERS must be positive")
         workers = min(self.threads, worker_cap, len(jobs))
-        with ThreadPoolExecutor(max_workers=workers) as pool:
+        self._homes = []
+        if numa.mem_home() and numa.route_pools():
+            allowed = os.sched_getaffinity(0)
+            homes = [(node, cpus & allowed) for node, cpus in numa.node_cpus() if cpus & allowed]
+            self._homes = homes if 1 < len(homes) <= workers else []
+        pool = _PhasePool(workers, self._homes)
+        try:
             # Bound the memory of transient matrices during setup. Every
             # angular system has the same grid graph and ordering.
             for first in range(0, len(jobs), workers):
-                for entry, size in pool.map(build, jobs[first:first + workers]):
+                for entry, size in pool.map(build, jobs[first:first + workers], offset=first):
                     self._factors.append(entry)
                     self.factor_bytes += size
                     self._check_mem_gate()
@@ -297,6 +374,8 @@ class SectorDiffusion(PSN2D):
                     raise MemoryError(
                         f"projected sector diffusion factor pool {projected_gb:.2f} GiB "
                         f"exceeds cap {self.mem_limit_gb:.2f} GiB")
+        finally:
+            pool.shutdown()
         self.factor_seconds = perf_counter() - started
         self._start_sweep_pool()
 
@@ -308,7 +387,7 @@ class SectorDiffusion(PSN2D):
 
     def _start_sweep_pool(self):
         if self._pool is None and self.threads > 1 and len(self._factors) > 1:
-            self._pool = ThreadPoolExecutor(max_workers=min(self.threads, len(self._factors)))
+            self._pool = _PhasePool(min(self.threads, len(self._factors)), self._homes)
 
     def _stop_sweep_pool(self):
         if self._pool is not None:
@@ -331,18 +410,19 @@ class SectorDiffusion(PSN2D):
             for _, weight, apply in block:
                 # The scalar flux picks out the mean of the angular cell.
                 field += weight * apply(rhs[g])[:self.mesh.size]
-            return g, self.mesh.moments(field)
+            return g, field
 
         # Fixed contiguous blocks preserve the reduction order across thread
-        # counts and avoid returning one cell-moment array per angular field.
-        block_size = 4
+        # counts. Projection is linear, so do it once per energy group.
+        block_size = 1 if self._homes else 4
         n = len(self.angles)
         blocks = [self._factors[g * n + i:g * n + min(i + block_size, n)]
                   for g in range(self.ng) for i in range(0, n, block_size)]
-        moments = np.zeros_like(q)
+        fields = np.zeros((self.ng, self.mesh.size))
         execute = map if self._pool is None else self._pool.map
-        for g, flux in execute(solve, blocks):
-            moments[g] += flux
+        for g, field in execute(solve, blocks):
+            fields[g] += field
+        moments = np.stack([self.mesh.moments(field) for field in fields])
         if self.transpose_symmetry:
             moments = self._transpose_average(moments)
         return moments[:, :, 0], moments
@@ -360,11 +440,19 @@ class SectorDiffusion(PSN2D):
 class SectorAverage(SectorDiffusion):
     """Finite-angle-cell PSN with local azimuth shapes through degree two."""
 
-    def __init__(self, *args, generic=True, azimuth_degree=0, **kwargs):
+    def __init__(self, *args, generic=True, azimuth_degree=0, slope_space="quadratic", **kwargs):
         if not generic or azimuth_degree not in (0, 1, 2):
             raise ValueError("sector_average requires angular.model=generic and A=0, 1 or 2")
+        if slope_space not in ("quadratic", "bilinear"):
+            raise ValueError("sector_average slope_space must be quadratic or bilinear")
+        if slope_space == "bilinear" and not azimuth_degree:
+            raise ValueError("bilinear slope_space requires A=1 or A=2")
         self.azimuth_degree = azimuth_degree
+        self.slope_space = slope_space
         super().__init__(*args, generic=generic, azimuth_degree=azimuth_degree, **kwargs)
+        if self.slope_space == "bilinear":
+            self.mesh.prepare_bilinear()
+        self.slope_size = self.mesh.bilinear_size if self.slope_space == "bilinear" else self.mesh.size
 
     def _angular_cells(self, azimuth_degree):
         return _sector_averages(self.M, self.I, self.transpose_symmetry, azimuth_degree)
@@ -375,16 +463,22 @@ class SectorAverage(SectorDiffusion):
         tensors, _ = cell
         modes = self.azimuth_degree + 1
         blocks = [[None] * modes for _ in range(modes)]
+        bilinear = self.slope_space == "bilinear"
         for row in range(modes):
             for col in range(row, modes):
-                matrix = self.mesh.tensor_matrix(st, *tensors[row, col], mass_scale=int(row == col))
-                blocks[row][col] = blocks[col][row] = matrix
+                matrix = self.mesh.tensor_matrix(
+                    st, *tensors[row, col], mass_scale=int(row == col),
+                    row_bilinear=bilinear and row > 0, col_bilinear=bilinear and col > 0,
+                )
+                blocks[row][col] = matrix
+                if row < col:
+                    blocks[col][row] = matrix.T
         return bmat(blocks, format="csc")
 
     def _angular_rhs(self, rhs):
         if not self.azimuth_degree:
             return rhs
         # Isotropic sources project only onto the constant angular shape.
-        source = np.zeros((self.azimuth_degree + 1) * rhs.size)
+        source = np.zeros(rhs.size + self.azimuth_degree * self.slope_size)
         source[:rhs.size] = rhs
         return source

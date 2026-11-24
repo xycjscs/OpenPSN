@@ -212,6 +212,11 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 - 固定 `model: generic` 时，可选 `closure: sector_average`。默认 `A: 0`
   只保留角区平均场。`A: 1` 或 `A: 2` 在每个扇区增加局部方位形函数，
   在同一个扩散弱式中同时求解。
+- 开启 `A: 1` 或 `A: 2` 时，可选 `slope_space: bilinear`，以较少空间
+  自由度表示高阶方位系数。平均场仍用双二次节点。多路 NUMA 机器可设
+  `OPENPSN_NUMA=1` 让每个扇区扩散块的分解和扫描访问本地内存。
+- [`--opt sector-cholmod` 构建与计时说明](docs/psn4-sector-diffusion.md#扇区扩散性能)
+  适用于这两种扇区扩散闭合。
 - 两种扇区闭合的比较见 [PSN-4 收敛记录](docs/psn4-sector-diffusion.md)。
 
 **高序方向闭合的内层求解器（`solver.inner`，YAML `solver:` 段，默认 `lu`）**

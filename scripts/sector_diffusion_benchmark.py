@@ -84,12 +84,13 @@ def main():
     parser.add_argument("--closure", default="sector_diffusion",
                         choices=["sector_average", "sector_diffusion", "legacy", "strict_phase_space"])
     parser.add_argument("--opt", default="off",
-                        choices=["off", "chol-rs", "chol-packed-rs"])
+                        choices=["off", "chol-rs", "chol-packed-rs", "sector-cholmod"])
 
     parser.add_argument("--core-step", type=float, metavar="CM",
                         help="remesh the rectangular core with this target cell width")
     parser.add_argument("--polar-order", type=int)
     parser.add_argument("--azimuth-degree", type=int)
+    parser.add_argument("--slope-space", choices=("quadratic", "bilinear"))
     parser.add_argument("--threads", type=int)
     parser.add_argument("--mem-limit-gb", type=float)
     args = parser.parse_args()
@@ -111,6 +112,8 @@ def main():
         case = dict(name=f"{args.model}_S{s}_M{m}", model="generic",
                     I=i, A=a, M=m, subdivide=s, closure=args.closure,
                     kref=reference)
+        if args.slope_space is not None:
+            case["slope_space"] = args.slope_space
         result = run_case(spec, case, verbose=False, opt=args.opt, ritz=True,
                           threads=args.threads, mem_limit_gb=args.mem_limit_gb)
         if args.core_step is not None:

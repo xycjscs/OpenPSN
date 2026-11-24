@@ -65,6 +65,8 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
         averaged = closure == "sector_average"
         cls = SectorAverage if averaged else SectorDiffusion
         options = {"azimuth_degree": case.get("A", 0 if averaged else 3), "backend": opt}
+        if averaged:
+            options["slope_space"] = case.get("slope_space", "quadratic")
     return cls(mat_map, h, St, Sgg, nuSf, chi=chi, boundary=boundary,
                generic=generic, I=int(case.get("I", 30)), M=int(case["M"]),
                widths=widths, threads=threads, mem_limit_gb=mem_limit_gb,
@@ -78,6 +80,8 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
              cmfd_current=False, ritz=False):
     t0 = time.time()
     closure = case.get("closure", "legacy")
+    if opt == "sector-cholmod" and closure not in ("sector_diffusion", "sector_average"):
+        raise ValueError("--opt sector-cholmod requires sector_diffusion or sector_average")
     if closure in ("sector_diffusion", "sector_average"):
         if cmfd or extrapolate or anderson:
             raise ValueError("sector diffusion uses Ritz and is exclusive with "
@@ -99,6 +103,9 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
                    trial_sweeps=psn.extra_sweeps, accel="ritz",
                    keff_residual=psn.keff_residual,
                    source_residual=psn.source_residual)
+        if closure == "sector_average" and degree:
+            out["slope_space"] = psn.slope_space
+            out["dofs_per_system"] = int(psn.mesh.size + degree * psn.slope_size)
         if case.get("kref") is not None:
             out.update(kref=float(case["kref"]), pcm=(k - float(case["kref"])) * 1e5)
         return out
@@ -324,14 +331,14 @@ def main(argv=None):
     pr.add_argument("--json", action="store_true", help="print results as JSON")
     pr.add_argument("--quiet", action="store_true", help="no per-iteration output")
     pr.add_argument("--opt", default="off",
-                    choices=["off", "auto", "chol", "chol-rs", "chol-packed-rs",
+                    choices=["off", "auto", "chol", "chol-rs", "chol-packed-rs", "sector-cholmod",
                              "mmd", "lu", "tile", "angschr"],
                     help="memory-optimized factorization backend "
                          "(off = plain path, default; auto picks "
                          "shared-chol -> angschr -> tile from "
                          "--mem-limit-gb; chol-rs = shared Rust Cholesky; "
                          "chol-packed-rs = shared packed Cholesky with "
-                         "FP64 PCG refinement)")
+                         "FP64 PCG refinement; sector-cholmod = optional FP64 sector factorization)")
     pr.add_argument("--threads", type=int, default=None,
                     help="total parallel-unit budget (default = half the "
                          "system core count; factor phase <= N threads, "
