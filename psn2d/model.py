@@ -9,8 +9,11 @@ Spec schema (see examples/):
     model: generic | ty3
     closure: legacy | strict_phase_space | directional_matrix | sector_diffusion | sector_average
     I: 30           # generic: even polar order, I/2 independent nodes
-    A: 3            # sector_diffusion: A+1 Gauss points; sector_average: 0, 1, 2
-    slope_space: quadratic  # sector_average with A>0: quadratic or bilinear
+    A: 3            # sector_diffusion: A+1 Gauss points; sector_average: degrees 0–4
+    polar_degree: 0 # sector_average: optional local linear polar mode
+    slope_space: quadratic  # quadratic, bilinear, or quadratic-linear
+    reflection_reduction: false # require symmetric material, widths and reflecting boundaries
+    azimuth_grid: uniform # sector_average: uniform or axis
     M: 24           # azimuthal segments (must be even)
   geometry:
     # square mode (default):
@@ -86,8 +89,14 @@ def load_spec(path):
             f"'directional_matrix', 'original_azimuth', "
             f"'strict_phase_space', 'sector_diffusion', 'sector_average', got {closure!r}")
     ang["closure"] = closure
-    if "slope_space" in ang and ang["slope_space"] not in ("quadratic", "bilinear"):
-        raise ValueError("angular.slope_space must be quadratic or bilinear")
+    if "slope_space" in ang and ang["slope_space"] not in ("quadratic", "bilinear", "quadratic-linear"):
+        raise ValueError("angular.slope_space must be quadratic, bilinear or quadratic-linear")
+    if "polar_degree" in ang and (type(ang["polar_degree"]) is not int or ang["polar_degree"] not in (0, 1)):
+        raise ValueError("angular.polar_degree must be 0 or 1")
+    if "reflection_reduction" in ang and not isinstance(ang["reflection_reduction"], bool):
+        raise ValueError("angular.reflection_reduction must be a boolean")
+    if "azimuth_grid" in ang and ang["azimuth_grid"] not in ("uniform", "axis"):
+        raise ValueError("angular.azimuth_grid must be uniform or axis")
 
     geom = spec["geometry"]
     if bool(geom.get("rect", False)):
@@ -178,8 +187,10 @@ def expand_cases(spec):
         c.setdefault("closure", ang.get("closure", "legacy"))
         default_A = 3 if c["closure"] == "sector_diffusion" else 0
         c.setdefault("A", int(ang.get("A", default_A)))
-        if c["closure"] == "sector_average" and "slope_space" in ang:
-            c.setdefault("slope_space", ang["slope_space"])
+        if c["closure"] == "sector_average":
+            for option in ("slope_space", "polar_degree", "reflection_reduction", "azimuth_grid"):
+                if option in ang:
+                    c.setdefault(option, ang[option])
         c.setdefault("subdivide", int(geom.get("subdivide", 1)))
         c["kref"] = c.get("kref", spec.get("kref"))
         out.append(c)

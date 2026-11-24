@@ -63,6 +63,14 @@ def _restricted_forms(row_bilinear, col_bilinear):
 _FORMS = {pair: _restricted_forms(*pair) for pair in product((False, True), repeat=2)}
 
 
+def _element_tensor(st, area, aspect, xx, xy, yy, forms, mass_scale):
+    mass, grad_x, grad_y, cross = forms[:4]
+    diagonal = ((mass_scale * st * area)[:, None, None] * mass
+                + (xx * aspect / st)[:, None, None] * grad_x
+                + (yy / (aspect * st))[:, None, None] * grad_y)
+    return diagonal, (xy / st)[:, None, None] * cross
+
+
 class _PhasePool:
     """Run each prefactor and its sweeps on the same NUMA node when enabled."""
 
@@ -112,12 +120,14 @@ def _directions(sectors, azimuth_degree, mu, polar_weights, transpose_symmetry):
                multiplicity * polar_weights[polar] * w[j] / (2 * sectors))
 
 
-def _sector_averages(sectors, polar_bands, transpose_symmetry, degree=0):
+def _sector_averages(sectors, polar_bands, transpose_symmetry, degree=0, polar_degree=0,
+                     azimuth_edges=None):
     """Yield five scalar coefficients and a weight for constant cells.
 
     Enriched cells carry the coefficients as a (mode, mode, 5) tensor and a weight.
     """
-    polar_edges = np.cos(np.linspace(0.0, np.pi / 2, polar_bands + 1))
+    inclination_edges = np.linspace(0.0, np.pi / 2, polar_bands + 1)
+    polar_edges = np.cos(inclination_edges)
     polar_edges[-1] = 0.0
     polar_width = polar_edges[:-1] - polar_edges[1:]
     a, b = polar_edges[1:], polar_edges[:-1]
@@ -128,15 +138,43 @@ def _sector_averages(sectors, polar_bands, transpose_symmetry, degree=0):
     step = np.pi / sectors
     samples = sectors // 2
     keep = (samples + 1) // 2 if transpose_symmetry else samples
-    sinc = np.sinc(1 / sectors)
-    half_sinc = np.sinc(0.5 / sectors)
-    if degree:
+    if azimuth_edges is not None:
+        azimuth_edges = np.asarray(azimuth_edges, dtype=float)
+        if (azimuth_edges.shape != (samples + 1,) or azimuth_edges[0] != 0
+                or not np.isclose(azimuth_edges[-1], np.pi / 2, rtol=0, atol=1e-14)
+                or not np.all(np.diff(azimuth_edges) > 0)
+                or (transpose_symmetry and not np.allclose(
+                    azimuth_edges + azimuth_edges[::-1], np.pi / 2, rtol=0, atol=1e-14))):
+            raise ValueError("azimuth edges must partition the quadrant and preserve active symmetry")
+    if degree or polar_degree:
         z, w = leggauss(12)
         modes = degree + 1
         basis = legvander(z, degree) * np.sqrt(2 * np.arange(modes) + 1)
         weights = np.einsum("ki,kj,k->kij", basis, basis, w / 2).reshape(z.size, -1)
+    if polar_degree:
+        # Cosine of the inclination has uniform measure on each polar band.
+        # Integrating in inclination leaves a smooth integrand at the pole.
+        delta = np.diff(inclination_edges)
+        inclination = inclination_edges[:-1, None] + delta[:, None] * (1 + z) / 2
+        radial = np.sin(inclination)
+        coordinate = (2 * np.cos(inclination) - a[:, None] - b[:, None]) / polar_width[:, None]
+        polar_basis = np.stack((np.ones_like(coordinate), np.sqrt(3) * coordinate), axis=-1)
+        measure = (delta / (2 * polar_width))[:, None] * w * radial
+        polar_modes = np.array([0] * modes + [1])
+        azimuth_modes = np.array([*range(modes), 0])
+        radial_coupling = np.einsum("bqi,bqj,bq->bij", polar_basis, polar_basis,
+                                   measure * radial**2)
+        vacuum_coupling = np.einsum("bqi,bqj,bq->bij", polar_basis, polar_basis,
+                                    measure * radial)
     for polar, sample in product(range(polar_bands), range(keep)):
-        phi = (sample + 0.5) * step
+        width = step
+        phi = (sample + 0.5) * width
+        if azimuth_edges is not None:
+            left, right = azimuth_edges[sample:sample + 2]
+            width = right - left
+            phi = (left + right) / 2
+        sinc = np.sinc(width / np.pi)
+        half_sinc = np.sinc(width / (2 * np.pi))
         square = mean_mu2[polar] / 2
         contrast = sinc * np.cos(2 * phi)
         multiplicity = 2 if transpose_symmetry and 2 * sample + 1 != samples else 1
@@ -145,20 +183,26 @@ def _sector_averages(sectors, polar_bands, transpose_symmetry, degree=0):
                    square * (1 - contrast),
                    mean_mu[polar] * half_sinc * np.cos(phi),
                    mean_mu[polar] * half_sinc * np.sin(phi))
-        weight = multiplicity * polar_width[polar] / sectors
-        if degree == 0:
+        weight = multiplicity * polar_width[polar] * (width / np.pi)
+        if not (degree or polar_degree):
             yield (*average, weight)
         else:
-            cos_phi = np.cos(phi + step / 2 * z)
-            sin_phi = np.sin(phi + step / 2 * z)
-            coefficients = np.array([mean_mu2[polar] * cos_phi**2,
-                                     mean_mu2[polar] * cos_phi * sin_phi,
-                                     mean_mu2[polar] * sin_phi**2,
-                                     mean_mu[polar] * cos_phi,
-                                     mean_mu[polar] * sin_phi])
+            cos_phi = np.cos(phi + width / 2 * z)
+            sin_phi = np.sin(phi + width / 2 * z)
+            coefficients = np.array([cos_phi**2, cos_phi * sin_phi, sin_phi**2, cos_phi, sin_phi])
             # Legendre shapes have diagonal mass. Streaming and vacuum
             # retain the couplings between shapes within the finite sector.
-            tensors = (coefficients @ weights).reshape(5, modes, modes).transpose(1, 2, 0)
+            tensors = (coefficients @ weights).reshape(5, modes, modes)
+            if polar_degree:
+                tensors = tensors[:, azimuth_modes[:, None], azimuth_modes]
+                streaming = radial_coupling[polar][np.ix_(polar_modes, polar_modes)]
+                vacuum = vacuum_coupling[polar][np.ix_(polar_modes, polar_modes)]
+                tensors[:3] *= streaming
+                tensors[3:] *= vacuum
+            else:
+                tensors[:3] *= mean_mu2[polar]
+                tensors[3:] *= mean_mu[polar]
+            tensors = tensors.transpose(1, 2, 0)
             tensors[0, 0] = average
             yield tensors, weight
 
@@ -207,13 +251,9 @@ class _QuadraticMesh:
 
     def tensor_matrix(self, st, xx, xy, yy, vacuum_x, vacuum_y, *, mass_scale=1,
                       row_bilinear=False, col_bilinear=False):
-        h = self.aspect
-        mass_form, x_form, y_form, cross_form, face_form = _FORMS[row_bilinear, col_bilinear]
-        mass = (mass_scale * st * self.area)[:, None, None] * mass_form
-        x_term = (xx * h / st)[:, None, None] * x_form
-        y_term = (yy / (h * st))[:, None, None] * y_form
-        cross = (xy / st)[:, None, None] * cross_form
-        diagonal = mass + x_term + y_term
+        forms = _FORMS[row_bilinear, col_bilinear]
+        diagonal, cross = _element_tensor(st, self.area, self.aspect, xx, xy, yy, forms, mass_scale)
+        face_form = forms[-1]
 
         data, rows, cols = [], [], []
 
@@ -286,6 +326,7 @@ class SectorDiffusion(PSN2D):
         )
         self.angles = list(self._angular_cells(azimuth_degree))
         self.backend = backend
+        self._phase_reduction = None
         self._factors = []
         self._pool = None
         self._homes = []
@@ -403,13 +444,18 @@ class SectorDiffusion(PSN2D):
         if self.transpose_symmetry:
             q = self._transpose_average(q)
         rhs = [self._angular_rhs(self.mesh.rhs(group)) for group in q]
+        reduction = self._phase_reduction
+        mean_size = self.mesh.size
+        if reduction is not None:
+            rhs = [reduction.rhs(group) for group in rhs]
+            mean_size = reduction.mean_size
 
         def solve(block):
             g = block[0][0]
-            field = np.zeros(self.mesh.size)
+            field = np.zeros(mean_size)
             for _, weight, apply in block:
                 # The scalar flux picks out the mean of the angular cell.
-                field += weight * apply(rhs[g])[:self.mesh.size]
+                field += weight * apply(rhs[g])[:mean_size]
             return g, field
 
         # Fixed contiguous blocks preserve the reduction order across thread
@@ -418,57 +464,101 @@ class SectorDiffusion(PSN2D):
         n = len(self.angles)
         blocks = [self._factors[g * n + i:g * n + min(i + block_size, n)]
                   for g in range(self.ng) for i in range(0, n, block_size)]
-        fields = np.zeros((self.ng, self.mesh.size))
+        fields = np.zeros((self.ng, mean_size))
         execute = map if self._pool is None else self._pool.map
         for g, field in execute(solve, blocks):
             fields[g] += field
+        if reduction is not None:
+            fields = fields[:, reduction.mean]
         moments = np.stack([self.mesh.moments(field) for field in fields])
         if self.transpose_symmetry:
             moments = self._transpose_average(moments)
         return moments[:, :, 0], moments
 
     def keff(self, max_outer=2000, outer_tol=1e-9, verbose=True, *, initial_source=None):
-        project = self._transpose_average if self.transpose_symmetry else None
+        def project(moments):
+            if self._phase_reduction is not None:
+                moments = self._phase_reduction.source(moments)
+            return self._transpose_average(moments) if self.transpose_symmetry else moments
+
+        projector = project if self.transpose_symmetry or self._phase_reduction is not None else None
         try:
             return keff_ritz(self, max_outer, outer_tol, verbose,
                              moment_count=_MOMENTS.shape[0], factor_threads=1,
-                             project_source=project, initial_source=initial_source)
+                             project_source=projector, initial_source=initial_source)
         finally:
             self._factors.clear()
 
 
 class SectorAverage(SectorDiffusion):
-    """Finite-angle-cell PSN with local azimuth shapes through degree two."""
+    """Finite-angle-cell PSN with local azimuth and polar modes."""
 
-    def __init__(self, *args, generic=True, azimuth_degree=0, slope_space="quadratic", **kwargs):
-        if not generic or azimuth_degree not in (0, 1, 2):
-            raise ValueError("sector_average requires angular.model=generic and A=0, 1 or 2")
-        if slope_space not in ("quadratic", "bilinear"):
-            raise ValueError("sector_average slope_space must be quadratic or bilinear")
-        if slope_space == "bilinear" and not azimuth_degree:
-            raise ValueError("bilinear slope_space requires A=1 or A=2")
+    def __init__(self, *args, generic=True, azimuth_degree=0, polar_degree=0,
+                 slope_space="quadratic", reflection_reduction=False,
+                 azimuth_grid="uniform", **kwargs):
+        if (not generic or isinstance(azimuth_degree, bool) or not isinstance(azimuth_degree, int)
+                or not 0 <= azimuth_degree <= 4
+                or isinstance(polar_degree, bool) or not isinstance(polar_degree, int)
+                or polar_degree not in (0, 1)):
+            raise ValueError("sector_average requires angular.model=generic, A from 0 to 4 and polar_degree 0 or 1")
+        if slope_space not in ("quadratic", "bilinear", "quadratic-linear"):
+            raise ValueError("sector_average slope_space must be quadratic, bilinear or quadratic-linear")
+        if slope_space != "quadratic" and not (azimuth_degree or polar_degree):
+            raise ValueError("a restricted slope space requires at least one higher angular mode")
+        if not isinstance(reflection_reduction, bool):
+            raise ValueError("reflection_reduction must be a boolean")
+        if azimuth_grid not in ("uniform", "axis"):
+            raise ValueError("azimuth_grid must be uniform or axis")
         self.azimuth_degree = azimuth_degree
+        self.polar_degree = polar_degree
         self.slope_space = slope_space
+        self.azimuth_grid = azimuth_grid
         super().__init__(*args, generic=generic, azimuth_degree=azimuth_degree, **kwargs)
-        if self.slope_space == "bilinear":
+        if self.slope_space != "quadratic":
             self.mesh.prepare_bilinear()
         self.slope_size = self.mesh.bilinear_size if self.slope_space == "bilinear" else self.mesh.size
+        if reflection_reduction:
+            from .phase_reflection import ReflectedAssembly
+            self._phase_reduction = ReflectedAssembly(self)
+
+    @property
+    def angular_modes(self):
+        return self.azimuth_degree + self.polar_degree + 1
+
+    def _bilinear_mode(self, mode):
+        return ((self.slope_space == "bilinear" and mode > 0)
+                or (self.slope_space == "quadratic-linear"
+                    and mode > (1 if self.azimuth_degree else 0)))
+
+    @property
+    def phase_size(self):
+        return int(sum(self.mesh.bilinear_size if self._bilinear_mode(index) else self.mesh.size
+                       for index in range(self.angular_modes)))
 
     def _angular_cells(self, azimuth_degree):
-        return _sector_averages(self.M, self.I, self.transpose_symmetry, azimuth_degree)
+        edges = None
+        if self.azimuth_grid == "axis":
+            # Refine the ranges next to the Cartesian axes where tracks can
+            # spend long distances in a single material strip. Keep the
+            # quadrant and its transpose partner at equal solid angle.
+            x = np.linspace(0, 1, self.M // 2 + 1)
+            edges = (x - np.sin(2 * np.pi * x) / (4 * np.pi)) * (np.pi / 2)
+        return _sector_averages(self.M, self.I, self.transpose_symmetry,
+                                azimuth_degree, self.polar_degree, azimuth_edges=edges)
 
     def _angular_matrix(self, st, cell):
-        if not self.azimuth_degree:
+        if self._phase_reduction is not None:
+            return self._phase_reduction.angular_matrix(st, cell)
+        if self.angular_modes == 1:
             return self.mesh.tensor_matrix(st, *cell[:-1])
         tensors, _ = cell
-        modes = self.azimuth_degree + 1
+        modes = self.angular_modes
         blocks = [[None] * modes for _ in range(modes)]
-        bilinear = self.slope_space == "bilinear"
         for row in range(modes):
             for col in range(row, modes):
                 matrix = self.mesh.tensor_matrix(
                     st, *tensors[row, col], mass_scale=int(row == col),
-                    row_bilinear=bilinear and row > 0, col_bilinear=bilinear and col > 0,
+                    row_bilinear=self._bilinear_mode(row), col_bilinear=self._bilinear_mode(col),
                 )
                 blocks[row][col] = matrix
                 if row < col:
@@ -476,9 +566,9 @@ class SectorAverage(SectorDiffusion):
         return bmat(blocks, format="csc")
 
     def _angular_rhs(self, rhs):
-        if not self.azimuth_degree:
+        if self.angular_modes == 1:
             return rhs
         # Isotropic sources project only onto the constant angular shape.
-        source = np.zeros(rhs.size + self.azimuth_degree * self.slope_size)
+        source = np.zeros(self.phase_size)
         source[:rhs.size] = rhs
         return source

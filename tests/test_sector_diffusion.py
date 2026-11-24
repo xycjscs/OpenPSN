@@ -9,7 +9,7 @@ from scipy.integrate import quad
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from psn2d.__main__ import run_case
-from psn2d.model import load_spec
+from psn2d.model import expand_cases, load_spec
 from psn2d.sector_diffusion import SectorAverage, SectorDiffusion, _directions, _sector_averages
 
 
@@ -119,6 +119,62 @@ class SectorAverageTests(TestCase):
         self.assertAlmostEqual(slope[0], expected_slope, places=13)
         self.assertAlmostEqual(mixed[4], expected_vacuum, places=13)
         self.assertGreater(abs(mixed[0]), 1e-4)
+
+    def test_local_polar_mode_is_integrated_in_measure_cosine(self):
+        sectors, bands = 4, 3
+        tensors, weight = next(_sector_averages(sectors, bands, False, 1, 1))
+        original, original_weight = next(_sector_averages(sectors, bands, False, 1))
+        self.assertEqual(weight, original_weight)
+        np.testing.assert_allclose(tensors[:2, :2], original, atol=2e-16)
+        left = np.cos(np.pi / (2 * bands))
+        delta = 1 - left
+        step = np.pi / sectors
+        polar = lambda u: np.sqrt(3) * (2 * (u - left) / delta - 1)
+        bulk = quad(lambda u: (1 - u * u) * polar(u), left, 1)[0] / delta
+        face = quad(lambda u: np.sqrt(1 - u * u) * polar(u), left, 1)[0] / delta
+        self.assertAlmostEqual(tensors[0, 2, 0], bulk * (.5 + np.sin(2 * step) / (4 * step)), places=13)
+        self.assertAlmostEqual(tensors[0, 2, 4], face * (1 - np.cos(step)) / step, places=13)
+        np.testing.assert_allclose(tensors, tensors.transpose(1, 0, 2), atol=2e-16)
+
+    def test_axis_grading_preserves_integrated_tensor_and_octant_weight(self):
+        args = (np.zeros((2, 1), dtype=int), .4, [[1.0]], [[[.6]]], [[.5]])
+        uniform, graded = (SectorAverage(*args, M=16, I=8, azimuth_grid=grid)
+                           for grid in ("uniform", "axis"))
+        normal, assigned = (np.asarray(solver.angles) for solver in (uniform, graded))
+        self.assertLess(assigned[0, -1], normal[0, -1])
+        self.assertAlmostEqual(assigned[:, -1].sum(), .5)
+        np.testing.assert_allclose(assigned[:, -1] @ assigned[:, :-1],
+                                   normal[:, -1] @ normal[:, :-1], atol=2e-16)
+
+    def test_mixed_spaces_use_finite_polar_mode_through_case_entry(self):
+        root = Path(__file__).resolve().parents[1]
+        spec = load_spec(root / "examples/psn_repro/checkerboard_1g_strong.yaml")
+        spec["angular"].update(closure="sector_average", model="generic", M=4,
+                               I=4, A=3, polar_degree=1, slope_space="quadratic-linear")
+        spec["cases"] = [dict(subdivide=1)]
+        case = expand_cases(spec)[0]
+        result = run_case(spec, case, verbose=False, threads=1)
+        self.assertEqual(result["K"], 5)
+        self.assertEqual(result["polar_degree"], 1)
+        self.assertEqual(result["slope_space"], "quadratic-linear")
+        self.assertTrue(result["converged"])
+
+    def test_reflection_reduction_matches_full_mixed_phase_system(self):
+        mat = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
+        args = (mat, .4, [[1.0, 1.2]], [[[.6, .7]]], [[.5, 0.]])
+        options = dict(M=4, I=4, azimuth_degree=3, polar_degree=1,
+                       slope_space="quadratic-linear", threads=1)
+        full = SectorAverage(*args, **options)
+        reduced = SectorAverage(*args, **options, reflection_reduction=True)
+        st = full.St[0, mat.ravel()]
+        reference = reduced._phase_reduction.matrix(full._angular_matrix(st, full.angles[0]))
+        actual = reduced._angular_matrix(st, reduced.angles[0])
+        np.testing.assert_allclose(actual.toarray(), reference.toarray(), atol=2e-15)
+        self.assertLess(actual.shape[0], full.phase_size / 2)
+        k_ref, flux_ref, _ = full.keff(outer_tol=1e-10, verbose=False)
+        k, flux, _ = reduced.keff(outer_tol=1e-10, verbose=False)
+        self.assertAlmostEqual(k, k_ref, places=9)
+        np.testing.assert_allclose(flux, flux_ref, rtol=2e-9)
 
     def test_linear_azimuth_transpose_fold_matches_full_cells(self):
         mat = np.array([[0, 1], [1, 0]])

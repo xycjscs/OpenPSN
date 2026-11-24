@@ -90,7 +90,9 @@ def main():
                         help="remesh the rectangular core with this target cell width")
     parser.add_argument("--polar-order", type=int)
     parser.add_argument("--azimuth-degree", type=int)
-    parser.add_argument("--slope-space", choices=("quadratic", "bilinear"))
+    parser.add_argument("--polar-degree", type=int, choices=(0, 1))
+    parser.add_argument("--azimuth-grid", choices=("uniform", "axis"))
+    parser.add_argument("--slope-space", choices=("quadratic", "bilinear", "quadratic-linear"))
     parser.add_argument("--threads", type=int)
     parser.add_argument("--mem-limit-gb", type=float)
     args = parser.parse_args()
@@ -114,6 +116,13 @@ def main():
                     kref=reference)
         if args.slope_space is not None:
             case["slope_space"] = args.slope_space
+        if args.polar_degree is not None or args.azimuth_grid is not None:
+            if args.closure != "sector_average":
+                parser.error("--polar-degree and --azimuth-grid require --closure sector_average")
+            if args.polar_degree is not None:
+                case["polar_degree"] = args.polar_degree
+            if args.azimuth_grid is not None:
+                case["azimuth_grid"] = args.azimuth_grid
         result = run_case(spec, case, verbose=False, opt=args.opt, ritz=True,
                           threads=args.threads, mem_limit_gb=args.mem_limit_gb)
         if args.core_step is not None:

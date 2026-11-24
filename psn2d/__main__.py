@@ -67,6 +67,9 @@ def build_solver(spec, case, threads=None, mem_limit_gb=None, opt="off"):
         options = {"azimuth_degree": case.get("A", 0 if averaged else 3), "backend": opt}
         if averaged:
             options["slope_space"] = case.get("slope_space", "quadratic")
+            options["polar_degree"] = case.get("polar_degree", 0)
+            options["reflection_reduction"] = case.get("reflection_reduction", False)
+            options["azimuth_grid"] = case.get("azimuth_grid", "uniform")
     return cls(mat_map, h, St, Sgg, nuSf, chi=chi, boundary=boundary,
                generic=generic, I=int(case.get("I", 30)), M=int(case["M"]),
                widths=widths, threads=threads, mem_limit_gb=mem_limit_gb,
@@ -93,7 +96,8 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
         degree = case.get("A", 0 if closure == "sector_average" else 3)
         out = dict(name=case["name"], model=case["model"], I=int(case.get("I", 30)),
                    polar_nodes=psn.I, phase_systems=psn.ng * len(psn.angles),
-                   M=psn.M, A=degree, K=degree + 1, closure=closure,
+                   M=psn.M, A=degree, K=psn.angular_modes if closure == "sector_average" else degree + 1,
+                   closure=closure,
                    subdivide=int(case["subdivide"]), nodes=psn.nodes,
                    keff=float(k), time_s=round(time.time() - t0, 2),
                    factor_time_s=round(psn.factor_seconds, 2),
@@ -103,9 +107,17 @@ def run_case(spec, case, verbose=True, opt="off", threads=None,
                    trial_sweeps=psn.extra_sweeps, accel="ritz",
                    keff_residual=psn.keff_residual,
                    source_residual=psn.source_residual)
-        if closure == "sector_average" and degree:
-            out["slope_space"] = psn.slope_space
-            out["dofs_per_system"] = int(psn.mesh.size + degree * psn.slope_size)
+        if closure == "sector_average":
+            if psn.angular_modes > 1:
+                out["slope_space"] = psn.slope_space
+                out["dofs_per_system"] = int(psn.phase_size)
+            if psn.polar_degree:
+                out["polar_degree"] = psn.polar_degree
+            if psn.azimuth_grid != "uniform":
+                out["azimuth_grid"] = psn.azimuth_grid
+            if psn._phase_reduction is not None:
+                out["reflection_reduction"] = True
+                out["dofs_per_system"] = psn._phase_reduction.size
         if case.get("kref") is not None:
             out.update(kref=float(case["kref"]), pcm=(k - float(case["kref"])) * 1e5)
         return out
