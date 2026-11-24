@@ -4,8 +4,8 @@ For isotropic sources, eliminating the odd flux gives
     -div(omega omega^T / Sigma_t grad u) + Sigma_t u = q.
 Take the weak form in each angular sector with a Gauss nodal basis. Quadrature
 diagonalizes the angular mass, streaming tensor and vacuum term together.
-The finite-sector closure instead retains a single average per angular cell
-and integrates the streaming tensor and vacuum coefficient over that cell.
+The finite-sector closure integrates the streaming tensor and vacuum term
+against an angular basis local to each cell.
 In both closures, reflected fields share spatial trace degrees of freedom
 at specular faces, so their normal currents sum to zero there.
 """
@@ -16,7 +16,7 @@ from time import perf_counter
 
 import numpy as np
 from numpy.polynomial.legendre import leggauss, legvander
-from scipy.sparse import coo_matrix
+from scipy.sparse import bmat, coo_matrix
 from scipy.sparse.linalg import splu
 
 from .ritz import keff_ritz
@@ -58,8 +58,11 @@ def _directions(sectors, azimuth_degree, mu, polar_weights, transpose_symmetry):
                multiplicity * polar_weights[polar] * w[j] / (2 * sectors))
 
 
-def _sector_averages(sectors, polar_bands, transpose_symmetry):
-    """Coefficients and weight of each finite polar-band/azimuth cell."""
+def _sector_averages(sectors, polar_bands, transpose_symmetry, degree=0):
+    """Yield five scalar coefficients and a weight for constant cells.
+
+    Enriched cells carry the coefficients as a (mode, mode, 5) tensor and a weight.
+    """
     polar_edges = np.cos(np.linspace(0.0, np.pi / 2, polar_bands + 1))
     polar_edges[-1] = 0.0
     polar_width = polar_edges[:-1] - polar_edges[1:]
@@ -73,17 +76,37 @@ def _sector_averages(sectors, polar_bands, transpose_symmetry):
     keep = (samples + 1) // 2 if transpose_symmetry else samples
     sinc = np.sinc(1 / sectors)
     half_sinc = np.sinc(0.5 / sectors)
+    if degree:
+        z, w = leggauss(12)
+        modes = degree + 1
+        basis = legvander(z, degree) * np.sqrt(2 * np.arange(modes) + 1)
+        weights = np.einsum("ki,kj,k->kij", basis, basis, w / 2).reshape(z.size, -1)
     for polar, sample in product(range(polar_bands), range(keep)):
         phi = (sample + 0.5) * step
         square = mean_mu2[polar] / 2
         contrast = sinc * np.cos(2 * phi)
         multiplicity = 2 if transpose_symmetry and 2 * sample + 1 != samples else 1
-        yield (square * (1 + contrast),
-               square * sinc * np.sin(2 * phi),
-               square * (1 - contrast),
-               mean_mu[polar] * half_sinc * np.cos(phi),
-               mean_mu[polar] * half_sinc * np.sin(phi),
-               multiplicity * polar_width[polar] / sectors)
+        average = (square * (1 + contrast),
+                   square * sinc * np.sin(2 * phi),
+                   square * (1 - contrast),
+                   mean_mu[polar] * half_sinc * np.cos(phi),
+                   mean_mu[polar] * half_sinc * np.sin(phi))
+        weight = multiplicity * polar_width[polar] / sectors
+        if degree == 0:
+            yield (*average, weight)
+        else:
+            cos_phi = np.cos(phi + step / 2 * z)
+            sin_phi = np.sin(phi + step / 2 * z)
+            coefficients = np.array([mean_mu2[polar] * cos_phi**2,
+                                     mean_mu2[polar] * cos_phi * sin_phi,
+                                     mean_mu2[polar] * sin_phi**2,
+                                     mean_mu[polar] * cos_phi,
+                                     mean_mu[polar] * sin_phi])
+            # Legendre shapes have diagonal mass. Streaming and vacuum
+            # retain the couplings between shapes within the finite sector.
+            tensors = (coefficients @ weights).reshape(5, modes, modes).transpose(1, 2, 0)
+            tensors[0, 0] = average
+            yield tensors, weight
 
 
 class _QuadraticMesh:
@@ -121,9 +144,9 @@ class _QuadraticMesh:
     def matrix(self, st, x, y):
         return self.tensor_matrix(st, x * x, x * y, y * y, x, y)
 
-    def tensor_matrix(self, st, xx, xy, yy, vacuum_x, vacuum_y):
+    def tensor_matrix(self, st, xx, xy, yy, vacuum_x, vacuum_y, *, mass_scale=1):
         h = self.aspect
-        mass = (st * self.area)[:, None, None] * _CELL_MASS
+        mass = (mass_scale * st * self.area)[:, None, None] * _CELL_MASS
         x_term = (xx * h / st)[:, None, None] * _GRAD_X
         y_term = (yy / (h * st))[:, None, None] * _GRAD_Y
         cross = (xy / st)[:, None, None] * _CROSS
@@ -213,6 +236,9 @@ class SectorDiffusion(PSN2D):
     def _angular_matrix(self, st, cell):
         return self.mesh.matrix(st, *cell[:-1])
 
+    def _angular_rhs(self, rhs):
+        return rhs
+
     def _build_topology(self):
         self.nodes = self.nx * self.ny
         self.j_idx, self.i_idx = np.divmod(np.arange(self.nodes), self.nx)
@@ -297,13 +323,14 @@ class SectorDiffusion(PSN2D):
     def _sweep_all(self, q):
         if self.transpose_symmetry:
             q = self._transpose_average(q)
-        rhs = [self.mesh.rhs(group) for group in q]
+        rhs = [self._angular_rhs(self.mesh.rhs(group)) for group in q]
 
         def solve(block):
             g = block[0][0]
             field = np.zeros(self.mesh.size)
             for _, weight, apply in block:
-                field += weight * apply(rhs[g])
+                # The scalar flux picks out the mean of the angular cell.
+                field += weight * apply(rhs[g])[:self.mesh.size]
             return g, self.mesh.moments(field)
 
         # Fixed contiguous blocks preserve the reduction order across thread
@@ -331,15 +358,33 @@ class SectorDiffusion(PSN2D):
 
 
 class SectorAverage(SectorDiffusion):
-    """Finite-angle-cell PSN with one even field per sector and polar band."""
+    """Finite-angle-cell PSN with local azimuth shapes through degree two."""
 
     def __init__(self, *args, generic=True, azimuth_degree=0, **kwargs):
-        if not generic or azimuth_degree != 0:
-            raise ValueError("sector_average requires angular.model=generic and A=0")
+        if not generic or azimuth_degree not in (0, 1, 2):
+            raise ValueError("sector_average requires angular.model=generic and A=0, 1 or 2")
+        self.azimuth_degree = azimuth_degree
         super().__init__(*args, generic=generic, azimuth_degree=azimuth_degree, **kwargs)
 
     def _angular_cells(self, azimuth_degree):
-        return _sector_averages(self.M, self.I, self.transpose_symmetry)
+        return _sector_averages(self.M, self.I, self.transpose_symmetry, azimuth_degree)
 
     def _angular_matrix(self, st, cell):
-        return self.mesh.tensor_matrix(st, *cell[:-1])
+        if not self.azimuth_degree:
+            return self.mesh.tensor_matrix(st, *cell[:-1])
+        tensors, _ = cell
+        modes = self.azimuth_degree + 1
+        blocks = [[None] * modes for _ in range(modes)]
+        for row in range(modes):
+            for col in range(row, modes):
+                matrix = self.mesh.tensor_matrix(st, *tensors[row, col], mass_scale=int(row == col))
+                blocks[row][col] = blocks[col][row] = matrix
+        return bmat(blocks, format="csc")
+
+    def _angular_rhs(self, rhs):
+        if not self.azimuth_degree:
+            return rhs
+        # Isotropic sources project only onto the constant angular shape.
+        source = np.zeros((self.azimuth_degree + 1) * rhs.size)
+        source[:rhs.size] = rhs
+        return source

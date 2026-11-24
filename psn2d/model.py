@@ -9,7 +9,7 @@ Spec schema (see examples/):
     model: generic | ty3
     closure: legacy | strict_phase_space | directional_matrix | sector_diffusion | sector_average
     I: 30           # generic: even polar order, I/2 independent nodes
-    A: 3            # sector_diffusion: A+1 Gauss points; sector_average: 0
+    A: 3            # sector_diffusion: A+1 Gauss points; sector_average: 0, 1, 2
     M: 24           # azimuthal segments (must be even)
   geometry:
     # square mode (default):

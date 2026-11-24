@@ -101,6 +101,41 @@ class SectorAverageTests(TestCase):
         self.assertGreater(xx * yy - xy * xy, 0)
         self.assertAlmostEqual(weight, polar_width / sectors)
 
+    def test_linear_azimuth_tensor_retains_cross_mode_coupling(self):
+        sectors, bands = 4, 3
+        tensors, _ = next(_sector_averages(sectors, bands, False, 1))
+        mean, mixed, slope = tensors[0, 0], tensors[0, 1], tensors[1, 1]
+        p2 = mean[0] + mean[2]
+        step = np.pi / sectors
+
+        def shape(phi):
+            return np.sqrt(3) * (2 * phi / step - 1)
+
+        expected_mixed = p2 * quad(lambda phi: shape(phi) * np.cos(phi)**2, 0, step)[0] / step
+        expected_slope = p2 * quad(lambda phi: shape(phi)**2 * np.cos(phi)**2, 0, step)[0] / step
+        p1 = mean[4] * step / (1 - np.cos(step))
+        expected_vacuum = p1 * quad(lambda phi: shape(phi) * np.sin(phi), 0, step)[0] / step
+        self.assertAlmostEqual(mixed[0], expected_mixed, places=13)
+        self.assertAlmostEqual(slope[0], expected_slope, places=13)
+        self.assertAlmostEqual(mixed[4], expected_vacuum, places=13)
+        self.assertGreater(abs(mixed[0]), 1e-4)
+
+    def test_linear_azimuth_transpose_fold_matches_full_cells(self):
+        mat = np.array([[0, 1], [1, 0]])
+        args = (mat, 0.5, [[1.0, 1.2]], [[[0.6, 0.5]]], [[0.5, 0.0]])
+        options = dict(M=6, I=4, threads=1, azimuth_degree=1,
+                       boundary=("reflect", "reflect", "vacuum", "vacuum"))
+        folded, full = (SectorAverage(*args, **options) for _ in range(2))
+        self.assertTrue(folded.transpose_symmetry)
+        full.transpose_symmetry = False
+        full.angles = list(_sector_averages(6, 2, False, 1))
+        rng = np.random.default_rng(7)
+        source = folded._transpose_average(rng.normal(size=(1, 4, 9)))
+        for solver in (folded, full):
+            solver._prefactor()
+        np.testing.assert_allclose(folded._sweep_all(source)[1],
+                                   full._sweep_all(source)[1], atol=3e-14, rtol=1e-12)
+
     def test_nested_refinement_on_strong_checkerboard(self):
         root = Path(__file__).resolve().parents[1]
         spec = load_spec(root / "examples/psn_repro/checkerboard_1g_strong.yaml")
@@ -118,6 +153,23 @@ class SectorAverageTests(TestCase):
         self.assertGreater(results[2, 8], results[2, 4])
         self.assertGreater(results[4, 4], results[2, 4])
         self.assertGreater(results[4, 8], max(results[2, 8], results[4, 4]))
+
+    def test_azimuth_enrichment_improves_strong_checkerboard_at_equal_cell_count(self):
+        root = Path(__file__).resolve().parents[1]
+        spec = load_spec(root / "examples/psn_repro/checkerboard_1g_strong.yaml")
+        case = dict(name="strong", closure="sector_average", model="generic",
+                    M=4, I=30, subdivide=4, kref=0.51673)
+        mean, linear, quadratic = (
+            run_case(spec, dict(case, A=degree), verbose=False, threads=1)
+            for degree in (0, 1, 2)
+        )
+        self.assertTrue(all(row["converged"] for row in (mean, linear, quadratic)))
+        self.assertEqual(mean["phase_systems"], linear["phase_systems"])
+        self.assertEqual(mean["phase_systems"], quadratic["phase_systems"])
+        self.assertEqual(quadratic["K"], 3)
+        self.assertLess(mean["keff"], linear["keff"])
+        self.assertLess(linear["keff"], quadratic["keff"])
+        self.assertLess(quadratic["pcm"], 0)
 
     def test_reflective_homogeneous_eigenpair(self):
         psn = SectorAverage(np.zeros((2, 2), dtype=int), 0.3,
