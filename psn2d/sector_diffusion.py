@@ -427,12 +427,12 @@ class SectorDiffusion(PSN2D):
             moments = self._transpose_average(moments)
         return moments[:, :, 0], moments
 
-    def keff(self, max_outer=2000, outer_tol=1e-9, verbose=True):
+    def keff(self, max_outer=2000, outer_tol=1e-9, verbose=True, *, initial_source=None):
         project = self._transpose_average if self.transpose_symmetry else None
         try:
             return keff_ritz(self, max_outer, outer_tol, verbose,
                              moment_count=_MOMENTS.shape[0], factor_threads=1,
-                             project_source=project)
+                             project_source=project, initial_source=initial_source)
         finally:
             self._factors.clear()
 

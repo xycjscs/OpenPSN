@@ -168,13 +168,14 @@ class _RitzSpace:
 
 
 def keff_ritz(psn, max_sweeps, outer_tol, verbose, *, moment_count=5,
-              factor_threads=None, project_source=None):
+              factor_threads=None, project_source=None, initial_source=None):
     """Solve Bq = kAq using exact sweeps for A=I-S*T and B=F*T.
 
     T maps a source to its transport flux moments. The coarse diffusion
-    operator proposes a starting source and directions. A fresh full
-    transport sweep certifies the final source residual and fission balance.
+    operator proposes search directions and a default starting source.
+    A supplied starting source uses the same group, cell and moment shape.
     A source projector may restrict the search to an invariant subspace.
+    A fresh full sweep certifies the final source residual and fission balance.
     """
     if max_sweeps < 2 or not np.isfinite(outer_tol) or outer_tol <= 0.0:
         raise ValueError("Ritz requires at least two sweeps and a positive tolerance")
@@ -187,6 +188,14 @@ def keff_ritz(psn, max_sweeps, outer_tol, verbose, *, moment_count=5,
     if reference_rate <= 0 or psn.chi.sum() <= 0:
         raise ValueError("Ritz requires positive fission production")
     shape = (psn.ng, psn.nodes, moment_count)
+    if initial_source is not None:
+        initial_source = np.asarray(initial_source, dtype=float)
+        if initial_source.shape != shape:
+            raise ValueError(f"initial_source must be a nonzero finite array of shape {shape}")
+        if project_source is not None:
+            initial_source = project_source(initial_source)
+        if not np.isfinite(initial_source).all() or not np.any(initial_source):
+            raise ValueError("initial_source must remain finite and nonzero after projection")
     previous_threads = runtime.get_thread_limit()
     sweeps = 0
     verification_sweeps = 0
@@ -202,7 +211,11 @@ def keff_ritz(psn, max_sweeps, outer_tol, verbose, *, moment_count=5,
         packed = getattr(psn, "_memopt_backend", None) == "chol-packed-rs"
         if packed:
             psn._start_sweep_pool()
-        direction = (project_source(initial) if project_source else initial).ravel()
+        if initial_source is not None:
+            initial = initial_source
+        elif project_source is not None:
+            initial = project_source(initial)
+        direction = initial.ravel()
         depth = min(_SPACE_SIZE, direction.size)
         space = _RitzSpace(depth, direction.size)
         source_tol = _SOURCE_TOL_FACTOR * outer_tol
