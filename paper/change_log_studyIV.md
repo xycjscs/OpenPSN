@@ -116,17 +116,19 @@
 
 ## 8. 已知未做
 
-- 记录口径的补测未跑完：`scripts/study4_uniform_grid` 计划 458 点（镜像已发表的
-  棋盘与组件网格），本轮写表时收敛 213 点；2026-11-25 补到 388/458 —— 棋盘发表
-  网格 114/114、`A=1` 宽矩阵 200/200、方形组件 48/72、矩形组件 26/72，剩 70 点
-  全在组件族。已并入 `paper/data/` 两个逐点 CSV 的仍是先前那 213 点；跑完后重跑
-  `merge` 与 `study4_closure_report`（去掉 `--allow-missing`）即刷新配对统计与比值表，
-  配对数会变、caption 自动同步，两篇论文的点数也要按合并后的实际行数重算。
-- 新闭合的六组件表还出不了：`study4_assembly_report.py --closure` 已能按闭合切换，
-  但它读的 `paper/data/study4_assembly_summary.csv` 只有对照闭合的汇总行、且没有
-  `closure` 列（该文件的历史生成者不在仓内）。补测跑满后需先按同一口径生成
-  `closure=sector_diffusion` 的汇总行并补上列名，否则脚本在
-  `complete == planned` 断言处停下。
+- 记录口径的补测已收敛到这台主机的上限：`scripts/study4_uniform_grid` 计划的 458
+  点里 440 点收敛并并入 `paper/data/` 两个逐点 CSV（棋盘发表网格 114/114、`A=1`
+  宽矩阵新增 200/200、方形组件 72/72、矩形组件 54/72）。剩 18 点是两个矩形组件
+  各同样的 9 格（`S=4` 的 `M=16,24`、`S=5` 的 `M=12,16,24`、`S=6` 的 `M≥8`），
+  实测稀疏因子池 49.77–182.85 GiB，超过主机 58 GiB，逐格记在
+  `paper/data/uniform/plan_unreachable.json`；这两例的最佳点因此是下界不是上限，
+  论文与 `docs` 都按这个口径写。换更大的机器之前这 18 点跑不出来。
+- 新闭合那侧没有逐棒裂变图：`study4_assembly_summary.py` 派生的汇总行只有本征值
+  与耗时，`fuel_rms_percent` / `fuel_max_percent` 留空，所以
+  `tab:study4-assembly-sector` 的 Pin 两列是 `---`，两篇论文的正文也写明这一点。
+  对照闭合那侧的棒图仍出自 Study III 的逐棒裂变输出。
+- 新五组矩阵图只进了两篇 LaTeX 论文；markdown 镜像（`paper/studyIV.md` 与
+  `main.md` / `revised_main.md`）仍只有文字与表，沿用镜像里既有的取舍。
 - `paper/main.docx` 未重生成：本机无 pandoc（只有 tectonic），无法从改后的
   LaTeX/Markdown 复原 docx。`main.pdf` 与两份 markdown 已更新。
 - OpenMC 堆芯参考的 statepoint / 统计误差原始输出未入仓（见
@@ -268,3 +270,53 @@
 - 矩形组件的配对样本各 1 点，方形 UO$_2$ 有 4/12 点变大，因此"逐方向闭合更准"
   在论文里限定为"在已配对的实测点上"。
 - 配对计时是负载记录（主机同时承载其余扫表），不是吞吐测量；`main.docx` 仍未重生成。
+
+## 12. 补测跑满后把全部正文重算一遍（本轮追加）
+
+- 数据合并：`merge` 之后 `paper/data/uniform/points.jsonl` 的收敛点写进
+  `study4-checkerboard.csv`（`sector_diffusion` 314 行）与
+  `study4_assembly_points.csv`（`sector_diffusion` 440 行 = 棋盘 314 + 组件 126），
+  已发表的 `sector_average` 行逐字未动（棋盘 130、组件与宽棋盘 384），
+  `study4_closure_pairs.csv` 从 189 对涨到 416 对。
+- 表：`python -m scripts.study4_assembly_summary --closure sector_diffusion` 先派生
+  汇总行（补 `closure` 列），再
+  `python -m scripts.study4_assembly_report --closure sector_diffusion --allow-partial
+  --table paper/tables/study4-assembly-sector.tex --label tab:study4-assembly-sector`
+  才出得了表；新增的 `--label` 专为这第二张表，两篇论文各自 `\input`、标签不撞。
+  已发表的 `tables/study4-assembly.tex` 重跑后逐字节不变（`git diff` 为空）。
+- 图的入口：新增 `scripts/study4_sm_figures.py`，只读 `paper/data/` 两个逐点 CSV、
+  `paper/data/uniform/plan.json` 与 `examples/c5g7/study4_sector_core/sm_error_pcm.csv`，
+  一次画五组图（PNG + 同名 PDF）落 `paper/figures/`：棋盘六格
+  `study4_checker_sm`、`A=1` 宽矩阵两格 `study4_sm6_sm`、组件 2×2 误差图
+  `study4_assembly_grid2x2`（上排方形、下排矩形，左 UO₂、右 MOX）、同布局耗时图
+  `study4_assembly_wall`、13 格总览 `study4_sm_overview`。三条口径固定在代码里：
+  每格独立色标（跨格只比印出的 pcm 数）、绿环标该格 $|\Delta k|$ 最小点（耗时图也环
+  同一个点，两图对着读就是"最佳点花多少"）、灰斜线 = 排程里就没有的格、`n/a` =
+  排了但主机算不出的格。宽矩阵那两格把 `checker` 与 `sm6_checker` 两个族并成一张
+  120 格矩阵 —— 那是同一道题的两份扫表清单，不是两道题，分开画会把 20 个已测点画成
+  缺口。
+- 正文按合并后的实数重算（旧 → 新）：棋盘 187 → 314 点；同号 172 → 279；正偏差
+  15 → 35 个，仍全在 `A=1`、`M=4` 一列（强吸收 $S{=}3\ldots20$、最大 +127.38 pcm，
+  弱吸收 $S{=}4\ldots20$、最大 +18.24 pcm）；沿 $S$ 的加密步 596 → 280 步（口径改为
+  314 点里同 $M$ 的相邻点对），趋零 540 → 246、反例 56 → 34，措辞从"无一例上升"
+  改成"34 例全在该列内"；方位饱和判据从 `M≥8` 收到 `M≥12`（55 条列、最宽 6.79 pcm），
+  `M=8` 那条最宽首步单写（`A=0`、`S=12` 强吸收 −22.40 pcm，下一格 −8.38 pcm）；
+  配对 189 → 416、更小 184 → 398、中位 0.488 → 0.437、最好 0.016 → 0.011、最差仍是
+  8.394；18 个反向配对全部是粗角向格（方形 UO₂ 的 12 个 $M{\le}8$ 格、矩形 UO₂ 的
+  6 个 $M{=}2$ 格）。改动落在 `main.tex` 引言与结论、`studyIV.tex`、
+  `sector_method.tex`（摘要 757 → 984 点、贡献 (iv)(v)、结果开头、棋盘段、组件段、
+  范围与结论）、`README.md`、`docs/psn4-sector-diffusion.md`、
+  `paper/unresolved_items.md`、`paper/retained_data_map.md`。
+- 新写进去的东西：`tab:study4-assembly-sector`（新闭合六矩阵）与
+  `fig:study4-checker` / `fig:study4-checker-wide` / `fig:study4-assembly-grid` /
+  `fig:study4-assembly-wall` / `fig:study4-overview` 进 `studyIV.tex`，
+  `tab:study4-assembly-sector` 与 `fig:assembly-grid` 进 `sector_method.tex`；
+  两个矩形案例的"新闭合最佳点较差"写明是覆盖受限（对照侧最佳格
+  $S{=}6,M{=}24$ 正在这 9 格里），共享的 27 格全部偏向新闭合。
+- markdown 镜像：`paper/studyIV.md` 三段正文 + 新六组件表同步（顺手把该表最后一格
+  的 2957.8 s 改回生成值 2957.7 s）；`scripts/finalize_markdown.py` 里三处字面量
+  （引言 EDITS、结论 EDITS、棋盘表题）同步；`main.md` 已落盘的旧数字单独改写后再
+  `--force` 重建 —— EDITS 的 marker 命中就跳过，只改脚本是刷不掉镜像里的旧句子的。
+- 重编译：`main.pdf` 41 页（多了 5 图 2 表），overfull 仍是原来那四处（`main.tex`
+  194 / 548 / 1168 与 `studyIV.tex` 209，行号随插入平移），无未定义引用；
+  `sector_method.pdf` 17 页、0 overfull、无未定义引用。

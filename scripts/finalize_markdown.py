@@ -42,10 +42,10 @@ EDITS = [
             as the body term, in two reductions of that tensor at equal angular
             unknowns; on the square checkerboard the direction-wise reduction, which
             is the closure of record, removes the sign-changing diagonal valley of the
-            published error survey at 172 of its 187 measured points and at every
+            published error survey at 279 of its 314 measured points and at every
             point outside one under-resolved azimuthal column, and where the two
-            reductions share $A$, $S$, $M$ and $I$ it is the more accurate one at 184
-            of the 189 paired points, at a median error ratio of $0.488$ and a median
+            reductions share $A$, $S$, $M$ and $I$ it is the more accurate one at 398
+            of the 416 paired points, at a median error ratio of $0.437$ and a median
             time ratio of $0.98$. Fifth, we assess the available checkerboard""",
      "which is the closure of record"),
     ("""            reference's own standard error, and the sector closure is the more
@@ -61,10 +61,10 @@ EDITS = [
             tested row, and on the explicit rectangular quarter core""",
      """            The direction-wise finite-sector closure of the even-parity equation gives
             checkerboard errors that are one-signed outside a single under-resolved
-            azimuthal column and that decrease under every refinement of the spatial
-            axis, and that stay below the cell-average reduction of the same tensor at
-            184 of the 189 points measured both ways; on the explicit rectangular
-            quarter core""",
+            azimuthal column and that move toward zero at 246 of the 280 refinements of
+            the spatial axis, and that stay below the cell-average reduction of the same
+            tensor at 398 of the 416 points measured both ways; on the explicit
+            rectangular quarter core""",
      "The direction-wise finite-sector closure"),
     # (anchor in main.md, replacement, phrase proving the edit is applied)
     ("""The contributions of this work are fourfold.""",
@@ -151,10 +151,11 @@ SECTOR_CAPTION = (
     "`sector_diffusion` closure --- the closure of record. $A{+}1$ angular unknowns per "
     "sector at azimuthal degree $A$, as in the cell-average table below, so a cell paired "
     "across the two tables differs in "
-    "the closure alone. 172 of the 187 measured points are negative; the 15 positive ones "
-    "are the $A{=}1$, $M{=}4$ column, where a sector holds two Gauss directions. Outside "
-    "that column every refinement of $S$ moves the error toward zero, and past $M{=}8$ each "
-    "$A,S$ column settles within $6.8$ pcm of its own best.")
+    "the closure alone. The closure is measured at 314 points on the two absorbers, of "
+    "which 279 are negative; the 35 positive ones are the $A{=}1$, $M{=}4$ column, where "
+    "a sector holds two Gauss directions. Outside that column 246 of the 280 refinements "
+    "of $S$ move the error toward zero, and past $M{=}12$ each $A,S$ column settles "
+    "within $6.8$ pcm of its own best.")
 
 CHECKER_CAPTION = (
     "Strong and weak absorber checkerboards, $10^{5}(\\kappa_{\\mathrm{eff}}-k_\\mathrm{ref})$ in "

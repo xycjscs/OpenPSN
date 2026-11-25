@@ -18,7 +18,7 @@ carries the same column.
 
     python -m scripts.study4_assembly_report --closure sector_average
     python -m scripts.study4_assembly_report --closure sector_diffusion \
-        --table paper/tables/study4-assembly-sector.tex
+        --table paper/tables/study4-assembly-sector.tex --label tab:study4-assembly-sector
 
 A closure the host could not finish leaves a case short of its planned grid --- the
 rectangular assemblies need up to 183 GiB of factor pool at ``S=6``, ``M=24`` on a machine
@@ -45,6 +45,8 @@ def main():
     parser.add_argument("--points", type=Path, default=ROOT / "paper/data/study4_assembly_points.csv")
     parser.add_argument("--summary", type=Path, default=ROOT / "paper/data/study4_assembly_summary.csv")
     parser.add_argument("--table", type=Path, default=ROOT / "paper/tables/study4-assembly.tex")
+    parser.add_argument("--label", default="tab:study4-assembly",
+                        help="LaTeX label of the table; a second closure goes under its own")
     parser.add_argument("--closure", default="sector_average",
                         help="which closure of the two in the per-point file is tabulated")
     parser.add_argument("--allow-partial", action="store_true",
@@ -83,7 +85,7 @@ def main():
     args.table.write_text(rf"""\begin{{table}}[htbp]
 \centering
 \caption{{{CAPTION.format(closure=closure)}}}
-\label{{tab:study4-assembly}}
+\label{{{args.label}}}
 \centering\small
 \begin{{tabular}}{{l r r r r r}}
 \hline

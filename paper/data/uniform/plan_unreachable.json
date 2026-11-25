@@ -1,0 +1,182 @@
+[
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 18,
+  "measured_pool_gib": 49.77
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 18,
+  "measured_pool_gib": 49.77
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 18,
+  "measured_pool_gib": 74.65
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 18,
+  "measured_pool_gib": 74.65
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 26,
+  "measured_pool_gib": 60.61
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 26,
+  "measured_pool_gib": 60.61
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 26,
+  "measured_pool_gib": 80.82
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 26,
+  "measured_pool_gib": 80.82
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 26,
+  "measured_pool_gib": 121.23
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 26,
+  "measured_pool_gib": 121.23
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 60.95
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 60.95
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 91.42
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 91.42
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 121.9
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 121.9
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 182.85
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 34,
+  "measured_pool_gib": 182.85
+ }
+]

@@ -113,7 +113,7 @@ A3/扇区分支的驱动、数据、图脚本与严格校验包一并推到该�
 40 格矩阵（`−268.51 / −49.83 / … / −11.98 / −3.68`）。仓内没有任何脚本或日志
 产生这些数：`tools_ho/cb_a3_*.log` 是**方向矩**（`directional_matrix`）闭包的
 `A=3` 扫表，闭合不同，数也对不上。文档现把它降级为"试算记录、不作判据"，并
-在正文以 `paper/tables/study4-checker-sector.tex`（`A=0,1,2`，187 点，
+在正文以 `paper/tables/study4-checker-sector.tex`（`A=0,1,2`，314 点，
 `closure=sector_diffusion`）为记录口径。记录闭包的 `A=3` 网格尚未归档：
 `scripts/study4_uniform_grid.py` 的计划只覆盖 `A=0,1,2`，若要补需要重跑该
 计划的 `A=3` 扩展，而不是引用现有日志。

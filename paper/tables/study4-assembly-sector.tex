@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{Coverage, best measured point, fuel-pin error and wall time of the six $S\times M$ matrices, measured with the \texttt{sector\_diffusion} closure at $A=1$. The sum column adds the individual point times; several cases ran concurrently on the same host.}
+\label{tab:study4-assembly-sector}
+\centering\small
+\begin{tabular}{l r r r r r}
+\hline
+Case & Best $(S,M)$ & $\Delta k$ (pcm) & Pin RMS & Pin max & Sum, 27--166 points\\
+\hline
+Strong absorber & $(20,8)$ & -0.90 & --- & --- & 339.9~s\\
+Weak absorber & $(20,8)$ & -1.79 & --- & --- & 402.9~s\\
+Square UO$_2$ & $(3,2)$ & -0.16 & --- & --- & 1453.4~s\\
+Square MOX & $(6,8)$ & -1.20 & --- & --- & 1413.0~s\\
+Rectangular UO$_2$ & $(3,24)$ & -7.75 & --- & --- & 6704.9~s\\
+Rectangular MOX & $(4,12)$ & -113.85 & --- & --- & 6392.6~s\\
+\hline
+\end{tabular}
+\end{table}
