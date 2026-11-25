@@ -393,10 +393,14 @@ python -m scripts.study4_checkerboard_report          # 对照闭合棋盘表 + 
 python -m scripts.study4_closure_report               # 记录口径棋盘矩阵 + 对照矩阵 + 逐点比值表
                                        # （study4-checker-sector / -average / -closure-ratio + pairs.csv；
                                        # 补测未完时加 --allow-missing，会打印留空格数）
+python -m scripts.study4_assembly_summary --closure sector_diffusion
+                                       # 由逐点 CSV 派生新闭合的六组件汇总行：planned 取补测计划，
+                                       # 所以跑不满的格显示成 26/36 而不是"完整"；已发表那侧的行原样保留，
+                                       # fuel_* 只有 Study III 的逐棒裂变图能给，派生行留空、表里出 '---'
 python -m scripts.study4_assembly_report --closure sector_average
                                        # 六组件汇总表（384 点，已发表的对照闭合表；--closure 两侧同码可切，
-                                       # 新闭合要等 paper/data/study4_assembly_summary.csv 补上
-                                       # closure=sector_diffusion 的汇总行后才出得了表）
+                                       # 上一行派生出汇总行后新闭合那侧也出得了表；矩形组件两例在 58 GiB
+                                       # 主机上只测到 36 格里的 26 格，那一侧加 --allow-partial 并打印覆盖率）
 python -m scripts.study4_core_report --logs examples/c5g7/study4_sector_core/logs \
     --output examples/c5g7/study4_sector_core --latex paper/tables \
     --fission-summary examples/c5g7/study4_sector_core/best_fission_summary.json \

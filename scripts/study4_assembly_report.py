@@ -19,6 +19,11 @@ carries the same column.
     python -m scripts.study4_assembly_report --closure sector_average
     python -m scripts.study4_assembly_report --closure sector_diffusion \
         --table paper/tables/study4-assembly-sector.tex
+
+A closure the host could not finish leaves a case short of its planned grid --- the
+rectangular assemblies need up to 183 GiB of factor pool at ``S=6``, ``M=24`` on a machine
+with 58 GiB --- so ``--allow-partial`` tabulates it with the coverage printed, while the
+default keeps the all-or-nothing gate the published table was measured under.
 """
 import argparse
 import csv
@@ -42,6 +47,8 @@ def main():
     parser.add_argument("--table", type=Path, default=ROOT / "paper/tables/study4-assembly.tex")
     parser.add_argument("--closure", default="sector_average",
                         help="which closure of the two in the per-point file is tabulated")
+    parser.add_argument("--allow-partial", action="store_true",
+                        help="tabulate a closure whose grid is not complete, printing the coverage")
     args = parser.parse_args()
 
     with args.points.open() as handle:
@@ -51,14 +58,18 @@ def main():
         summary = {(row.get("closure", "sector_average"), row["case"]): row
                    for row in csv.DictReader(handle)}
 
-    body, counts = [], []
+    body, counts, partial = [], [], []
     for key, label in CASES:
         points = [row for row in rows if row["case"] == key]
         assert points, f"no points recorded for {key}"
         counts.append(len(points))
         best = min(points, key=lambda row: abs(float(row["pcm"])))
         info = summary[(args.closure, key)]
-        assert int(info["complete"]) == len(points) == int(info["planned"]), (key, info["complete"])
+        assert int(info["complete"]) == len(points), (key, info["complete"])
+        if len(points) != int(info["planned"]):
+            assert args.allow_partial, \
+                f"{key}: {len(points)} of {info['planned']} planned points measured"
+            partial.append(f"{label} {len(points)}/{info['planned']}")
         assert (int(info["S"]), int(info["M"])) == (int(best["S"]), int(best["M"])), key
         assert abs(float(info["pcm"]) - float(best["pcm"])) < 1e-9, key
         assert abs(float(info["sum_s"]) - sum(float(row["seconds"]) for row in points)) < 0.05, key
@@ -84,7 +95,8 @@ Case & Best $(S,M)$ & $\Delta k$ (pcm) & Pin RMS & Pin max & Sum, {min(counts)}-
 \end{{table}}
 """)
     print(f"{len(rows)} {args.closure} assembly points over {len(CASES)} cases, "
-          f"every planned grid complete")
+          + ("incomplete grids: " + "; ".join(partial) if partial
+             else "every planned grid complete"))
     print(f"wrote {args.table}")
 
 
