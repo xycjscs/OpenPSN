@@ -59,7 +59,10 @@ def point(directory, s, m):
 def run(args, *, backend_label=None):
     relpath, reference = CASES[args.case]
     spec = load_spec(EXAMPLES / relpath)
-    directory = args.output / args.case
+    # The published checkpoints are the sector_average ones; any other closure
+    # keeps its own directory so a rerun cannot overwrite a stored point.
+    directory = args.output / args.case if args.closure == "sector_average" \
+        else args.output / f"{args.case}_{args.closure}"
     directory.mkdir(parents=True, exist_ok=True)
     geometry = spec["geometry"]
     rect = geometry.get("rect", False)
@@ -76,8 +79,10 @@ def run(args, *, backend_label=None):
                         continue
                     original = json.loads(saved["info"].item())
             start = perf_counter()
-            case = dict(name=args.case, model="generic", closure="sector_average", I=8,
-                        M=m, A=1, slope_space="bilinear", subdivide=s, kref=reference)
+            case = dict(name=args.case, model="generic", closure=args.closure, I=8,
+                        M=m, A=args.azimuth_degree, subdivide=s, kref=reference)
+            if args.closure == "sector_average":
+                case["slope_space"] = "bilinear"
             psn = build_solver(spec, case, threads=args.threads, mem_limit_gb=args.memory,
                                opt=args.backend)
             near = [(abs(s - r) + abs(np.log2(m / a)), r, a)
@@ -97,7 +102,8 @@ def run(args, *, backend_label=None):
             pin_flux = weighted_flux.reshape(psn.ng, 17, block, 17, block).sum(axis=(2, 4)) / pin_area
             reaction = np.sum(weighted_flux * psn.nuSf[:, psn.mat.ravel()], axis=0)
             pin_source = reaction.reshape(17, block, 17, block).sum(axis=(1, 3)) / pin_area
-            row = dict(case=args.case, S=s, M=m, I=8, A=1, keff=k, reference=reference,
+            row = dict(case=args.case, S=s, M=m, I=8, A=args.azimuth_degree, keff=k,
+                       reference=reference, closure=args.closure,
                        pcm=(k-reference)*1e5, seconds=perf_counter()-start,
                        factor_seconds=psn.factor_seconds, sweeps=psn.sweeps_executed,
                        source_residual=psn.source_residual, keff_residual=psn.keff_residual,
@@ -134,6 +140,14 @@ def main(*, backend_label=None):
                         help="recompute missing pin fields while preserving the original timing")
     parser.add_argument("--backend", default="sector-cholmod",
                         choices=("off", "sector-cholmod", "chol-packed-rs"))
+    parser.add_argument("--closure", default="sector_average",
+                        choices=("sector_average", "sector_diffusion"),
+                        help="finite-sector closure; sector_average is the published one and keeps "
+                             "the stored checkpoint directory, any other closure checkpoints "
+                             "and records under its own name")
+    parser.add_argument("--azimuth-degree", type=int, default=1,
+                        help="A: local azimuthal modes per sector (sector_average) or extra Gauss "
+                             "directions per sector minus one (sector_diffusion)")
     run(parser.parse_args(), backend_label=backend_label)
 
 
