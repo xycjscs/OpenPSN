@@ -1,0 +1,4124 @@
+[
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 4,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 8,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 12,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 2,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 24,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 48,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 2,
+  "M": 96,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 4,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 4,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 8,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 8,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 12,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 24,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 48,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 4,
+  "M": 96,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 4,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 8,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 8,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 12,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 12,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 8,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 24,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 48,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 8,
+  "M": 96,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 4,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 4,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 8,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 8,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 12,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 12,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 12,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 24,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 24,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 24,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 48,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 48,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 48,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "strong",
+  "S": 12,
+  "M": 96,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 96,
+  "A": 0,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "checker",
+  "case": "weak",
+  "S": 12,
+  "M": 96,
+  "A": 2,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 1,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 1,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 1,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 1,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 1,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 1,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 1,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 1,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 1,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 1,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 1,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 1,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 2,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 2,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 2,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 2,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 3,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 3,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 3,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 3,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 3,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 3,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 3,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 3,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 3,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 3,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 3,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 3,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 4,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 4,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 5,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 5,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 5,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 5,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 5,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 5,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 6,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 6,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 7,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 7,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 7,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 7,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 7,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 7,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 7,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 7,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 7,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 7,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 7,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 7,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 8,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 8,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 8,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 8,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 9,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 9,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 9,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 9,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 9,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 9,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 9,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 9,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 9,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 9,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 9,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 9,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 10,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 10,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 10,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 10,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 10,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 10,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 10,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 10,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 10,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 10,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 10,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 10,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 11,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 11,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 11,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 11,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 11,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 11,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 11,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 11,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 11,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 11,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 11,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 11,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 12,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 12,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 12,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 12,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 13,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 13,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 13,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 13,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 13,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 13,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 13,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 13,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 13,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 13,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 13,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 13,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 14,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 14,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 14,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 14,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 14,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 14,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 14,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 14,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 14,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 14,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 14,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 14,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 15,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 15,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 15,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 15,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 15,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 15,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 15,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 15,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 15,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 15,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 15,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 15,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 16,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 16,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 16,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 16,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 16,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 16,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 16,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 16,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 16,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 16,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 16,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 16,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 17,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 17,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 17,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 17,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 17,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 17,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 17,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 17,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 17,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 17,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 17,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 17,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 18,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 18,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 18,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 18,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 18,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 18,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 18,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 18,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 18,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 18,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 18,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 18,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 19,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 19,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 19,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 19,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 19,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 19,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 19,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 19,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 19,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 19,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 19,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 19,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 20,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 20,
+  "M": 2,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 20,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 20,
+  "M": 4,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 20,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 20,
+  "M": 8,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 20,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 20,
+  "M": 12,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 20,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 20,
+  "M": 16,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "strong",
+  "S": 20,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "sm6_checker",
+  "case": "weak",
+  "S": 20,
+  "M": 24,
+  "A": 1,
+  "I": 30,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 1,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 1,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 1,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 1,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 1,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 1,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 1,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 1,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 1,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 1,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 1,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 1,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 2
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 2,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 2,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 2,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 2,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 2,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 2,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 2,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 2,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 2,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 2,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 2,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 2,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 3
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 1,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 1,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 1,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 1,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 1,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 1,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 1,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 1,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 1,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 1,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 1,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 1,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 4
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 3,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 3,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 3,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 3,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 3,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 3,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 3,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 3,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 3,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 3,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 3,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 3,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 5
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 2,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 2,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 2,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 2,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 2,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 2,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 2,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 2,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 2,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 2,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 2,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 2,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 7
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 4,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 4,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 4,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 4,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 4,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 4,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 4,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 4,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 8
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 3,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 3,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 3,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 3,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 3,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 3,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 3,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 3,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 3,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 3,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 3,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 3,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 5,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 5,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 5,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 5,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 5,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 5,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 12
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 6,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 6,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 6,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 6,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_uo2",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "square",
+  "case": "square_mox",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 16
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 4,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 18
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 5,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 26
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 2,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 4,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 8,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 12,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 16,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_uo2",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ },
+ {
+  "family": "rect",
+  "case": "rect_mox",
+  "S": 6,
+  "M": 24,
+  "A": 1,
+  "I": 8,
+  "tier": 34
+ }
+]

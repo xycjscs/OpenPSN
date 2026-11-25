@@ -1,0 +1,30 @@
+\begin{table}[htbp]
+\centering
+\caption{$\lvert\Delta k\rvert$ of the direction-wise closure divided by that of the
+cell-average closure at the same $A$, $S$, $M$ and $I$; below $1$ the direction-wise
+tensor is the more accurate of the two at equal angular unknowns. Over all
+189 paired checkerboard and assembly points the direction-wise closure is
+smaller at 184 of them, the median ratio is 0.488
+(best 0.016), the worst is 8.39 at the rectangular UO$_2$ assembly with $A$=1, $S$=1, $M$=2, where the two errors are 24 and 204 pcm; the other 188 pairs are all at most 1.11, and the sign of the difference
+changes between the two closures at 15 of them, all of them in the $M{{=}}4$ column of the $A{{=}}1$ scan, where a sector holds two Gauss directions 
+($A$=1, $M$=4, $S=$3,4,5,6,7,8,9,12 of the strong absorber; $A$=1, $M$=4, $S=$4,5,6,7,8,9,12 of the weak absorber). The time these points take is
+not compared here, because the two campaigns ran under different thread budgets; the
+matched pairs of Table~\ref{tab:study4-closure-cost} are.}
+\label{tab:study4-closure-ratio}
+\centering\small
+\begin{tabular}{rrrrrrrr}
+\hline
+& & \multicolumn{3}{c}{strong absorber} &
+  \multicolumn{3}{c}{weak absorber}\\
+\cline{3-5}\cline{6-8}
+$S$ & $M$ & $A$=0 & $A$=1 & $A$=2 & $A$=0 & $A$=1 & $A$=2\\
+\hline
+2 & 4 & 0.349 & 0.350 & --- & 0.307 & 0.399 & ---\\
+4 & 8 & 0.117 & 0.587 & 0.759 & 0.121 & 0.609 & ---\\
+8 & 12 & 0.053 & 0.396 & 0.511 & 0.074 & 0.471 & ---\\
+12 & 24 & 0.093 & 0.359 & 0.377 & 0.155 & 0.474 & ---\\
+12 & 48 & 0.226 & --- & --- & 0.326 & --- & ---\\
+12 & 96 & 0.327 & --- & --- & 0.440 & --- & ---\\
+\hline
+\end{tabular}
+\end{table}

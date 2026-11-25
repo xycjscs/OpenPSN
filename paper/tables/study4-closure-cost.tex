@@ -1,0 +1,29 @@
+\begin{table}[htbp]
+\centering
+\caption{Cost of the two closures at equal angular unknowns.  Each pair was run
+through \texttt{scripts/sector\_diffusion\_benchmark.py} on one host, one closure
+immediately after the other, at the same $M$, $A$, $I$, thread budget, factor kernel
+and memory cap (8 threads, 10~GiB,
+\texttt{sector-cholmod}); the load average at the start of each run is in the data
+file, and the host was also carrying the rest of the campaign, so these are workload
+records.  $s$ is the end-to-end time, pcm the difference from the same reference.
+Median ratio 0.98 over 10 pairs.}
+\label{tab:study4-closure-cost}
+\centering\small
+\begin{tabular}{l r r l l r}
+\hline
+Case & $(S,M)$ & $A$ & \texttt{sector\_average} & \texttt{sector\_diffusion} & ratio \\
+\hline
+Square MOX & $(4,8)$ & $1$ & 23.32~s / -6.09 & 22.90~s / -1.85 & 0.98\\
+Square UO$_2$ & $(4,8)$ & $1$ & 20.29~s / +6.24 & 15.70~s / +6.39 & 0.77\\
+Strong absorber & $(4,8)$ & $2$ & 0.69~s / -100.79 & 0.48~s / -76.46 & 0.70\\
+Strong absorber & $(8,16)$ & $1$ & 2.29~s / -48.45 & 2.17~s / -23.02 & 0.95\\
+Strong absorber & $(12,24)$ & $0$ & 3.84~s / -107.43 & 3.29~s / -9.97 & 0.86\\
+Strong absorber & $(12,24)$ & $1$ & 5.10~s / -34.13 & 7.38~s / -12.25 & 1.45\\
+Weak absorber & $(4,8)$ & $2$ & 0.69~s / -19.78 & 0.36~s / -15.21 & 0.52\\
+Weak absorber & $(8,16)$ & $1$ & 2.35~s / -10.40 & 2.40~s / -5.65 & 1.02\\
+Weak absorber & $(12,24)$ & $0$ & 3.06~s / -21.61 & 3.43~s / -3.35 & 1.12\\
+Weak absorber & $(12,24)$ & $1$ & 5.05~s / -7.85 & 6.22~s / -3.73 & 1.23\\
+\hline
+\end{tabular}
+\end{table}

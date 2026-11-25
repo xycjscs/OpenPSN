@@ -125,6 +125,15 @@ def main():
                 "sweeps_executed": record.get("sweeps_executed", ""),
                 "backend": record.get("backend", ""),
                 "time_s": record["time_s"]})
+    # The same file carries the points of the other closure and the strict-phase-space
+    # counterexample, which this scan does not produce: they are carried over untouched,
+    # so regenerating one campaign cannot silently drop the other.
+    own = {f"examples/psn_repro/logs/{SCAN[key][0]}" for key in SCAN}
+    stored = []
+    if args.data.exists():
+        with args.data.open() as handle:
+            stored = [row for row in csv.DictReader(handle) if row.get("source") not in own]
+    rows = stored + rows
     rows.sort(key=lambda row: (row["problem"], row["closure"], row["A"], row["subdivide"], row["M"]))
     args.data.parent.mkdir(parents=True, exist_ok=True)
     with args.data.open("w", newline="") as out:

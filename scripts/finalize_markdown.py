@@ -27,6 +27,45 @@ SPOILER = "## Comparison with the published diffusion / SN / nodal landscape"
 HERE = PAPER  # the markdown mirror source lives beside the paper
 
 EDITS = [
+    # the direction-wise closure is the closure of record
+    ("""            relation to the original PSN closure. Fourth, we document a finite-sector
+            closure of the same even-parity hierarchy, in which the diffusion tensor
+            of each finite angular cell is the exact second moment of the retained
+            directions and the interface and vacuum terms come from the same weak form
+            as the body term; on the square checkerboard that closure removes the
+            sign-changing diagonal valley of the published error survey over every
+            tested point. Fifth, we assess the available checkerboard""",
+     """            relation to the original PSN closure. Fourth, we document a finite-sector
+            closure of the same even-parity hierarchy, in which the diffusion tensor
+            of each finite angular cell is the exact second moment of the retained
+            directions and the interface and vacuum terms come from the same weak form
+            as the body term, in two reductions of that tensor at equal angular
+            unknowns; on the square checkerboard the direction-wise reduction, which
+            is the closure of record, removes the sign-changing diagonal valley of the
+            published error survey at 172 of its 187 measured points and at every
+            point outside one under-resolved azimuthal column, and where the two
+            reductions share $A$, $S$, $M$ and $I$ it is the more accurate one at 184
+            of the 189 paired points, at a median error ratio of $0.488$ and a median
+            time ratio of $0.98$. Fifth, we assess the available checkerboard""",
+     "which is the closure of record"),
+    ("""            reference's own standard error, and the sector closure is the more
+            expensive of the two paths at equal $M$.""",
+     """            reference's own standard error. Against the legacy path the sector closure
+            is the more expensive one; between the two sector closures, which carry
+            the same unknowns at equal $A$ and $M$, the measured time ratio is $0.98$
+            at a median, and the accuracy difference is in the closure rather than in
+            the cost accounting.""",
+     "between the two sector closures"),
+    ("""            The finite-sector closure of the even-parity equation gives one-signed
+            checkerboard errors that decrease under refinement of either axis at every
+            tested row, and on the explicit rectangular quarter core""",
+     """            The direction-wise finite-sector closure of the even-parity equation gives
+            checkerboard errors that are one-signed outside a single under-resolved
+            azimuthal column and that decrease under every refinement of the spatial
+            axis, and that stay below the cell-average reduction of the same tensor at
+            184 of the 189 points measured both ways; on the explicit rectangular
+            quarter core""",
+     "The direction-wise finite-sector closure"),
     # (anchor in main.md, replacement, phrase proving the edit is applied)
     ("""The contributions of this work are fourfold.""",
      """The contributions of this work are fivefold.""",
@@ -107,9 +146,20 @@ CHECKER_COLUMNS = (("checkerboard-strong", "0", "quadratic"),
                    ("checkerboard-strong", "2", "quadratic"),
                    ("checkerboard-weak", "0", "quadratic"),
                    ("checkerboard-weak", "1", "quadratic"))
+SECTOR_CAPTION = (
+    "The same two checkerboards and the same grid, measured with the direction-wise "
+    "`sector_diffusion` closure --- the closure of record. $A{+}1$ angular unknowns per "
+    "sector at azimuthal degree $A$, as in the cell-average table below, so a cell paired "
+    "across the two tables differs in "
+    "the closure alone. 172 of the 187 measured points are negative; the 15 positive ones "
+    "are the $A{=}1$, $M{=}4$ column, where a sector holds two Gauss directions. Outside "
+    "that column every refinement of $S$ moves the error toward zero, and past $M{=}8$ each "
+    "$A,S$ column settles within $6.8$ pcm of its own best.")
+
 CHECKER_CAPTION = (
     "Strong and weak absorber checkerboards, $10^{5}(\\kappa_{\\mathrm{eff}}-k_\\mathrm{ref})$ in "
-    "pcm, against the published $0.51673$ and $1.12974$. $I{=}30$. $A{=}0$ keeps the angular average "
+    "pcm, against the published $0.51673$ and $1.12974$, measured with the cell-average "
+    "`sector_average` closure as the comparison for the table above. $I{=}30$. $A{=}0$ keeps the angular average "
     "over each sector, $A{=}1$ and $A{=}2$ add local azimuthal modes inside the sector, and \"bilin.\" "
     "represents the $A{=}1$ coefficient in the continuous bilinear subspace of the same mesh. The "
     "bilinear representation was scanned over the same $S{=}2,\\ldots,12$ $\\times$ "
@@ -117,11 +167,34 @@ CHECKER_CAPTION = (
     "weak absorber reaches $-8.94$ pcm at $S{=}12$, $M{=}24$.")
 
 
-def checker_table():
-    """The checkerboard matrix, read back from the same CSV the LaTeX table is built from."""
+def points_of(closure):
+    """One closure's checkerboard points, keyed by representation and grid."""
     with (PAPER / "data/study4-checkerboard.csv").open() as handle:
-        points = {(row["problem"], row["A"], row["slope_space"], int(row["subdivide"]), int(row["M"])):
-                  float(row["pcm"]) for row in csv.DictReader(handle)}
+        return {(row["problem"], row["A"], row["slope_space"] or "quadratic",
+                 int(row["subdivide"]), int(row["M"])): float(row["pcm"])
+                for row in csv.DictReader(handle)
+                if row.get("closure", "sector_average") == closure}
+
+
+def sector_table():
+    """The matrix of record: the direction-wise closure on the published grid."""
+    points = points_of("sector_diffusion")
+    head = ["$S$", "$M$"] + [f"{case} $A{{=}}{a}$" for case in ("strong", "weak")
+                            for a in (0, 1, 2)]
+    lines = ["| " + " | ".join(head) + " |", "|" + "---:|" * len(head)]
+    for subdivision, M in CHECKER_ROWS:
+        row = [str(subdivision), str(M)]
+        for case in ("checkerboard-strong", "checkerboard-weak"):
+            for a in "012":
+                value = points.get((case, a, "quadratic", subdivision, M))
+                row.append("---" if value is None else f"${value:+.2f}$".replace("-", "\\u2212"))
+        lines.append("| " + " | ".join(row) + " |")
+    return "\n".join(lines) + f"\n\n: {SECTOR_CAPTION} {{#tab:study4-checker-sector}}\n"
+
+
+def checker_table():
+    """The archived comparison, read back from the same CSV the LaTeX table is built from."""
+    points = points_of("sector_average")
     head = ["$S$", "$M$", "strong $A{=}0$", "strong $A{=}1$", "strong bilin.", "strong $A{=}2$",
             "weak $A{=}0$", "weak $A{=}1$"]
     lines = ["| " + " | ".join(head) + " |", "|" + "---:|" * len(head)]
@@ -222,7 +295,8 @@ def build_section():
     section = (HERE / "studyIV.md").read_text()
     for token, text in (("@@CORE_TABLES@@", core_tables()[0]),
                         ("@@BEST_TABLE@", core_tables()[1]),
-                        ("@@CHECKER_TABLE@@", checker_table())):
+                        ("@@CHECKER_TABLE@@", checker_table()),
+                        ("@@SECTOR_TABLE@@", sector_table())):
         if token not in section:
             raise SystemExit(f"{HERE / 'studyIV.md'} has no {token}")
         section = section.replace(token, text)

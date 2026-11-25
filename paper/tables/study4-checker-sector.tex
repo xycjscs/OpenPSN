@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\caption{The direction-wise closure \texttt{sector\_diffusion} on the same meshes, same $I$, same $M$, and the same number of angular unknowns per sector ($K=A+1$): the diffusion tensor of each sector is used per retained direction instead of being averaged over the sector first. This is the closure of record; every point of the cell-average comparison is paired with the point here that shares its $A$, $S$ and $M$.}
+\label{tab:study4-checker-sector}
+\centering\small
+\begin{tabular}{rrrrrrrr}
+\hline
+& & \multicolumn{3}{c}{strong absorber} &
+  \multicolumn{3}{c}{weak absorber}\\
+\cline{3-5}\cline{6-8}
+$S$ & $M$ & $A$=0 & $A$=1 & $A$=2 & $A$=0 & $A$=1 & $A$=2\\
+\hline
+2 & 4 & $-746.69$ & $-146.66$ & --- & $-120.55$ & $-31.05$ & $-50.61$\\
+4 & 8 & $-72.92$ & $-74.01$ & $-76.46$ & $-14.44$ & $-14.80$ & $-15.21$\\
+8 & 12 & $-16.47$ & $-22.38$ & $-23.13$ & $-4.42$ & $-5.57$ & $-5.66$\\
+12 & 24 & $-9.97$ & $-12.25$ & $-12.08$ & $-3.35$ & $-3.73$ & $-3.70$\\
+12 & 48 & $-11.68$ & --- & --- & $-3.63$ & --- & $-3.68$\\
+12 & 96 & $-11.99$ & --- & --- & $-3.68$ & --- & $-3.68$\\
+\hline
+\end{tabular}
+\end{table}
