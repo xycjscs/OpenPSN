@@ -117,8 +117,18 @@
 ## 8. 已知未做
 
 - 四分之一堆芯矩阵当前 26/30 格：`S=4,M=24` 与 `S=5,M=8,12,24` 在写表时仍在运行，
-  两张表里留空并在 caption 里标注；其余 26 格已入仓。补齐后重跑
-  `scripts/study4_core_report.py`（去掉 `--allow-missing`）即填上并去掉标注；
+  两张表里留空并在 caption 里标注；其余 26 格已入仓。补齐后重跑（去掉
+  `--allow-missing`）即填上并去掉标注，完整命令见 README §6：
+
+  ```bash
+  python -m scripts.study4_core_report --logs examples/c5g7/study4_sector_core/logs \
+      --output examples/c5g7/study4_sector_core --latex paper/tables \
+      --mirror-md docs/psn4-sector-diffusion.md \
+      --mirror-md examples/c5g7/study4_sector_core/README.md
+  python -m scripts.finalize_markdown --force
+  make -C paper
+  ```
+
   若新的最佳格改变，需同时重跑 `validation/sector-diffusion-sm/fission_map.py`
   更新逐棒裂变对照图。
 
@@ -127,3 +137,44 @@
 - OpenMC 堆芯参考的 statepoint / 统计误差原始输出未入仓（见
   `unresolved_items.md`）。
 - 堆芯矩阵的墙钟时间不是吞吐测量：同机多点并发，`*` 标注复用分解因子的格子。
+
+## 9. 独立成文的 companion 论文（本轮追加）
+
+- 新增 `paper/sector_method.tex`（14 页，已随仓提交 `paper/sector_method.pdf`）：
+  有限扇区扩散闭包的独立文章，结构与 OpenPSN 论文同型（引言—方法—实现与复现—
+  测试算例—结果—讨论与范围—结论—Reproducibility—附录），正文以
+  `\cite{openpsn2026}` 引用 OpenPSN 框架论文，可脱离 `main.tex` 单独编译：
+  `tectonic paper/sector_method.tex` 或 `make -C paper companion`。
+- 三张结果表不再手抄：新增 `scripts/study4_assembly_report.py`，从
+  `paper/data/study4_assembly_points.csv` 重建 `paper/tables/study4-assembly.tex`
+  （六组件最佳点、逐点误差、棒功率 RMS/max、逐点耗时求和，并断言 planned ==
+  complete、最佳点与最佳 pcm 自洽、时间列等于逐点之和）。`paper/studyIV.tex` 与
+  companion 论文 `\input` 同一文件；重生成时发现手抄表的一处末位舍入
+  （矩形 MOX 求和 2957.8 s → 2957.7 s），以生成值为准。棋盘与堆芯表沿用
+  `study4_checkerboard_report.py` / `study4_core_report.py`。
+- companion 论文里新增的测试算例总表（问题 / 输入 / 参考 / 约束什么）逐项对齐
+  仓库参考值；与 `main.tex` 一样，表内数值全部来自生成物。
+- 数值口径校正：实测网格点数按存档记录写成 540（棋盘 130 + 组件 384 + 堆芯
+  已收敛 26），组件+堆芯的"其余点数"相应为 410；`544`/`414` 是把未收敛的
+  4 格与 10 个旧闭包对照点混计进去的结果。
+- 两处措辞收紧：（1）正方形 UO₂ 上 $M{=}2\to4$ 的台阶不再写成"没有台阶"，改为
+  已归档的 $S{=}1,A{=}1$ 双线性 $-10.84$ pcm / 双二次 $-0.06$ pcm；（2）"扇区闭包在
+  同 $M$ 下更贵"改为分场景：四分之一芯 $S{=}1,M{=}24$ 冷启动 340.68 s 对 128.08 s
+  （约 2.7 倍），组件网格上双线性扇区点反而快于同 $M$ 原版、双二次更慢，且两条路径
+  在该表里用的是不同分解核。
+- 删除一处无源码可追的常数（真空平板角扩散平均通量 `0.718691069833`），改为直接
+  指向 `tests/test_sector_diffusion.py::test_vacuum_slab_matches_analytic_angular_diffusion`
+  （32 格、1.6 mfp、$M{=}4$、$A{=}1$，六位一致）。同时把节点响应等价性的两条断言
+  改写为测试实际做的事（三材料矩形在四个空间/角向子空间、其中两个在反射不变子空间，
+  对 splu 直解 $2\times10^{-11}$；强棋盘消元与直解同本征对 $2\times10^{-9}$）。
+- `paper/Makefile` 增加 `companion` 目标并入 `all`，`clean` 一并清理；`.gitignore`
+  增加 `paper/sector_method.{aux,log,out}`。`README.md` §3 与目录树、`studyIV.tex`
+  开头各加一处指向 companion 论文的说明。
+- 本机校验：`tests/test_sector_diffusion.py` 22 项 11.8 s 全过；
+  `examples/psn_strict_checks` 在本机只能收集 8 项（`test_rectangle.py` 因未安装
+  `sympy` 无法导入，已收集的 7 项通过），本机无网络、无法按
+  `requirements.txt` 补装依赖，故 14 项全量需在有依赖的环境里跑。
+- companion 论文的表与 `main.tex` 共用生成物，因此本轮把 markdown 镜像驱动也入仓：
+  `scripts/finalize_markdown.py` + `paper/studyIV.md`（原先是两个带绝对路径的本地脚本，
+  读者无法重建 `main.md` / `revised_main.md`）。入仓后 `python -m scripts.finalize_markdown
+  --force` 与本地版输出逐字节相同（两份 markdown 各改 2 行）。

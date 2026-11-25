@@ -223,6 +223,10 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 - [`--opt sector-cholmod` 构建与计时说明](docs/psn4-sector-diffusion.md#扇区扩散性能)
   适用于这两种扇区扩散闭合。
 - 两种扇区闭合的比较见 [PSN-4 收敛记录](docs/psn4-sector-diffusion.md)。
+- 这一闭合的独立成文（偶宇称约化、角区张量、两个反例、测试算例清单、代价与
+  适用范围）见 `paper/sector_method.tex` / `paper/sector_method.pdf`，可单独
+  编译与阅读，正文引用 OpenPSN 框架论文；论文数据表与本文共用
+  `paper/tables/` 与 `paper/data/`，由 `scripts/study4_*_report.py` 生成。
 
 **高序方向闭合的内层求解器（`solver.inner`，YAML `solver:` 段，默认 `lu`）**
 
@@ -364,6 +368,20 @@ cd examples/psn_strict_checks && python -m unittest discover -s . -p 'test_*.py'
                                        # 14 项有理/符号精确检查（sympy + PyYAML，~2 s）
 ```
 
+论文表图与 markdown 同源重建（图脚本需要 matplotlib）：
+
+```bash
+python -m scripts.study4_checkerboard_report          # 棋盘表 + 数据（130 点，逐点断言）
+python -m scripts.study4_assembly_report              # 六组件汇总表（384 点）
+python -m scripts.study4_core_report --logs examples/c5g7/study4_sector_core/logs \
+    --output examples/c5g7/study4_sector_core --latex paper/tables --allow-missing \
+    --mirror-md docs/psn4-sector-diffusion.md \
+    --mirror-md examples/c5g7/study4_sector_core/README.md
+                                       # 1/4 芯两张矩阵（未收敛格留 '---'）
+python -m scripts.finalize_markdown --force           # main.md / revised_main.md 与 LaTeX 同源
+make -C paper                          # main.pdf 与 sector_method.pdf（tectonic）
+```
+
 C5G7 20 码 NEA 景观对照（高保真参考 1.18646，论文 §4.5）：
 
 ```
@@ -448,6 +466,7 @@ OpenPSN/
 │   └── logs/         #   历史扫参日志
 ├── tools_ho/         # 论文扫表驱动 + 逐点日志 + dump 数据 + 图脚本（见 §7）
 ├── paper/            # 论文：main.tex + studyIII.tex + studyIV.tex + appendix.tex
+│                     #   + sector_method.tex（有限扇区闭合 companion 论文，可独立编译）
 │                     #   + figures/ + tables/ + 三格式（pdf/md/docx）
 ├── tests/            # 回归套件：run_examples.py + test_memopt.py + test_tile.py
 │                     #   + test_sector_diffusion.py + test_strict_closure.py
