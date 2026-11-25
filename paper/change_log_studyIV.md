@@ -132,6 +132,16 @@
   若新的最佳格改变，需同时重跑 `validation/sector-diffusion-sm/fission_map.py`
   更新逐棒裂变对照图。
 
+- 记录口径的补测未跑完：`scripts/study4_uniform_grid` 计划 458 点（镜像已发表的
+  棋盘与组件网格），本轮写表时收敛 213 点 —— 棋盘发表网格 114/114、`A=1` 宽矩阵
+  73/200、方形组件 24/72、矩形组件 2/72。已收敛点已并入 `paper/data/` 两个逐点
+  CSV，跑完后重跑 `merge` 与 `study4_closure_report`（去掉 `--allow-missing`）
+  即刷新配对统计与比值表，配对数会变、caption 自动同步。
+- 新闭合的六组件表还出不了：`study4_assembly_report.py --closure` 已能按闭合切换，
+  但它读的 `paper/data/study4_assembly_summary.csv` 只有对照闭合的汇总行、且没有
+  `closure` 列（该文件的历史生成者不在仓内）。补测跑满后需先按同一口径生成
+  `closure=sector_diffusion` 的汇总行并补上列名，否则脚本在
+  `complete == planned` 断言处停下。
 - `paper/main.docx` 未重生成：本机无 pandoc（只有 tectonic），无法从改后的
   LaTeX/Markdown 复原 docx。`main.pdf` 与两份 markdown 已更新。
 - OpenMC 堆芯参考的 statepoint / 统计误差原始输出未入仓（见
@@ -198,3 +208,78 @@
   `python -m scripts.finalize_markdown --force` 重建。
 - 重编译结果：`main.pdf` 39 页、仍只有 189 / 543 / 1163 三处既有 overfull；
   `sector_method.pdf` 14 页、0 overfull、无未定义引用。
+
+## 11. 记录口径改为逐方向闭合（本轮追加）
+
+§10 只回答"哪张表用了哪个闭合"。本轮把它换成一个正向口径：**逐方向闭合
+`sector_diffusion` 是方法记录，`sector_average` 是等节点数对照**，两篇论文、
+`README.md`、`docs/psn4-sector-diffusion.md` 与本节都按这个顺序叙述；对照侧的
+数值不删，改为标注归属。两者共用同一空间弱式、同一镜面迹共享、同一门槛
+（外层 `1e-9`、复扫源残差 `5e-9`、扇区线性求解 `5e-12`）和同一每扇区自由度
+`K = A + 1`（`psn2d/__main__.py:107`），所以同格逐点差只来自闭合本身。
+
+### 11.1 新增的生成物（不手抄）
+
+- `scripts/study4_closure_report.py`：读两个逐点 CSV 的 `closure` 列 →
+  `paper/tables/study4-checker-sector.tex`（记录口径棋盘矩阵）、
+  `study4-checker-average.tex`（对照矩阵）、`study4-closure-ratio.tex`
+  （逐点 $|\Delta k|$ 比值，配对数/中位/极值/变号写在 caption 里，随数据自动同步）
+  与 `paper/data/study4_closure_pairs.csv`。发表网格的每个已发表点都必须有配对点，
+  补测未完时 `--allow-missing` 会打印留空格数。
+- `scripts/study4_closure_cost.py`：同机背靠背跑配对的两闭合 →
+  `study4-closure-cost.tex` 与 `paper/data/study4_closure_cost.csv`（同 $M$、$A$、
+  $I$、线程预算、分解核与内存上限，逐条记录开始时负载、空闲内存与 CPU 亲和位掩码）。
+- `scripts/study4_uniform_grid.py`（`plan` / `run` / `merge`）：按已发表网格逐点补测
+  `sector_diffusion`，收敛点入 `paper/data/uniform/points.jsonl`（逐点出处随码发布，
+  `paper/data/` 两个 CSV 的 `source` 字段指向它），`merge` 按 `closure` + 网格键并入，
+  已发表行不改写，脚本幂等。
+- `scripts/study4_assembly_report.py` 与 `scripts/study4_checkerboard_report.py`
+  改成闭合感知：前者加 `--closure`，后者重写自己那 9 份日志的行、其余行原样保留，
+  因此重生成一种闭合不会抹掉另一种。`study4_assembly_points.csv` 增加 `closure` 列。
+
+### 11.2 记录口径下的数值变化（旧 → 新）
+
+- 棋盘：原写"扇区闭合 130 点全部同号（负），任一轴加密单调趋零"——那是
+  `sector_average` 的 130 点，仍成立但降级为对照。记录口径改为按发表网格逐点重测的
+  **187 点**（`A=0,1,2`，`I=30`，全部通过独立复扫，最大源残差 `3.93e-9`、最大本征值
+  残差 `9.68e-10`），符号结构写成"187 点中 172 点为负；15 个正偏差全部在 `A=1`
+  （每扇区两个 Gauss 方向）的 `M=4` 一列，强吸收 $S{=}3,4,5,6,7,8,9,12$、弱吸收
+  $S{=}4,5,6,7,8,9,12$，最大 $+123.97$ / $+17.55\,\mathrm{pcm}$"，这 15 格同格的角区
+  平均值仍为负，是两种闭合唯一的符号分歧。
+- 单调性："两轴均单调趋零" → 固定 `M>4` 加密 S 时 187 点无一例 $|\Delta k|$ 上升；
+  `M` 方向饱和（强吸收 `A=1`、`S=12` 在 `M=8,12,24` 为 −5.73 / −10.79 / −12.25 pcm）。
+- 棋盘最佳点：`sector_average` `A=1` 的 −34.13 / −7.85 pcm（`S=12,M=24`）→
+  记录口径 `A=1` 的 −5.73 / −2.68 pcm（`S=12,M=8`）；`A=0` −8.38 / −2.90
+  （`S=12,M=12`）、`A=2` −12.08（`S=12,M=24`）/ −3.67（`S=12,M=8`）。
+  同格提高 `A` 不再有系统收益：(4,8)、(8,12)、(12,24) 三行里 `A=0` 在两个吸收体上
+  都略优，这一点此前没有写过。
+- 闭合对比：`sector_diffusion`/`sector_average` 的 $|\Delta k|$ 比值，本轮写表时
+  189 个配对点中 184 点更小、中位 0.488、最好 0.016、最差 8.394；分案例是强吸收
+  85/85（中位 0.445）、弱吸收 78/78（0.472）、方形 MOX 12/12（0.570）、方形 UO$_2$
+  8/12（0.937），矩形组件各 1 点（0.710 与 8.394）不作趋势。补测跑完后这些计数会
+  变，caption 由脚本同步，正文只引用比值表。
+- 成本：删掉"扇区闭合同 $M$ 更贵"的未归档探针值（1.1–1.5×），换成入仓的配对计时
+  0.52–1.45、中位 0.98（10 组，8 线程、10 GiB 上限、同一 `sector-cholmod`）。
+  `2.7×`（`S=1,M=24` 冷启动 340.68 s 对 128.08 s）只作为**对 legacy PSN 路径**的
+  代价保留；`docs` 里 `60.21/82.32` 对扇区列那张旧计时表也补写明它比的是 legacy
+  路径，且两侧分解核不同。
+- 一处口径错误更正：双线性方案的顺序计时写的是 12.68 s，日志
+  `examples/psn_repro/logs/timing_bilinear_full_strong.log` 的 `time_s` 是 **12.81 s**，
+  与 `main.tex` 一致（legacy 同侧 37.44 s，出自 `timing_final_legacy_strong.log`）。
+- `docs/psn4-sector-diffusion.md` 的"方形棋盘格"小节原以默认 `A=3` 的 40 格联合加密
+  （`S=12,M=24` 处 −11.98 / −3.68 pcm）为表值，**仓内无对应脚本或日志**，按
+  `unresolved_items.md` §11 的同类条目降级为试算记录；表值改由已归档的 `A=0,1,2`
+  187 点给出，复现命令按方位阶逐条写出。
+- `README.md` §5 的 Study IV 行拆成"记录口径 187 点"与"对照 130 点"两行，各自的
+  结论只写自己那份数据支持的；§3 写明 `slope_space` / `polar_degree` /
+  `azimuth_grid` / `node_response` / `reflection_reduction` 只在
+  `sector_average` 下被读入（`psn2d/model.py:197`），逐方向闭合没有 `slope_space`
+  变体；§6 补上三个新脚本与 `--closure` 的用法与前置条件。
+
+### 11.3 仍不是结论的东西
+
+- 变号例外只在 `M=4`、`A=1` 一列，但没有把它证成两点求积的必然结果，只写实测分布
+  与对照侧的同格行为。
+- 矩形组件的配对样本各 1 点，方形 UO$_2$ 有 4/12 点变大，因此"逐方向闭合更准"
+  在论文里限定为"在已配对的实测点上"。
+- 配对计时是负载记录（主机同时承载其余扫表），不是吞吐测量；`main.docx` 仍未重生成。

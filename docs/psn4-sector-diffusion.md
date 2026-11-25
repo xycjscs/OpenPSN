@@ -1,6 +1,51 @@
 # PSN-4 扇区扩散验证
 
-## 有限角区平均闭合
+## 记录口径
+
+本文记录两种有限扇区闭合，二者在相同的空间弱式、相同的 `I`、`M` 与相同的
+每扇区角向自由度数（`K = A + 1`，`psn2d/__main__.py:107`）下逐点对照，
+外层容差 `1e-9`、独立复扫源残差 `5e-9`、扇区线性求解 `5e-12` 门槛完全共用。
+**逐方向闭合 `sector_diffusion` 是本文与论文的记录口径**，
+`sector_average`（角区平均）保留为等节点数对照。
+
+| | `sector_diffusion`（记录口径） | `sector_average`（对照） |
+|---|---|---|
+| 每扇区角向自由度 | `A+1` 个 Gauss 方向，逐方向解偶宇称二阶方程 | 角平均场 + `A` 个扇区内方位形函数，解一个耦合扩散块 |
+| 扩散张量 | 每个保留方向直接给 `ΩΩᵀ/Σₜ` | 先对"角区 × 形函数乘积"平均成 `⟨b_a b_b ΩΩᵀ⟩` |
+| 专属选项 | — | `slope_space`、`polar_degree`、`azimuth_grid`、`node_response`、`reflection_reduction` |
+| 默认 `A` | 3（`psn2d/model.py:195`） | 0 |
+
+后五个选项只在 `closure: sector_average` 下被读入（`psn2d/model.py:197`），
+逐方向闭合的方位系数是 Gauss 方向而非多项式，因此没有 `slope_space` 变体。
+下文标"对照"的小节属于 `sector_average`，其数值仍是该闭合自己的实测。
+
+配对结果与代价全部由脚本生成，不手抄：
+
+- `python -m scripts.study4_closure_report` → `paper/tables/study4-checker-sector.tex`
+  （记录口径的棋盘矩阵）、`study4-checker-average.tex`（对照矩阵）、
+  `study4-closure-ratio.tex`（逐点比值），逐点配对数据在
+  `paper/data/study4_closure_pairs.csv`；
+- `python -m scripts.study4_closure_cost` → `study4-closure-cost.tex` 与
+  `paper/data/study4_closure_cost.csv`（同机背靠背配对计时）。
+
+已发表的棋盘与组件矩阵出自 `sector_average` 扫表。
+`python -m scripts.study4_uniform_grid plan|run|merge` 按同一网格逐点补测
+`sector_diffusion`（`paper/data/uniform/points.jsonl` 追加收敛点，`merge`
+按 `closure` 一并并入 `paper/data/` 的两个逐点 CSV，不改写已发表行）。
+本轮写表时的进度：458 点中 213 点收敛（棋盘发表网格 114/114、强弱宽矩阵
+73/200、方形组件 24/72、矩形组件 2/72）。
+
+同自由度下的实测（`study4-closure-ratio.tex` caption 同步生成）：189 个配对点
+中 184 点上逐方向闭合的 `|Δk|` 更小，中位比 0.488，最好 0.016、最差 8.394；
+15 个变号点全部落在 `A=1`、`M=4`（每扇区两个 Gauss 方向）一列。方形 UO₂
+12 点中 8 点更小（中位 0.937），方形 MOX 12 点全部更小（中位 0.570），
+矩形组件各 1 点（0.710 与 8.394）样本太短，不构成趋势。代价上逐方向闭合
+不是一律更贵：10 组配对（8 线程、10 GiB 上限、同一 `sector-cholmod` 分解核）
+比值 0.52–1.45，中位 0.98。`## 扇区扩散性能` 里那张端到端计时表的 1.95 倍是
+**`sector_average` 对 legacy PSN 路径**的比较（两侧分解核还不同），不是两种扇区
+闭合之间的成本比；四分之一堆芯的 2.7 倍同属这类 legacy 路径对照。
+
+## 对照：有限角区平均闭合（`sector_average`）
 
 `sector_average` 的默认 `A=0` 在每个有限极角带与方位扇区的交集上保留一个偶宇称场，
 直接积分二阶张量 `⟨Ω Ωᵀ⟩` 和真空边界系数 `⟨|Ω·n|⟩`，
@@ -119,6 +164,12 @@ Legendre 基只定义在各自方位扇区上。每两个基函数 `b_i, b_j` �
 得 −32.05 pcm。`S=4, M=4` 升阶的收益更大，`A=0,1,2` 分别给出
 −2051.74、−271.34、−149.71 pcm。
 
+本节的角向形函数属于对照闭合。同样的 `A`（即同样的每扇区自由度数 `A+1`）改用
+逐方向张量后，`S=12, M=24` 上强、弱吸收的偏差分别是 −12.25 与 −3.73 pcm，
+即上表同格的 0.36 与 0.48 倍；逐点比值见
+`paper/tables/study4-closure-ratio.tex`，棋盘上的完整矩阵见
+`## 方形棋盘格`。
+
 无散射真空板另用解析输运解验证。板厚 1.6、总截面和各向同性均匀源均为 1，
 离散扫掠必须复现解析的单元平均通量，该判据作为回归固定在
 `tests/test_sector_diffusion.py::test_vacuum_slab_matches_analytic_angular_diffusion`
@@ -195,6 +246,11 @@ python -m scripts.sector_diffusion_benchmark "${rect[@]}" --azimuth-degree 1 --c
 
 ## 扇区扩散性能
 
+本节前半段（`polar_degree`、`slope_space`、`azimuth_grid`、
+`reflection_reduction` 与双线性/双二次角系数对照）都是**对照闭合
+`sector_average`** 的选项与实测：逐方向闭合没有这些开关（见 `## 记录口径`）。
+后半端的分解核与端到端计时对两种扇区闭合都适用。
+
 有限扇区方位角可用局部 Legendre 多项式从 A=0 加到 A=4。设
 `angular.polar_degree=1` 可在每个极角带加入沿 cos θ 的一次形函数。它与方位形函数
 通过体扩散和真空边界积分耦合，角区仍使用同一个偶宇称弱式。`polar_degree=0`
@@ -228,7 +284,9 @@ M=2 至 4 的本征值变化由 −10.84 pcm 缩至 −0.06 pcm。关闭互余�
 40 个双线性测点的误差均为负，固定 S 或 M 加密另一轴时均单调向零接近。
 `S=12, M=24` 时，强、弱吸收偏差分别为 −40.24、−8.94 pcm。
 另以同样的 8 线程预算和 `--opt off` 顺序计时强吸收 `S=12, M=24`，
-原版用时 37.44 秒，双线性方案用时 12.68 秒。
+原版用时 37.44 秒，双线性方案用时 12.81 秒（两份日志
+`examples/psn_repro/logs/timing_final_legacy_strong.log` 与
+`timing_bilinear_full_strong.log` 的 `time_s` 字段）。
 
 对于支持 NUMA 内存绑定的 Linux 主机，`OPENPSN_NUMA=1` 将同一个能群和角区
 的矩阵分解与扫掠分配到相同的节点。每群先按固定次序累加角区的空间解，再投影
@@ -246,10 +304,11 @@ cc -O3 -fPIC -shared -I/usr/include/suitesparse psn2d/sector_cholmod.c \
 
 同机端到端计时使用 C5G7 矩形 153×153 网格、`I=8`、`S=1`、60 线程上限、
 45 GiB 因子池上限及 `OPENPSN_NUMA=1`。`k_eff` 和独立复扫的源残差门槛分别为
-`1e-9` 和 `5e-9`。原版使用 `chol-packed-rs`，扇区闭合使用 `sector-cholmod`。
-各点依次运行，时间包含组装、分解、外层求解和复扫。
+`1e-9` 和 `5e-9`。原版使用 `chol-packed-rs`，两个扇区列使用
+`sector-cholmod`；两列的扇区闭合都是 `sector_average`（下表复现命令里的
+`--closure`）。各点依次运行，时间包含组装、分解、外层求解和复扫。
 
-| M | 原版耗时 / 偏差 | A=1 双线性耗时 / 偏差 | A=1 双二次耗时 / 偏差 |
+| M | 原版耗时 / 偏差 | `sector_average` A=1 双线性 | `sector_average` A=1 双二次 |
 |--:|:--|:--|:--|
 | 8 | 60.21 s / −203.73 pcm | 50.26 s / −200.95 pcm | 59.12 s / −123.55 pcm |
 | 16 | 82.32 s / −78.52 pcm | 73.12 s / −114.13 pcm | 160.49 s / −82.27 pcm |
@@ -257,6 +316,17 @@ cc -O3 -fPIC -shared -I/usr/include/suitesparse psn2d/sector_cholmod.c \
 双二次方案在 M=8 与原版耗时相近，M=16 耗时约为原版的 1.95 倍，因子池约
 41.64 GiB。双线性方案在两点均更快，M=16 的因子池为 22.56 GiB，偏差较原版多
 35.61 pcm。双二次方案的两个本征值都复现了已有扇区扩散结果。
+**这张表量的是扇区闭合对 legacy PSN 路径的代价**（两条路径还用了不同分解核），
+不能读成两种扇区闭合之间的成本比。
+
+两种闭合等自由度的配对计时另由 `python -m scripts.study4_closure_cost` 生成，
+10 组配对、8 线程、10 GiB 上限、同一 `sector-cholmod` 分解核，一组内两个闭合
+背靠背运行，结果在 `paper/tables/study4-closure-cost.tex` 与
+`paper/data/study4_closure_cost.csv`：比值 0.52–1.45，中位 0.98，
+即等角向自由度数下逐方向闭合不是一律更贵。该表的 `pcm` 列同时复现了
+棋盘与方形组件发表格的对应格，说明两侧跑的确实是同一测点。主机当时还承载
+其余扫表，每组开始时的负载与空闲内存随记录入档，因此这些是负载记录而非吞吐
+测量。
 
 计时桥接库用 SuiteSparse 4.4.4 头文件构建，连接 CVXOPT 1.3.3 提供的
 CHOLMOD 3.0.6。一次 CHOLMOD 5.3.1 的双二次 M=8 运行在四分钟后终止，
@@ -289,6 +359,12 @@ python -m scripts.sector_diffusion_benchmark rect --closure sector_average --opt
 每个小角区的扩散张量由方向直接给出。对称几何上，互余方位角只分解一侧，应用
 空间转置恢复角积分。PSN-3 的 Ritz 投影仍由细网扩散扫描组装本征问题，并用新扫描复核。
 
+上一段就是记录口径 `sector_diffusion` 的离散。对照闭合 `sector_average` 共用
+同一空间弱式、同一镜面迹共享与同一组门槛，只把张量与真空系数先对"角区 ×
+方位形函数乘积"积分成 `⟨b_a b_b ΩΩᵀ⟩` 与 `⟨b_a b_b |Ω·n|⟩`，再解一个耦合
+扩散块；`A=0` 时它就是角区平均。两套离散共用同样的 `I`、`M`、`A` 与自由度
+数，所以同一格上的逐点差只来自闭合本身。
+
 ### 等节点数空间加密
 
 `geometry.interface_grading` 可在 `S>1` 时将原有子节点向材料界面和真空边界移动。
@@ -319,34 +395,62 @@ python -m scripts.sector_diffusion_benchmark rect --closure sector_average \
 
 ## 方形棋盘格
 
-用论文 Fig. 3 对应的二维棋盘格几何，比较强吸收基线以及强、弱两种吸收的新闭合。
-两种材料布局均测试 `S = 2, 4, 6, 8, 12` 与 `M = 4, 8, 12, 24` 的全部交叉点。
-新闭合固定 `I=30, A=3`。参考是论文中的强吸收 `0.51673`、弱吸收
-`1.12974`。误差定义为 `(k_eff - k_ref) × 10⁵`。
+用论文 Fig. 3 对应的二维棋盘格几何，强、弱两种吸收，固定 `I=30`。参考是论文中的
+强吸收 `0.51673`、弱吸收 `1.12974`。误差定义为 `(k_eff - k_ref) × 10⁵`。
+强吸收的 legacy 路径（`closure: legacy`）过零位置随 S 移动：S=2 在 M=4–8 间
+（−790.22 → +807.92 pcm），S=4 在 M=8–12 间，S=6 与 S=8 在 M=12–24 间，
+这就是论文 Fig. 3 的对角谷线。
 
-强吸收原版的过零位置随 S 移动。S=2 在 M=4–8 间过零，S=4 在 M=8–12 间，
-S=6 和 S=8 在 M=12–24 间。新闭合的强、弱共 40 格均为负误差。在每一列
-固定 M 时，两个算例的绝对误差都随 S 单调下降。联合加密如下。
+记录口径 `sector_diffusion` 已按发表网格逐点重测并归档：`A=0,1,2` 三个方位阶、
+强与弱共 187 个测点（`paper/data/study4-checkerboard.csv` 里
+`closure=sector_diffusion` 的行，逐点出处 `paper/data/uniform/points.jsonl`），
+全部通过独立复扫，最大源残差 `3.93e-9`、最大本征值残差 `9.68e-10`。下表与论文
+表 `tab:study4-checker-sector`（`paper/tables/study4-checker-sector.tex`）同源；
+"—" 是 `sector_average` 当时未发表、因而不在这轮镜像补测计划里的格。
 
-| S | M | 强吸收 Δk (pcm) | 弱吸收 Δk (pcm) |
-|--:|--:|-----------------:|-----------------:|
-| 2 | 4 | −268.51 | −49.83 |
-| 4 | 8 | −75.37 | −15.03 |
-| 8 | 12 | −22.62 | −5.58 |
-| 12 | 24 | −11.98 | −3.68 |
+| S | M | 强 A=0 | 强 A=1 | 强 A=2 | 弱 A=0 | 弱 A=1 | 弱 A=2 |
+|--:|--:|-------:|-------:|-------:|-------:|-------:|-------:|
+| 2 | 4 | −746.69 | −146.66 | — | −120.55 | −31.05 | −50.61 |
+| 4 | 8 | −72.92 | −74.01 | −76.46 | −14.44 | −14.80 | −15.21 |
+| 8 | 12 | −16.47 | −22.38 | −23.13 | −4.42 | −5.57 | −5.66 |
+| 12 | 24 | −9.97 | −12.25 | −12.08 | −3.35 | −3.73 | −3.70 |
+| 12 | 48 | −11.68 | — | — | −3.63 | — | −3.68 |
+| 12 | 96 | −11.99 | — | — | −3.68 | — | −3.68 |
 
-固定 S 的角向余差很小且存在轻微回摆，例如强吸收 S=12 随 M=4、8、12、24
-得到 −12.30、−12.40、−12.20、−11.98 pcm。每扇区只用两个积分点的试算，
-强吸收在 M=4 的数个测点仍出现过零。方形结果对应上表的角向设置和测试范围。
+对角谷线消失，但符号结构比"全部同号"更细：187 点中 172 点为负，15 个正偏差
+全部落在 `A=1`（每扇区只有两个 Gauss 方向）的 `M=4` 一列 —— 强吸收
+S=3,4,5,6,7,8,9,12、弱吸收 S=4,5,6,7,8,9,12，最大分别 +123.97 与 +17.55 pcm。
+同一 `A,S,M` 下的角区平均值在这 15 格上仍为负，所以这是两种闭合唯一的符号分歧，
+与对照闭合上"每扇区两个积分点欠积分"的同一失败模式一致（见对照小节的
+`A=1` 段）。除 `M=4` 这一列外，固定 `M>4` 加密 S 时 187 点里没有一例 `|Δk|`
+上升。M 方向的余差已饱和：强吸收 `A=1`、`S=12` 随 M=8、12、24 得到 −5.73、
+−10.79、−12.25 pcm，本征值误差由角向设置主导。
 
-复现角网格和空间网格的全部交叉点。
+同一格上提高 `A` 不再有系统收益：(4,8)、(8,12)、(12,24) 三行里 `A=0` 在两个
+吸收体上都略优于 `A=1` 与 `A=2`。三个方位阶各自的最佳点落在不同网格：`A=0`
+强 −8.38 / 弱 −2.90（`S=12, M=12`）、`A=1` 强 −5.73 / 弱 −2.68（`S=12, M=8`）、
+`A=2` 强 −12.08（`S=12, M=24`）/ 弱 −3.67（`S=12, M=8`）。此外 `A=1` 的宽矩阵
+（`S=1…20 × M=2,4,8,12,16,24`，每侧 100 格）补测进行中，强、弱已分别收敛
+37 与 36 格。等自由度的 `sector_average` 对照逐点比值见论文表
+`tab:study4-closure-ratio`。
+
+本节此前记录的是默认 `A=3`（每扇区 4 个方向）的 40 格联合加密（`S=12, M=24`
+处 −11.98 / −3.68 pcm），**仓内没有对应的脚本或日志**，按
+`paper/unresolved_items.md` §11 的同类条目只作试算记录，不再作为表值；上表
+改由已归档的 `A=0,1,2` 测点生成。按方位阶复现发表网格：
 
 ```bash
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
 samples=(2,4 2,8 2,12 2,24 4,4 4,8 4,12 4,24 6,4 6,8 6,12 6,24
          8,4 8,8 8,12 8,24 12,4 12,8 12,12 12,24)
-python -m scripts.sector_diffusion_benchmark strong --sm "${samples[@]}" --threads 8
-python -m scripts.sector_diffusion_benchmark weak --sm "${samples[@]}" --threads 8
+for a in 0 1 2; do
+  python -m scripts.sector_diffusion_benchmark strong --closure sector_diffusion \
+      --azimuth-degree $a --sm "${samples[@]}" --threads 8
+  python -m scripts.sector_diffusion_benchmark weak --closure sector_diffusion \
+      --azimuth-degree $a --sm "${samples[@]}" --threads 8
+done
+python -m scripts.study4_uniform_grid run     # 镜像发表网格逐点补齐，可中断续跑
+python -m scripts.study4_closure_report       # 重建两张棋盘矩阵与比值表
 python -m scripts.sector_diffusion_benchmark strong --sm "${samples[@]}" --closure legacy --threads 1
 ```
 
@@ -363,7 +467,8 @@ OpenMC 0.11 同几何参考取自 `omc_rect_core/statepoint.20200.h5`，
 `1.187217554586068`，标准误 3.41 pcm。Statepoint 的 `k_combined` 为
 `1.187220349151050`，标准误 1.75 pcm。表中偏差沿用 PSN-3 的批次均值口径。
 
-矩形测试固定 `I=8, A=1`。表中所有结果均通过独立复扫。
+本节的堆芯算例全部用记录口径 `sector_diffusion`（`scripts/sector_diffusion_benchmark.py`
+的默认闭合），固定 `I=8, A=1`。表中所有结果均通过独立复扫。
 
 | S | M | 节点 | k_eff | Δk (pcm) | 复扫源残差 |
 |--:|--:|-----:|------:|---------:|-----------:|
@@ -390,14 +495,21 @@ python -m scripts.sector_diffusion_benchmark rect --sm 2,4 2,8 --opt chol-packed
 ### 完整 5 × 6 SM 矩阵
 
 上表固定 `I=8`。在此之外把极角换成 TY3 三点规则、保持 `A=1` 与互余方位折叠，
-补齐 `S=1,2,3,4,5` × `M=2,4,8,12,16,24` 的全部 30 格。每格独立求解并通过
-独立复扫（本征值相对变化 ≤ `1e-9`，复扫源残差 ≤ `5e-9`）。逐点日志、CSV、
+扫 `S=1,2,3,4,5` × `M=2,4,8,12,16,24` 的全部 30 格。每格独立求解并通过
+独立复扫（本征值相对变化 ≤ `1e-9`，复扫源残差 ≤ `5e-9`）。写表时 26 格收敛，
+`S=4, M=24` 与 `S=5, M=8,12,24` 仍在运行，两张矩阵里留 `---` 并在 caption 里
+标注；补齐后去掉 `--allow-missing` 重跑下方命令即可填上。逐点日志、CSV、
 色板图与最佳点裂变率图收录在
 [`examples/c5g7/study4_sector_core/`](../../examples/c5g7/study4_sector_core/README.md)，
 论文表 `tab:study4-core-pcm` 与 `tab:study4-core-time` 由
 `scripts/study4_core_report.py` 从这些日志逐格重建。口径与边界的完整说明在该
 目录的 README，要点是：部分测点热启动并复用分解因子，墙钟只反映负载而非吞吐；
 `S=5` 的七群因子模板另计约 2144 秒；`M=16` 一列取自此前的同配置算例。
+
+同一目录还记录了 legacy PSN 路径在同几何、同 `S=1, M=24`、同 60 线程冷启动下的
+`−10.12 pcm` / 128.08 s 对扇区扩散的 `−54.09 pcm` / 340.68 s（约 2.7 倍）：最粗
+角分辨率下扇区闭合不总是更好。这是**记录口径对 legacy 路径**的对照，与上文
+两种扇区闭合之间的等自由度配对计时（中位 0.98）是两回事，不能互换引用。
 
 <!-- SM_MATRIX_BEGIN -->
 

@@ -214,15 +214,28 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 - 支持真空和镜面反射边界。可用 `--opt off`、`--opt chol-rs` 或
   `--opt chol-packed-rs`，其中 Rust 后端的编译方式见上文。
   `factor_bytes` 是常驻因子池的大小，`sweeps_executed` 包含独立复扫。
-- 固定 `model: generic` 时，可选 `closure: sector_average`。默认 `A: 0`
-  只保留角区平均场。`A: 1` 或 `A: 2` 在每个扇区增加局部方位形函数，
-  在同一个扩散弱式中同时求解。
-- 开启 `A: 1` 或 `A: 2` 时，可选 `slope_space: bilinear`，以较少空间
-  自由度表示高阶方位系数。平均场仍用双二次节点。多路 NUMA 机器可设
-  `OPENPSN_NUMA=1` 让每个扇区扩散块的分解和扫描访问本地内存。
+- `closure: sector_average` 是等节点数**对照**闭合（默认 `A: 0` 只保留角区平均
+  场，`A: 1`/`A: 2` 在每个扇区增加局部方位形函数，在同一个扩散弱式中同时求解）。
+  它与逐方向闭合每扇区自由度相同（`K = A + 1`），论文两张棋盘矩阵按
+  `closure` 列并排给出。
+- `slope_space`（含 `bilinear`）、`polar_degree`、`azimuth_grid`、
+  `node_response`、`reflection_reduction` 只在 `closure: sector_average` 下被读入
+  （`psn2d/model.py:197`）；逐方向闭合的方位系数是 Gauss 方向而非多项式，
+  没有 `slope_space` 变体。多路 NUMA 机器可设 `OPENPSN_NUMA=1` 让每个扇区扩散块
+  的分解和扫描访问本地内存。
 - [`--opt sector-cholmod` 构建与计时说明](docs/psn4-sector-diffusion.md#扇区扩散性能)
   适用于这两种扇区扩散闭合。
-- 两种扇区闭合的比较见 [PSN-4 收敛记录](docs/psn4-sector-diffusion.md)。
+- **记录口径是 `sector_diffusion`**：棋盘、组件与四分之一堆芯的论文主表都跑这个
+  闭合，`sector_average` 只作为等自由度对照保留。189 个同 `A,S,M,I` 配对点中
+  184 点上它的 `|Δk|` 更小，中位比 0.488；15 个符号分歧全部在 `A=1`、`M=4`
+  （每扇区两个 Gauss 方向）一列。等角向自由度数下它不是一律更贵——10 组同机
+  背靠背配对计时比值 0.52–1.45、中位 0.98。逐点配对与比值由
+  `python -m scripts.study4_closure_report` 生成
+  （`paper/tables/study4-checker-{sector,average}.tex`、
+  `study4-closure-ratio.tex`、`paper/data/study4_closure_pairs.csv`），配对计时由
+  `python -m scripts.study4_closure_cost` 生成；按发表网格逐点补测的驱动是
+  `python -m scripts.study4_uniform_grid plan|run|merge`。口径、进度与两个
+  反例见 [PSN-4 收敛记录](docs/psn4-sector-diffusion.md)。
 - 这一闭合的独立成文（偶宇称约化、角区张量、两个反例、测试算例清单、代价与
   适用范围）见 `paper/sector_method.tex` / `paper/sector_method.pdf`，可单独
   编译与阅读，正文引用 OpenPSN 框架论文；论文数据表与本文共用
@@ -331,9 +344,10 @@ cases:                   # 批量：per-case 覆盖 M / subdivide / A / closure 
 | Study III：A=3 1/4 芯 | `c5g7/study2_rectangular/c5g7_core_split4_uo2_mox_quarter_core.yaml` | S=1,2 × M=2–24（12 点） | 1.1872176 | S=1 全行：−135.6 / −34.2 / −1.7 / +6.2 / +9.1 / +11.0 pcm（M2→M24）；S=2 行在产（M=2：−150.1） |
 | Study III：A=3 棋盘弱吸收（TY3 / I30 / I60） | `psn_repro/checkerboard_1g_rect.yaml` | TY3 S=1–12；I30 S=1–20；I60 单点（194 case） | 1.12974 | I30 最佳 S=12：−0.1 pcm；I60 S=20 M=24：−0.9（vs I30 同点 −3.8，+2.9 pcm） |
 | Study III：A=3 棋盘强吸收 | `psn_repro/checkerboard_1g_rect_strong.yaml` | 同上（194 case） | 0.51673 | 同上网格 |
-| Study IV：扇区扩散闭包 棋盘弱/强吸收 | `psn_repro/checkerboard_1g.yaml`、`psn_repro/checkerboard_1g_strong.yaml` | S=2–12 × M=4–96，共 130 点（A=0 44、A=1 二次 40、A=1 双线性 40、A=2 6） | 1.12974 / 0.51673 | 130 点全部同号（负），任一轴加密单调趋零，对角谷线消失 |
-| Study IV：扇区扩散闭包 4 组件 + 2 棋盘 | `c5g7/study1_homogenised/c5g7_{uo2,mox}_assembly_*.yaml`、`c5g7/study2_rectangular/c5g7_rect_{uo2,mox}_assembly.yaml` | 组件 S=1–6、棋盘 S=1–20 × M=2–24（384 点），A=1 双线性 | 同 Study I / II | 论文表 tab:study4-assembly；矩形 MOX 最佳 −118.55 pcm（材料/平铺受限） |
-| Study IV：扇区扩散闭包 矩形 1/4 芯 SM 矩阵 | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–5 × M=2,4,8,12,16,24（TY3，A=1，逐点独立复扫） | 1.1872176 | 矩阵与最佳点见 `examples/c5g7/study4_sector_core/`（`sm_matrix.md` 由 `scripts/study4_core_report.py` 从逐点日志重建） |
+| Study IV：棋盘弱/强吸收（**记录口径 `sector_diffusion`**） | `psn_repro/checkerboard_1g.yaml`、`psn_repro/checkerboard_1g_strong.yaml` | 发表网格（S=2–12 × M=4–96）逐点重测 + A=1 宽矩阵 S=1–20 × M=2–24，共 187 点（A=0/1/2） | 1.12974 / 0.51673 | 论文表 tab:study4-checker-sector；对角谷线消失：M>4 固定时随 S 加密无一例 \|Δk\| 上升，172/187 点同号（负），15 个正偏差全在 A=1、M=4（每扇区两个方向）一列 |
+| Study IV：棋盘弱/强吸收（等自由度对照 `sector_average`） | 同上 | S=2–12 × M=4–96，共 130 点（A=0 44、A=1 二次 40、A=1 双线性 40、A=2 6） | 1.12974 / 0.51673 | 论文表 tab:study4-checker-average；130 点全部同号（负）、任一轴加密单调趋零，逐点比值见 tab:study4-closure-ratio |
+| Study IV：4 组件 + 2 棋盘（对照 `sector_average`，384 点已发表） | `c5g7/study1_homogenised/c5g7_{uo2,mox}_assembly_*.yaml`、`c5g7/study2_rectangular/c5g7_rect_{uo2,mox}_assembly.yaml` | 组件 S=1–6、棋盘 S=1–20 × M=2–24（384 点），A=1 双线性 | 同 Study I / II | 论文表 tab:study4-assembly；矩形 MOX 最佳 −118.55 pcm（材料/平铺受限）。同网格的 `sector_diffusion` 补测在跑（方形组件 24/72、矩形组件 2/72），`study4_assembly_report.py --closure` 两侧都能出表 |
+| Study IV：矩形 1/4 芯 SM 矩阵（**记录口径 `sector_diffusion`**） | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–5 × M=2,4,8,12,16,24（TY3，A=1，逐点独立复扫） | 1.1872176 | 矩阵与最佳点见 `examples/c5g7/study4_sector_core/`（`sm_matrix.md` 由 `scripts/study4_core_report.py` 从逐点日志重建；写表时 26/30 格，4 格在跑，用 `--allow-missing` 留 `---`） |
 | 严格代数校验（14 项，符号/有理精确） | `examples/psn_strict_checks/` | 两层真空板、镜像矩形、四反射均质 7 群、堆芯守恒 LP | 精确解析值 | k∞ 四位精确小数、`k_eff<1.894` 上界，`unittest` 约 2 s |
 
 （棋盘 A3 的 `subdivide` 约定：case 名中的 S = 论文 S，2×2 基网格再细分
@@ -371,13 +385,25 @@ cd examples/psn_strict_checks && python -m unittest discover -s . -p 'test_*.py'
 论文表图与 markdown 同源重建（图脚本需要 matplotlib）：
 
 ```bash
-python -m scripts.study4_checkerboard_report          # 棋盘表 + 数据（130 点，逐点断言）
-python -m scripts.study4_assembly_report              # 六组件汇总表（384 点）
+python -m scripts.study4_uniform_grid plan|run|merge  # 按发表网格逐点补测记录口径 sector_diffusion
+                                       # run 可中断续跑，收敛点追加 paper/data/uniform/points.jsonl，
+                                       # merge 按 closure 键并入下面两个逐点 CSV，不改写已发表行
+python -m scripts.study4_checkerboard_report          # 对照闭合棋盘表 + 数据（130 点，逐点断言；
+                                       # 另一种闭合与 strict_phase_space 的反例行原样保留）
+python -m scripts.study4_closure_report               # 记录口径棋盘矩阵 + 对照矩阵 + 逐点比值表
+                                       # （study4-checker-sector / -average / -closure-ratio + pairs.csv；
+                                       # 补测未完时加 --allow-missing，会打印留空格数）
+python -m scripts.study4_assembly_report --closure sector_average
+                                       # 六组件汇总表（384 点，已发表的对照闭合表；--closure 两侧同码可切，
+                                       # 新闭合要等 paper/data/study4_assembly_summary.csv 补上
+                                       # closure=sector_diffusion 的汇总行后才出得了表）
 python -m scripts.study4_core_report --logs examples/c5g7/study4_sector_core/logs \
     --output examples/c5g7/study4_sector_core --latex paper/tables --allow-missing \
     --mirror-md docs/psn4-sector-diffusion.md \
     --mirror-md examples/c5g7/study4_sector_core/README.md
                                        # 1/4 芯两张矩阵（未收敛格留 '---'）
+python -m scripts.study4_closure_cost                 # 两种闭合等自由度的配对计时（会跑求解器，
+                                       # 默认 10 组、8 线程、10 GiB 上限，空闲内存不足则跳过该组）
 python -m scripts.finalize_markdown --force           # main.md / revised_main.md 与 LaTeX 同源
 make -C paper                          # main.pdf 与 sector_method.pdf（tectonic）
 ```
@@ -472,6 +498,8 @@ OpenPSN/
 │                     #   + test_sector_diffusion.py + test_strict_closure.py
 │                     #   + verify_rect_node.py + baseline_keff.json（位级基线）
 ├── scripts/          # C5G7 规格/截面生成脚本 + 扇区扩散基准与 Study IV 表图驱动
+│                     #   （study4_closure_report / study4_closure_cost /
+│                     #    study4_uniform_grid = 记录口径与对照闭合的配对表、配对计时与补测驱动）
 ├── snapshot/         # 原始复现快照（core/ + drivers/ + 数据/图/日志，248 点）
 ├── requirements.txt
 └── README.md
