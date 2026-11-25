@@ -1,0 +1,13 @@
+{"name": "rect_sector_S4_M8", "model": "ty3", "closure": "sector_diffusion", "M": 8, "A": 1, "I": 8, "subdivide": 4, "kref": 1.187217554586068, "warm_from_S": 4, "warm_checkpoint": "warm_S4.npz", "backend": "shared-polar-cholmod-packed-fp64-pcg"}
+  factored 1/7 energy groups with 4 factors each, pool 1.284 GiB
+  factored 2/7 energy groups with 4 factors each, pool 2.543 GiB
+  factored 3/7 energy groups with 4 factors each, pool 3.787 GiB
+  factored 4/7 energy groups with 4 factors each, pool 5.028 GiB
+  factored 5/7 energy groups with 4 factors each, pool 6.267 GiB
+  factored 6/7 energy groups with 4 factors each, pool 7.475 GiB
+  factored 7/7 energy groups with 4 factors each, pool 8.638 GiB
+  ritz sweep 1: keff=1.2660678901, source=2.72e-03
+  ritz sweep 5: keff=1.1868574268, source=8.00e-06
+  ritz sweep 10: keff=1.1868819950, source=3.75e-08
+  ritz sweep 15: keff=1.1868818444, source=5.92e-10
+{"name": "rect_sector_S4_M8", "model": "ty3", "closure": "sector_diffusion", "M": 8, "A": 1, "I": 8, "subdivide": 4, "kref": 1.187217554586068, "warm_from_S": 4, "warm_checkpoint": "warm_S4.npz", "threads": 60, "nodes": 374544, "keff": 1.1868818443685623, "pcm": -33.57102175056692, "time_s": 3485.968536887085, "factor_time_s": 1129.074340200983, "factor_bytes": 9275447304, "sweeps_executed": 16, "source_residual": 5.919713749095064e-10, "keff_residual": 7.218683433778058e-10, "median_sweep_s": 85.72468866204144, "converged": true, "backend": "shared-polar-cholmod-packed-fp64-pcg", "factor_cache_used": false, "anchor_m": null, "anchor_revision": null, "sweep_worker_cap": 14, "ritz_depth": 12, "coarse_block": 6, "warm_coarse": true, "preconditioner_bits": 16}

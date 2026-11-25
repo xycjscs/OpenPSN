@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{End-to-end wall time in seconds for the same points, including assembly, factor construction, outer iterations and the verification sweep. An asterisk marks a point that reused a stored factorisation. Points sharing a time window ran concurrently, so the column reports load rather than throughput. \textbf{Incomplete:} still running when this table was written --- $(S,M)=(4,24)$, $(S,M)=(5,8)$, $(S,M)=(5,12)$, $(S,M)=(5,24)$; those cells are left blank.}
+\label{tab:study4-core-time}
+\begin{tabular}{rrrrrrr}
+\hline
+ & \multicolumn{6}{c}{Azimuth sectors $M$}\\
+\cline{2-7}
+$S$ & 2 & 4 & 8 & 12 & 16 & 24\\
+\hline
+1 & 77.8 & 113.4 & 166.4 & 176.1 & 237.8 & 340.7 \\
+2 & 625.3 & 790.3 & 548.5 & 1299.0 & 996.6 & 1810.2 \\
+3 & 1199.5 & 1757.3 & 1559.8 & 1787.4 & 2790.4 & 2518.8 \\
+4 & 3263.4 & 1647.5 & 3486.0 & 2665.9 & 2163.1* & --- \\
+5 & 5787.4 & 3161.0 & --- & --- & 4841.3* & --- \\
+\hline
+\end{tabular}
+\end{table}

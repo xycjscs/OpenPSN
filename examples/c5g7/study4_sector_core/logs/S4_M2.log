@@ -1,0 +1,10 @@
+{"name": "rect_sector_S4_M2", "model": "ty3", "closure": "sector_diffusion", "M": 2, "A": 1, "I": 8, "subdivide": 4, "kref": 1.187217554586068, "warm_from_S": 4, "warm_checkpoint": "warm_S4.npz"}
+  assembled 6/7 preconditioners, factor+operator pool 2.066 GiB; projection 2.410 GiB, latest factor has 228412022 entries, 0 restored
+  assembled 7/7 preconditioners, factor+operator pool 2.389 GiB; projection 2.389 GiB, latest factor has 228412022 entries, 0 restored
+  ritz sweep 1: keff=1.5453555355, source=1.16e-02
+  ritz sweep 5: keff=1.1924575312, source=4.15e-04
+  ritz sweep 10: keff=1.1846672919, source=4.02e-06
+  ritz sweep 15: keff=1.1846451925, source=4.79e-08
+  ritz sweep 20: keff=1.1846445751, source=6.88e-10
+  ritz sweep 25: keff=1.1846445764, source=3.95e-11
+{"name": "rect_sector_S4_M2", "model": "ty3", "closure": "sector_diffusion", "M": 2, "A": 1, "I": 8, "subdivide": 4, "kref": 1.187217554586068, "warm_from_S": 4, "warm_checkpoint": "warm_S4.npz", "threads": 60, "nodes": 374544, "keff": 1.1846445764118283, "pcm": -257.2978174239626, "time_s": 3263.3986226230627, "factor_time_s": 955.5379839120433, "factor_bytes": 2564819573, "sweeps_executed": 26, "source_residual": 3.954053993865871e-11, "keff_residual": 7.933419305378335e-10, "median_sweep_s": 42.64058065647259, "converged": true, "backend": "shared-polar-cholmod-packed-fp64-pcg"}

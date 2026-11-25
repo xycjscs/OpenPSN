@@ -1,0 +1,35 @@
+{"name": "rect_sector_shared_polar_S4_M16", "model": "ty3", "closure": "sector_diffusion", "M": 16, "A": 1, "I": 8, "subdivide": 4, "kref": 1.187217554586068}
+  assembled 3/56 preconditioners, factor+operator pool 1.026 GiB; projection 19.151 GiB, latest factor has 228412022 entries, 3 restored
+  assembled 15/56 preconditioners, factor+operator pool 5.240 GiB; projection 19.564 GiB, latest factor has 228412022 entries, 15 restored
+  assembled 27/56 preconditioners, factor+operator pool 9.339 GiB; projection 19.369 GiB, latest factor has 228412022 entries, 27 restored
+  assembled 39/56 preconditioners, factor+operator pool 13.456 GiB; projection 19.321 GiB, latest factor has 228412022 entries, 39 restored
+  assembled 51/56 preconditioners, factor+operator pool 17.427 GiB; projection 19.135 GiB, latest factor has 228412022 entries, 51 restored
+  assembled 56/56 preconditioners, factor+operator pool 19.055 GiB; projection 19.055 GiB, latest factor has 228412022 entries, 56 restored
+  projecting converged source from S=3
+  ritz sweep 1: keff=1.1706352207, source=8.40e-04
+  ritz sweep 5: keff=1.1870649781, source=3.38e-06
+  ritz sweep 10: keff=1.1870231726, source=5.60e-09
+{"name": "rect_sector_shared_polar_S4_M16", "model": "ty3", "closure": "sector_diffusion", "M": 16, "A": 1, "I": 8, "subdivide": 4, "kref": 1.187217554586068, "warm_from_S": 3, "keff": 1.1870231676287355, "pcm": -19.43869573324264, "threads": 60, "nodes": 374544, "factor_bytes": 20459970356, "time_s": 2163.0653661729884, "factor_time_s": 49.010655066987965, "sweeps_executed": 14, "median_warm_sweep_s": 105.16748520999681, "keff_residual": 1.5016880965872488e-10, "source_residual": 9.36554584370179e-11, "converged": true, "backend": "shared-polar-cholmod-packed-fp64-pcg", "ritz_depth": 17, "coarse_block": 3, "factor_blas": 4, "polar_owners": [1, 1, 1], "sweep_worker_cap": 26, "interleaved": true, "paired_cg": true}
+	Command being timed: "python3 -u ../validation/rect_m16_sweep/run_sharedpolar.py 4 --owners one --depth 17 --coarse-block 3 --factor-blas 4 --sweep-workers 26 --memory-per-factor-job-gib 7 --interleaved --paired-cg --warm-from ../validation/rect_m16_sweep/warm_S3.npz --save-source ../validation/rect_m16_sweep/warm_S4.npz --checkpoint ../validation/rect_m16_sweep/factors_v1_S4 --reuse-symbolic"
+	User time (seconds): 29117.70
+	System time (seconds): 436.06
+	Percent of CPU this job got: 1359%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 36:13.29
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 36338488
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 487452
+	Minor (reclaiming a frame) page faults: 89046205
+	Voluntary context switches: 542173
+	Involuntary context switches: 49554
+	Swaps: 0
+	File system inputs: 38397104
+	File system outputs: 1474840
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

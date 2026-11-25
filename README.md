@@ -105,6 +105,11 @@ python -m psn2d run examples/c5g7/study2_rectangular/c5g7_core_split4_uo2_mox_qu
 # Study III 棋盘（A=3，TY3 / generic I=30 / I=60 协议）
 python -m psn2d run examples/psn_repro/checkerboard_1g_rect.yaml --case i30_M24_S20
 
+# Study IV（扇区扩散闭包：每个有限角区解偶宇称二阶扩散方程）
+python -m scripts.sector_diffusion_benchmark strong --sm 12,24 --threads 8
+python -m scripts.sector_diffusion_benchmark rect --sm 1,16 --opt chol-packed-rs --threads 60
+python -m scripts.study3_bilinear rect_uo2 --output <dir> --s 6 --m 24 --threads 8
+
 # 通用开关
 python -m psn2d run <file>.yaml --case <name>        # 只跑指定 case
 python -m psn2d run <file>.yaml --json                # 结果输出 JSON
@@ -322,6 +327,10 @@ cases:                   # 批量：per-case 覆盖 M / subdivide / A / closure 
 | Study III：A=3 1/4 芯 | `c5g7/study2_rectangular/c5g7_core_split4_uo2_mox_quarter_core.yaml` | S=1,2 × M=2–24（12 点） | 1.1872176 | S=1 全行：−135.6 / −34.2 / −1.7 / +6.2 / +9.1 / +11.0 pcm（M2→M24）；S=2 行在产（M=2：−150.1） |
 | Study III：A=3 棋盘弱吸收（TY3 / I30 / I60） | `psn_repro/checkerboard_1g_rect.yaml` | TY3 S=1–12；I30 S=1–20；I60 单点（194 case） | 1.12974 | I30 最佳 S=12：−0.1 pcm；I60 S=20 M=24：−0.9（vs I30 同点 −3.8，+2.9 pcm） |
 | Study III：A=3 棋盘强吸收 | `psn_repro/checkerboard_1g_rect_strong.yaml` | 同上（194 case） | 0.51673 | 同上网格 |
+| Study IV：扇区扩散闭包 棋盘弱/强吸收 | `psn_repro/checkerboard_1g.yaml`、`psn_repro/checkerboard_1g_strong.yaml` | S=2–12 × M=4–96，共 130 点（A=0 44、A=1 二次 40、A=1 双线性 40、A=2 6） | 1.12974 / 0.51673 | 130 点全部同号（负），任一轴加密单调趋零，对角谷线消失 |
+| Study IV：扇区扩散闭包 4 组件 + 2 棋盘 | `c5g7/study1_homogenised/c5g7_{uo2,mox}_assembly_*.yaml`、`c5g7/study2_rectangular/c5g7_rect_{uo2,mox}_assembly.yaml` | 组件 S=1–6、棋盘 S=1–20 × M=2–24（384 点），A=1 双线性 | 同 Study I / II | 论文表 tab:study4-assembly；矩形 MOX 最佳 −118.55 pcm（材料/平铺受限） |
+| Study IV：扇区扩散闭包 矩形 1/4 芯 SM 矩阵 | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–5 × M=2,4,8,12,16,24（TY3，A=1，逐点独立复扫） | 1.1872176 | 矩阵与最佳点见 `examples/c5g7/study4_sector_core/`（`sm_matrix.md` 由 `scripts/study4_core_report.py` 从逐点日志重建） |
+| 严格代数校验（14 项，符号/有理精确） | `examples/psn_strict_checks/` | 两层真空板、镜像矩形、四反射均质 7 群、堆芯守恒 LP | 精确解析值 | k∞ 四位精确小数、`k_eff<1.894` 上界，`unittest` 约 2 s |
 
 （棋盘 A3 的 `subdivide` 约定：case 名中的 S = 论文 S，2×2 基网格再细分
 S×S → 2S×2S 节点，即 `subdivide: S`。）
@@ -344,6 +353,15 @@ full 层另含 C5G7 1/4 芯均质化与矩形节点重 case），对照
 ```bash
 python tests/run_examples.py          # fast 层（当前 7/7 全过，Δ=0.000 pcm）
 python tests/run_examples.py --full   # 含 full 层重 case
+```
+
+扇区扩散闭包（论文 Study IV）的算子与本征对回归，以及严格闭包门禁：
+
+```bash
+python tests/test_sector_diffusion.py  # 22 项，~13 s：扇区张量、节点响应精确消元、界面与对称性
+python tests/test_strict_closure.py    # 严格闭包锚点/一致性门禁（M=2 处严格基 = 原法基）
+cd examples/psn_strict_checks && python -m unittest discover -s . -p 'test_*.py'
+                                       # 14 项有理/符号精确检查（sympy + PyYAML，~2 s）
 ```
 
 C5G7 20 码 NEA 景观对照（高保真参考 1.18646，论文 §4.5）：
@@ -406,26 +424,35 @@ OpenPSN/
 │   ├── memopt.py     #   内存优化后端 auto 分派（--opt auto）
 │   ├── angschr.py    #   角度 Schur 剖分后端（方向块对角化, --opt angschr）
 │   ├── tile.py       #   Schur 分块内存回退后端（--opt tile）
+│   ├── sector_diffusion.py  # 扇区扩散闭包（sector_diffusion / sector_average，论文 Study IV）
+│   ├── phase_response.py    # 有限角区节点响应的精确消元（node_response）
+│   ├── phase_reflection.py  # 镜面反射方向的迹共享与互余方位折叠
+│   ├── sector_cholmod.c/.py # FP64 超节点 Cholesky 桥（--opt sector-cholmod，按需编译）
 │   └── memopt_cxx/   #   C++ Cholesky 桥（eigen_chol.cpp + build.py, 按需编译）
 ├── docs/             # 在线演示站（GitHub Pages → openpsn-ai.com）
 │   ├── index.html    #   产品页 + 浏览器内求解器 + C5G7 结果
 │   ├── psn.js        #   纯 JS PSN 引擎（无依赖）
 │   ├── fig3ref.json  #   论文 Fig.3 棋盘 120 点逐点数据（weak/strong 各 60）
 │   ├── bwr_ref.json  #   论文附录 C/D BWR 120 点逐点数据（无 Gd/含 Gd 各 60）
+│   ├── psn4-sector-diffusion.md # Study IV 收敛记录（方法推导、SM 矩阵、计时与后端）
 │   └── img/          #   内嵌插图（原论文 Fig.1/3/6/7/8/10 + C5G7 图）
 ├── examples/         # 论文问题输入（按论文结构分文件夹，见 §5 对照表）
 │   ├── psn_repro/    #   §3 复现 + Study III 棋盘：1 群棋盘（A=0 / A=3 rect）+ 2 群 BWR（±Gd）
 │   ├── c5g7/
 │   │   ├── c5g7-mgxs.h5             # 原始 7 群截面库
 │   │   ├── study1_homogenised/      # Study I：pinwise 均质化（含 BWW 自屏蔽）
-│   │   └── study2_rectangular/      # Study II：3×3 矩形节点 + Study III：2×2 燃料分割（A=3）
+│   │   ├── study2_rectangular/      # Study II：3×3 矩形节点 + Study III：2×2 燃料分割（A=3）
+│   │   └── study4_sector_core/      # Study IV：1/4 芯 SM 矩阵（逐点日志 + CSV + 图）
+│   ├── psn_strict_checks/  # 14 项有理/符号精确检查（论文 Study IV 的符号对照）
 │   ├── tools/        #   probe/chain/绘图等辅助脚本
 │   └── logs/         #   历史扫参日志
 ├── tools_ho/         # 论文扫表驱动 + 逐点日志 + dump 数据 + 图脚本（见 §7）
-├── paper/            # 论文：main.tex + studyIII.tex + appendix.tex + figures/ + 三格式（pdf/md/docx）
+├── paper/            # 论文：main.tex + studyIII.tex + studyIV.tex + appendix.tex
+│                     #   + figures/ + tables/ + 三格式（pdf/md/docx）
 ├── tests/            # 回归套件：run_examples.py + test_memopt.py + test_tile.py
+│                     #   + test_sector_diffusion.py + test_strict_closure.py
 │                     #   + verify_rect_node.py + baseline_keff.json（位级基线）
-├── scripts/          # C5G7 规格/截面生成脚本
+├── scripts/          # C5G7 规格/截面生成脚本 + 扇区扩散基准与 Study IV 表图驱动
 ├── snapshot/         # 原始复现快照（core/ + drivers/ + 数据/图/日志，248 点）
 ├── requirements.txt
 └── README.md

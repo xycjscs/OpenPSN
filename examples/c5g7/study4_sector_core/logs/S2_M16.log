@@ -1,0 +1,40 @@
+{"name": "rect_sector_shared_polar_S2_M16", "model": "ty3", "closure": "sector_diffusion", "M": 16, "A": 1, "I": 8, "subdivide": 2, "kref": 1.187217554586068}
+  projection from 4 groups is 13.112 GiB
+  assembled 4/56 preconditioners, factor+operator pool 0.937 GiB; latest factor has 151277670 entries
+  projection from 16 groups is 13.191 GiB
+  assembled 16/56 preconditioners, factor+operator pool 3.769 GiB; latest factor has 151277670 entries
+  projection from 32 groups is 12.956 GiB
+  assembled 32/56 preconditioners, factor+operator pool 7.403 GiB; latest factor has 151277670 entries
+  projection from 48 groups is 12.786 GiB
+  assembled 48/56 preconditioners, factor+operator pool 10.959 GiB; latest factor has 151277670 entries
+  projection from 56 groups is 12.627 GiB
+  assembled 56/56 preconditioners, factor+operator pool 12.627 GiB; latest factor has 151277670 entries
+  ritz sweep 1: keff=0.4294945123, source=7.32e-02
+  ritz sweep 5: keff=1.1876926962, source=4.73e-04
+  ritz sweep 10: keff=1.1868928359, source=6.86e-06
+  ritz sweep 15: keff=1.1868462176, source=7.85e-08
+  ritz sweep 20: keff=1.1868465438, source=1.06e-09
+{"name": "rect_sector_shared_polar_S2_M16", "model": "ty3", "closure": "sector_diffusion", "M": 16, "A": 1, "I": 8, "subdivide": 2, "kref": 1.187217554586068, "keff": 1.1868465438315745, "pcm": -37.101075449341714, "threads": 60, "nodes": 93636, "factor_bytes": 13557605383, "time_s": 996.6047156860004, "factor_time_s": 774.2115931810113, "sweeps_executed": 22, "median_warm_sweep_s": 7.032840877014678, "keff_residual": 4.135203433136036e-12, "source_residual": 5.164675324005234e-10, "converged": true, "backend": "shared-polar-cholmod-packed-fp64-pcg", "ritz_depth": 32, "polar_owners": [0, 1, 2], "sweep_worker_cap": 32}
+	Command being timed: "python3 -u ../validation/rect_m16_sweep/run_sharedpolar.py 2 --owners exact --sweep-workers 32"
+	User time (seconds): 6147.85
+	System time (seconds): 520.06
+	Percent of CPU this job got: 663%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 16:45.03
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 19942428
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 4132
+	Minor (reclaiming a frame) page faults: 116517812
+	Voluntary context switches: 14503
+	Involuntary context switches: 21522
+	Swaps: 0
+	File system inputs: 88496
+	File system outputs: 88
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

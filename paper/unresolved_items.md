@@ -66,9 +66,43 @@ tab:repro 最后一行最大值写 "within plot reading"（对照原文 Fig. 12
 
 ## 9. 代码可用性
 
-论文首页与 §6 后声明代码位于 `github.com/xycjscs/OpenPSN`。截至本次
-改稿，**A3 驱动/数据/图脚本的 commit（本地 f6caac2）尚未推送远端**
-（push 由用户最终决定）。公开仓库当前可复现的是 legacy PSN 分支
-（Study I/II/复现）；A3 分支的可复现性以本地仓库 + 本包交付的
-`tools_ho/data/r17_core4/` 数据为准。→ push 之前，投稿信中如需强调
-代码可得性，措辞应与用户确认。
+论文首页与 §6 后声明代码位于 `github.com/xycjscs/OpenPSN`。Study IV 本轮把
+A3/扇区分支的驱动、数据、图脚本与严格校验包一并推到该仓库的 `psn-4` 分支
+（含 `paper/data/`、`examples/psn_repro/logs/`、
+`examples/c5g7/study4_sector_core/`、`examples/psn_strict_checks/`）。
+公开分支上 legacy PSN（Study I/II/复现）继续可复现；扇区闭包需要
+`--opt sector-cholmod` 的本地构建，构建步骤在
+`docs/psn4-sector-diffusion.md`。
+
+## 10. 堆芯 OpenMC 参考的运行侧输出未入仓
+
+四分之一堆芯的同几何参考取批次均值 `1.187217554586068`（标准误 3.41 pcm，
+20 000 活跃批次）与 `k_combined = 1.187220349151050`（标准误 1.75 pcm），
+逐棒参考值与 `best_fission.*` 一起入仓，但 **OpenMC 的输入脚本、statepoint
+与批次统计输出不在仓库内**。论文引用的是数值与标准误本身；批次级统计
+（10–500 批次分块给 3.39–3.91 pcm）无法由仓内文件复核。→ 建议把 OpenMC 侧
+输入与 statepoint 归档进仓库后再投稿。
+
+## 11. 本轮从论文删除的两个无归档出处数值
+
+- 节点响应消去"25 个测点上 $k_\text{eff}$ 最大差 $6.4\times10^{-14}$"：
+  仓内无对应脚本或日志，已改为引用 `tests/test_sector_diffusion.py` 实际断言
+  的两条判据（压缩解对直接稀疏解 $2\times10^{-11}$、同本征对 $2\times10^{-9}$）。
+- 无散射真空板的逐点平均通量误差阶梯（96 节点、`I=8, M=4` 时 `A=0,1,2` 为
+  `9.42e-3 / 1.95e-3 / 1.30e-3`，`A=2` 加密为 `3.60e-4`）：无归档脚本，论文
+  已删除该句，`docs/psn4-sector-diffusion.md` 保留为"试算记录、不作判据"。
+
+两处都不影响其他数值，也不改变结论。
+
+## 12. `--balance-pin` 的 `subdivide` 记号与 SM 扫表不同
+
+同一物理 pin 网格在 `study4_balance_pin.jsonl` 里记为 `subdivide=1`，在
+`study4_assembly_points.csv` 里记为 `S=2`（`--balance-pin` 重排胞内胞数后
+`suddivide` 字段的含义改变）。论文中该对照只写配对点的 Δk 数值，不用 `S`
+标记两侧，避免读者按同一 `S` 去查两个文件。
+
+## 13. 堆芯矩阵的墙钟时间不是吞吐测量
+
+30 个测点在同机上最多两点并发，部分点复用已存分解因子（表中带 `*`），
+墙钟包含装配、因子、外迭代与独立复扫。因此 `tab:study4-core-time` 描述
+负载而非吞吐，不能用于成本结论；匹配成本的对比仍在本任务证据之外。

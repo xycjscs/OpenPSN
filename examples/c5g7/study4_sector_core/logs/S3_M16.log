@@ -1,0 +1,41 @@
+{"name": "rect_sector_shared_polar_S3_M16", "model": "ty3", "closure": "sector_diffusion", "M": 16, "A": 1, "I": 8, "subdivide": 3, "kref": 1.187217554586068, "warm_from_S": 1}
+  projection from 3 groups is 10.652 GiB
+  assembled 3/56 preconditioners, factor+operator pool 0.571 GiB; latest factor has 122721275 entries
+  projection from 12 groups is 10.897 GiB
+  assembled 12/56 preconditioners, factor+operator pool 2.335 GiB; latest factor has 122721275 entries
+  projection from 24 groups is 10.844 GiB
+  assembled 24/56 preconditioners, factor+operator pool 4.647 GiB; latest factor has 122721275 entries
+  projection from 36 groups is 10.755 GiB
+  assembled 36/56 preconditioners, factor+operator pool 6.914 GiB; latest factor has 122721275 entries
+  projection from 48 groups is 10.692 GiB
+  assembled 48/56 preconditioners, factor+operator pool 9.165 GiB; latest factor has 122721275 entries
+  projection from 56 groups is 10.585 GiB
+  assembled 56/56 preconditioners, factor+operator pool 10.585 GiB; latest factor has 122721275 entries
+  ritz sweep 1: keff=1.1175896746, source=3.58e-03
+  ritz sweep 5: keff=1.1870759097, source=2.75e-05
+  ritz sweep 10: keff=1.1869611734, source=6.50e-08
+  ritz sweep 15: keff=1.1869607471, source=1.69e-10
+{"name": "rect_sector_shared_polar_S3_M16", "model": "ty3", "closure": "sector_diffusion", "M": 16, "A": 1, "I": 8, "subdivide": 3, "kref": 1.187217554586068, "warm_from_S": 1, "keff": 1.1869607478280824, "pcm": -25.680675798556152, "threads": 60, "nodes": 210681, "factor_bytes": 11365325782, "time_s": 2790.4430803629803, "factor_time_s": 1188.3820692949812, "sweeps_executed": 17, "median_warm_sweep_s": 85.22242085152538, "keff_residual": 6.220369087809517e-10, "source_residual": 5.120899031866246e-11, "converged": true, "backend": "shared-polar-cholmod-packed-fp64-pcg", "ritz_depth": 20, "polar_owners": [1, 1, 1], "sweep_worker_cap": 28}
+	Command being timed: "python3 -u ../validation/rect_m16_sweep/run_sharedpolar.py 3 --owners one --depth 20 --sweep-workers 28 --warm-from ../validation/rect_m16_sweep/warm_S1.npz --save-source ../validation/rect_m16_sweep/warm_S3.npz"
+	User time (seconds): 31935.28
+	System time (seconds): 558.10
+	Percent of CPU this job got: 1160%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 46:39.03
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 22900052
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 46717
+	Minor (reclaiming a frame) page faults: 131846923
+	Voluntary context switches: 265193
+	Involuntary context switches: 58789
+	Swaps: 0
+	File system inputs: 930608
+	File system outputs: 207496
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

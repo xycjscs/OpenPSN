@@ -1,0 +1,33 @@
+{"name": "rect_sector_diffusion_S1_M16", "model": "ty3", "closure": "sector_diffusion", "M": 16, "A": 1, "I": 8, "subdivide": 1, "kref": 1.187217554586068}
+  ritz sweep 5: keff=5.9904055912, source=4.54e-02
+  ritz sweep 10: keff=1.1762196102, source=1.49e-03
+  ritz sweep 15: keff=1.1819488273, source=4.25e-04
+  ritz sweep 20: keff=1.1866205626, source=1.21e-05
+  ritz sweep 25: keff=1.1866492438, source=5.47e-07
+  ritz sweep 30: keff=1.1866454783, source=1.15e-08
+  ritz sweep 35: keff=1.1866454527, source=1.44e-09
+  ritz sweep 40: keff=1.1866454438, source=5.40e-11
+{"name": "rect_sector_diffusion_S1_M16", "model": "ty3", "I": 8, "polar_nodes": 3, "phase_systems": 168, "M": 16, "A": 1, "K": 2, "closure": "sector_diffusion", "subdivide": 1, "nodes": 23409, "keff": 1.1866454428442468, "time_s": 237.83, "factor_time_s": 167.17, "factor_bytes": 16254914592, "backend": "chol-rs", "sweeps_executed": 42, "converged": true, "outer_iterations": 41, "trial_sweeps": 1, "accel": "ritz", "keff_residual": 8.011263140767903e-10, "source_residual": 3.983523477819009e-11, "kref": 1.187217554586068, "pcm": -57.21117418211463, "threads": 60, "polar_directions": 3, "factor_workers_cap": 12, "selected_backend": "chol-rs", "sweep_s": 45.75905682519078, "median_warm_sweep_s": 1.0468987229978666}
+	Command being timed: "python3 -u ../validation/rect_hi60/run_case.py sector_diffusion 16"
+	User time (seconds): 2803.51
+	System time (seconds): 123.78
+	Percent of CPU this job got: 1204%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 4:02.96
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 19797308
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 27484151
+	Voluntary context switches: 19586
+	Involuntary context switches: 7388
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 24
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

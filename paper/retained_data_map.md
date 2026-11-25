@@ -3,7 +3,7 @@
 原则：只列位置与条件，不改任何数值。所有数值与改稿前逐点核对一致；
 A3 各行已对照 `tools_ho/r17_asm_final.log`、`tools_ho/core4_sweep.log`、
 `tools_ho/data/r17_core4/*.npz` 实证。"新稿位置"以修订后 PDF 30 页的章节号计
-（main.tex §1–§6，studyIII.tex 挂为 §4.4）。
+（main.tex §1–§6，studyIII.tex 挂为 §4.4、studyIV.tex 挂为 §4.5，文献景观段顺延为 §4.6；章节号以最终 `main.pdf` 为准）。
 
 ---
 
@@ -105,7 +105,26 @@ pin 内水区角表示示意（静态图 `pin_angular_three_sectors_en.pdf`，�
 表述（"A degrees of freedom" 已更正为 A+1 local even angular
 coefficients per segment）。
 
-## §4.5 文献景观对比（Table tab:lit + NEA 20 码）
+## §4.5 Study IV — 有限扇区扩散闭包（评估章，sec:study4）
+
+原则同上：只列位置与条件。本轮新算的只有四分之一堆芯的 5 × 6 矩阵；其余
+Study IV 数值来自此前的 campaign，逐点核对后写入，源数据一并入仓
+（`paper/data/`、`paper/tables/`、`examples/psn_repro/logs/`）。
+
+| 论文位置 | 数据 | 方法/配置 | 仓内出处 |
+|---|---|---|---|
+| 表 tab:study4-checker | 棋盘 130 点（$A{=}0$ 44 / $A{=}1$ 40 / $A{=}1$ 双线性 40 / $A{=}2$ 6） | `sector_average`，$I{=}30$，$k_\text{ref}$ 0.51673 / 1.12973 | `examples/psn_repro/logs/*.log` → `paper/data/study4-checkerboard.csv`、`paper/tables/study4-checker.tex`（由 `scripts/study4_checkerboard_report.py` 重建，并复核同号与单调性） |
+| §4.5 谷线定位 | legacy 变号点（$S{=}2$：$-790.22$ → $+807.92$ pcm 等） | 原法 $A{=}0$，$I{=}30$ | `docs/fig3ref.json`（与附录 A 同源） |
+| §4.5 谷线定位 | `strict_phase_space` 对照 $-1363.03$ / $+76.41$ pcm | 只换体内张量、保留原面闭合 | `examples/psn_repro/logs/strong_strict_sector_valley.log` |
+| §4.5 计时句 | 双线性 12.81 s 对 legacy 37.44 s（$S{=}12,M{=}24$） | 同网格两点，日志未记线程数/负载 | `timing_bilinear_full_strong.log`、`timing_final_legacy_strong.log` |
+| 表 tab:study4-assembly 与三张 studyIII 图 | 384 点六矩阵与最佳点逐棒偏差 | $A{=}1$ 双线性角系数，组件 $S{=}1\ldots6$、棋盘 $S{=}1\ldots20$ | `paper/data/study4_assembly_points.csv`、`paper/data/study4_assembly_summary.csv`，图 `figures/studyIII_*.pdf` |
+| §4.5 矩形 MOX 段 | $M{=}24,A{=}2$ 下 $-185.20\to-52.81$ pcm | 显式水隙空间加密 | `paper/data/study4_rectangular_controls.csv`（series=Control） |
+| §4.5 $M{=}2\to4$ 段 | 57.33 → 40.69 pcm、$A{=}4$ 对照 $-71.17\to-33.21$ pcm | `--balance-pin` 重排胞内胞数 / 提高 $A$ 与空间基 | `paper/data/study4_balance_pin.jsonl`、`paper/data/study4_rectangular_controls.csv` |
+| 表 tab:study4-core-pcm / -time / -best 与两张堆芯图 | 四分之一芯 30 点 | TY3、$A{=}1$、60 线程、$k_\text{ref}=1.187217554586068$ | `examples/c5g7/study4_sector_core/`（30 个日志 + 两张矩阵 CSV + `sm_matrix.md`），论文表由 `scripts/study4_core_report.py` 生成 |
+| §4.5 严格校验段 | 两层板解析量、四反射均质七群 $k_\infty$、LP 上界 $k<1.894$ | 符号/有理精确 | `examples/psn_strict_checks/`（`unittest discover`，14 项） |
+| §4.5 节点响应段 | 压缩面迹解 vs 直接稀疏解 $2\times10^{-11}$、同本征对 $2\times10^{-9}$ | 4 个小矩形 + 强棋盘 | `tests/test_sector_diffusion.py` |
+
+## §4.6 文献景观对比（Table tab:lit + NEA 20 码）
 
 - OpenPSN 行：k=1.1872011，方法栏现为 "Local angular-moment nodal
   (A=3; square-fuel model, S=1, M=8)"；对同几何 OpenMC 1.1872176 差
@@ -118,6 +137,10 @@ coefficients per segment）。
 
 ## 图/表 ID 与公式标签
 
-全部保留原 ID：tab:repro、tab:rectsm、tab:lit、tab:appA–appD、
+全部保留原 ID：tab:repro、tab:rectsm、tab:lit、tab:appA–appD；本轮新增
+tab:study4-checker、tab:study4-assembly、tab:study4-core-pcm、
+tab:study4-core-time、tab:study4-core-best、fig:study4-c5g7、
+fig:study4-fission、fig:study4-walltime、fig:study4-core、
+fig:study4-core-fission、eq:study4-even、sec:study4。
 fig:rectsm、fig:rect33best、fig:cbA3、fig:a3mconv、fig:a3fission、
 fig:pinangular 等；公式 \label{eq:*} 未动，交叉引用按新章节号更新。

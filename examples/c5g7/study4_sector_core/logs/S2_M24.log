@@ -1,0 +1,13 @@
+{"name": "rect_sector_S2_M24", "model": "ty3", "closure": "sector_diffusion", "M": 24, "A": 1, "I": 8, "subdivide": 2, "kref": 1.187217554586068, "warm_from_S": 3, "warm_checkpoint": "warm_S3.npz"}
+  assembled 6/84 preconditioners, factor+operator pool 0.519 GiB; projection 7.271 GiB, latest factor has 50425890 entries, 0 restored
+  assembled 30/84 preconditioners, factor+operator pool 2.600 GiB; projection 7.279 GiB, latest factor has 50425890 entries, 0 restored
+  assembled 54/84 preconditioners, factor+operator pool 4.632 GiB; projection 7.205 GiB, latest factor has 50425890 entries, 0 restored
+  assembled 78/84 preconditioners, factor+operator pool 6.589 GiB; projection 7.096 GiB, latest factor has 50425890 entries, 0 restored
+  assembled 84/84 preconditioners, factor+operator pool 7.067 GiB; projection 7.067 GiB, latest factor has 50425890 entries, 0 restored
+  ritz sweep 1: keff=1.2062699654, source=1.20e-03
+  ritz sweep 5: keff=1.1859568287, source=4.56e-05
+  ritz sweep 10: keff=1.1868618860, source=7.87e-07
+  ritz sweep 15: keff=1.1868780385, source=1.15e-08
+  ritz sweep 20: keff=1.1868780891, source=4.08e-10
+  ritz sweep 25: keff=1.1868780914, source=3.90e-11
+{"name": "rect_sector_S2_M24", "model": "ty3", "closure": "sector_diffusion", "M": 24, "A": 1, "I": 8, "subdivide": 2, "kref": 1.187217554586068, "warm_from_S": 3, "warm_checkpoint": "warm_S3.npz", "threads": 60, "nodes": 93636, "keff": 1.1868780913895545, "pcm": -33.94631965134565, "time_s": 1810.1719622840174, "factor_time_s": 374.00757690297905, "factor_bytes": 7587946226, "sweeps_executed": 26, "source_residual": 3.8957387993034595e-11, "keff_residual": 6.16095633461615e-10, "median_sweep_s": 49.94710202346323, "converged": true, "backend": "shared-polar-cholmod-packed-fp64-pcg"}

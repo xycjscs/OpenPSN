@@ -1,0 +1,31 @@
+subdivide,M,factors,note
+1,2,fresh,"run_point.py driver, factor built in this run"
+1,4,fresh,"run_point.py driver, factor built in this run"
+1,8,fresh,"run_point.py driver, factor built in this run"
+1,12,fresh,"run_point.py driver, factor built in this run"
+1,16,fresh,archived run rect_hi60/sector_diffusion_M16.log
+1,24,fresh,archived run rect_hi60/sector_diffusion_M24.log
+2,2,fresh,"run_point.py driver, factor built in this run"
+2,4,fresh,"run_point.py driver, factor built in this run"
+2,8,fresh,"run_point.py driver, factor built in this run"
+2,12,fresh,"run_point.py driver, factor built in this run"
+2,16,fresh,archived run rect_m16_sweep/fast_S2.log
+2,24,fresh,"run_point.py driver, factor built in this run"
+3,2,fresh,"run_point.py driver, factor built in this run"
+3,4,fresh,"run_point.py driver, factor built in this run"
+3,8,fresh,"run_point.py driver, factor built in this run"
+3,12,fresh,"run_point.py driver, factor built in this run"
+3,16,fresh,archived run rect_m16_sweep/shared_S3.log
+3,24,fresh,"run_point.py driver, factor built in this run"
+4,2,fresh,"run_point.py driver, factor built in this run"
+4,4,fresh,"run_point.py driver, factor built in this run"
+4,8,fresh,"run_point.py driver, factor built in this run"
+4,12,fresh,"run_point.py driver, factor built in this run"
+4,16,reused,archived run rect_m16_sweep/shared_S4_verified.log
+4,24,fresh,"run_point.py driver, factor built in this run"
+5,2,fresh,"run_point.py driver, factor built in this run"
+5,4,fresh,"run_point.py driver, factor built in this run"
+5,8,fresh,"run_point.py driver, factor built in this run"
+5,12,fresh,"run_point.py driver, factor built in this run"
+5,16,reused,archived run rect_m16_sweep/shared_S5_sweeps.log
+5,24,fresh,"run_point.py driver, factor built in this run"

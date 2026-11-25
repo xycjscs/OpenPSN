@@ -1,0 +1,339 @@
+\clearpage
+\subsection{Study IV --- the finite-sector diffusion closure}\label{sec:study4}
+
+\begin{sloppypar}
+Study III added even-parity angular modes inside each angular segment and
+changed the body closure. This section assesses the branch that keeps the
+PSN idea in its literal form: the transport equation is reduced, per finite
+angular cell, to a diffusion-type equation whose coefficients are the exact
+second-moment tensor of the directions in that cell, and the resulting
+systems are assembled over space exactly as a diffusion calculation would
+be. The branch is implemented as the closures \texttt{sector\_diffusion}
+(one field per Gauss direction of a sector) and \texttt{sector\_average}
+(one field per finite angular cell, plus local azimuthal modes
+$A{=}0,\ldots,4$). Both are selected from the input file
+(\texttt{angular.model: generic}, \texttt{angular.closure: sector\_average},
+\texttt{angular.azimuth\_degree}, \texttt{angular.polar\_degree},
+\texttt{angular.slope\_space}); the driver
+\texttt{scripts/sector\_diffusion\_benchmark.py} reproduces every point
+below, and \texttt{scripts/study4\_core\_report.py} rebuilds the core tables
+from the recorded run logs.
+
+\end{sloppypar}
+
+\paragraph{Formulation.}
+Inside a material-constant node, decomposing the angular flux into its even
+and odd parts under $\boldsymbol{\Omega}\rightarrow-\boldsymbol{\Omega}$
+gives, for isotropic scattering and fission, the exact relation
+$\psi^{-}=-(\boldsymbol{\Omega}\cdot\nabla u)/\Sigma_t$ for the even-parity
+flux $u$. Eliminating $\psi^{-}$ yields, for each retained direction,
+\begin{equation}
+-\nabla\cdot\!\left(\frac{\boldsymbol{\Omega}\boldsymbol{\Omega}^{\mathsf T}}{\Sigma_t}\nabla u\right)
++\Sigma_t u = q ,
+\label{eq:study4-even}
+\end{equation}
+with the vacuum boundary condition carrying $|\boldsymbol{\Omega}\cdot\mathbf{n}|u$
+and specularly reflected directions sharing the trace value on the reflecting
+face. Equation~\eqref{eq:study4-even} is discretised in space by continuous
+biquadratic Lagrange nodes, with the body diffusion term, the normal current
+across material interfaces and the vacuum term taken from one weak form, so
+no separate face-current model is introduced. Scattering and fission are
+projected onto nine orthogonal spatial moments per material node. Azimuth is
+split into $M$ sectors per half-plane, each carrying $A{+}1$ Gauss
+directions; polar angle uses Gauss nodes ($I/2$ per half-axis) or the
+existing three-point TY3 rule. The tensor
+$\langle b_a\,\boldsymbol{\Omega}\boldsymbol{\Omega}^{\mathsf T}b_b\rangle/\Sigma_t$
+is integrated analytically over each finite cell, and its $xy$ component is
+retained, so two directions in one sector that differ only in sign of
+$\Omega_x\Omega_y$ are not collapsed. For the mirrored quadrant-symmetric
+assemblies, complementary azimuths are solved once and applied by the spatial
+transpose.
+
+\begin{sloppypar}
+Two reductions were verified algebraically rather than numerically. Setting
+\texttt{angular.node\_response: true} rewrites the same weak form as a shared
+face-trace system, $R=\mathsf{K}_{II}^{-1}\mathsf{K}_{IB}$,
+$\mathsf{T}_B=\mathsf{K}_{BB}-\mathsf{K}_{BI}R$,
+$\mathbf{g}_B=\mathbf{f}_B-R^{\mathsf T}\mathbf{f}_I$, with the nodal interior
+recovered afterwards. Because $\mathsf{K}_{II}$ is block-diagonal per node,
+this is an exact elimination of the interior degrees of freedom, and the
+repository checks it two ways: on four small rectangles the condensed trace
+solve reproduces a direct sparse solve of the full angular matrix to
+$2\times10^{-11}$, and on the strong checkerboard the eliminated and direct
+systems give the same eigenpair to a relative tolerance of $2\times10^{-9}$
+with the spatial and angular test spaces unchanged
+(\texttt{tests/test\_sector\_diffusion.py}). Changing $A$, by contrast, changes the test space, and its effect
+is measured below. A second check concerns what a finite angular closure can
+and cannot achieve: for a purely absorbing slab, the map from an incident
+angular profile $g(\mu)$ to the exit profile is $e^{-T/\mu}g(\mu)$, which is
+injective on angular functions, so any fixed number of retained angular
+moments admits two incident profiles with identical moments and different
+outgoing states. A reflective slab with a cosine source gives a response
+coefficient of $\pi/4$ when the direction-wise solution is averaged after the
+fact and $3/4$ when the diffusion tensor is averaged over angle first. Exact
+transfer between nodes therefore requires a continuous face function, and
+$S$ and $M$ then only partition the phase space. This is the sense in which
+the closure is ``strict'': the algebra is exact up to the chosen finite
+spatial and angular spaces, and no additional face-current model is hidden in
+the assembly.
+
+\end{sloppypar}
+
+\paragraph{The diagonal valley of the square checkerboard.}
+On the one-group square checkerboard of the original paper the published PSN
+errors change sign along a diagonal valley whose position moves with $S$: at
+$I{=}30$ the strong-absorber row $S{=}2$ crosses between $M{=}4$ and $M{=}8$
+($-790.22\pcm$ at $M{=}4$, $+807.92\pcm$ at $M{=}8$), the $S{=}4$ row between
+$M{=}8$ and $M{=}12$, and the $S{=}6$ and $S{=}8$ rows between $M{=}12$ and
+$M{=}24$. Replacing only the node-interior diffusion coefficient by the exact
+sector tensor, while keeping the original four-mode body and face-average
+matching, does not remove the crossing ($-1363.03\pcm$ and $+76.41\pcm$ on
+the same two points), which locates the sign change in the face closure rather
+than in the body tensor alone.
+
+With the sector closure the sign change is absent over the tested range. All
+130 points of the four sector scans have negative eigenvalue error, and
+refining either axis at fixed values of the other moves the error
+monotonically toward zero: $A{=}0$ over $S{=}2,4,6,8,12$ with
+$M{=}4,8,12,24$ and $S{=}12$ also at $M{=}48,96$ for both absorbers (44
+points), the same grid at $A{=}1$ in the quadratic subspace (40 points), that
+coefficient instead in the bilinear subspace (40 points), and $A{=}2$ at six
+points. The largest independent verification residual over those points was
+$3.2\times10^{-9}$ in the source and $9.7\times10^{-10}$ in the eigenvalue.
+\texttt{scripts/study4\_checkerboard\_report.py} reads the run logs of these
+scans, which ship in \texttt{examples/psn\_repro/logs/}, re-checks the
+one-sign and monotonicity properties, and regenerates
+Table~\ref{tab:study4-checker}.
+The one-sign behaviour is a property of the assembled closure rather than of
+any angular partition: a trial run of the same scan with only two quadrature
+points per sector restores a sign change at several $M{=}4$ points of the
+strong absorber, because the sector tensor is then under-integrated.
+For a one-group problem with positive removal, Eq.~\eqref{eq:study4-even} is
+a generalised Rayleigh quotient, and bisecting a cell or halving an angular
+cell nests the trial spaces, so under exact quadrature the computed $\keff$ is
+non-decreasing under refinement and approaches the continuous eigenvalue from
+below. The observed one-sign errors are consistent with that bound; the
+seven-group problems are not covered by it, their scattering coupling is not
+symmetric, and some of the refinements below are non-nested.
+
+\input{tables/study4-checker.tex}
+
+Table~\ref{tab:study4-checker} shows the effect of the added sector modes:
+at $S{=}12$, $M{=}24$ the strong-absorber error falls from $-107.43\pcm$ with
+the angular average to $-34.13\pcm$ with one azimuthal mode and $-32.05\pcm$
+with two; representing the same mode in the bilinear subspace gives
+$-40.24\pcm$ with fewer spatial degrees of freedom, and on this grid the
+bilinear point is also the cheaper of the two settings ($12.81$~s against
+$37.44$~s for the legacy node model at the same $S{=}12$, $M{=}24$; the two
+logs record neither thread count nor host load, so this pair is not a
+controlled timing comparison). The same closure is checked against an
+analytic solution rather than against itself: on the one-group slab with
+vacuum on both faces and no scattering, the angular-diffusion solution
+gives the cell-mean flux in closed form, and the discretised sweep is
+required to reproduce it (\texttt{tests/test\_sector\_diffusion.py},
+\texttt{test\_\allowbreak vacuum\_\allowbreak slab\_\allowbreak matches\_\allowbreak analytic\_\allowbreak angular\_\allowbreak diffusion},
+$A{=}1$, 32 cells, $I{=}4$, $M{=}4$, six digits).
+
+\paragraph{Assemblies: six $S\times M$ matrices.}
+The same closure was then run as a full sweep on the four C5G7 assemblies and
+both checkerboards: $M{=}2,4,8,12,16,24$ against
+$S{=}1,\ldots,20$ for the checkerboards ($I{=}30$) and
+$S{=}1,\ldots,6$ for the assemblies ($I{=}8$ finite polar subdivisions),
+$A{=}1$ with the bilinear azimuth coefficients, 384 points in total. Each
+point passed its own verification sweep. The square model reuses the
+pin-homogenised cross sections of Study I and the rectangular model the
+explicit $3\times3$ tiling of Study II, with the same-geometry OpenMC
+references $1.3336285$ / $1.1853993$ (square UO$_2$ / MOX) and
+$1.3347260$ / $1.1851053$ (rectangular UO$_2$ / MOX).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.86\linewidth]{studyIII_c5g7_sm.pdf}
+\caption{Signed eigenvalue differences for the pin-homogenised square and
+explicit rectangular C5G7 assemblies, in pcm against each same-geometry
+OpenMC reference. The marker indicates the smallest measured absolute
+difference in each panel.}
+\label{fig:study4-c5g7}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.86\linewidth]{studyIII_best_fission.pdf}
+\caption{Fuel-pin fission maps at the best measured points, from left to
+right OpenPSN, OpenMC and the relative pin error. The square rows use
+$\nu\Sigma_f\phi$, the rectangular rows $\Sigma_f\phi$, each normalised to
+unit pin sum as in the corresponding Study I and II figures.}
+\label{fig:study4-fission}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{Coverage, best measured point, fuel-pin error and wall time of the
+six $S\times M$ matrices. The sum column adds the individual point times;
+several cases ran concurrently on the same host.}
+\label{tab:study4-assembly}
+\centering\small
+\begin{tabular}{l r r r r r}
+\hline
+Case & Best $(S,M)$ & $\Delta k$ (pcm) & Pin RMS & Pin max & Sum, 36--120 points\\
+\hline
+Strong absorber   & $(20,24)$ & $-33.67$  & ---    & ---    & 140.1~s\\
+Weak absorber     & $(20,24)$ & $-7.76$   & ---    & ---    & 131.4~s\\
+Square UO$_2$     & $(6,4)$   & $+3.02$   & 0.029\% & 0.077\% & 492.9~s\\
+Square MOX        & $(6,24)$  & $-2.45$   & 0.033\% & 0.116\% & 502.6~s\\
+Rectangular UO$_2$& $(6,24)$  & $-8.80$   & 0.050\% & 0.168\% & 3041.0~s\\
+Rectangular MOX   & $(6,24)$  & $-118.55$ & 0.079\% & 0.238\% & 2957.8~s\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.92\linewidth]{studyIII_wall_time.pdf}
+\caption{End-to-end wall time of the same 384 points in seconds on a
+logarithmic scale; top to bottom, strong and weak absorber checkerboards,
+square UO$_2$ and MOX, rectangular UO$_2$ and MOX. Points were run several at
+a time on one host and the coarse points take under a second, so the panels
+describe workload rather than measured throughput.}
+\label{fig:study4-walltime}
+\end{figure}
+
+The rectangular MOX row is the weakest point of this sweep, and it is a
+material-and-tiling effect rather than an angular one: at fixed $M{=}24$,
+$A{=}2$ and one polar mode, its error reduces from $-185.20\pcm$ at $S{=}1$
+through $-115.02$ ($S{=}2$) and $-68.35$ ($S{=}4$) to $-52.81\pcm$ at
+$S{=}6$, so spatial resolution of the explicit water gaps, not additional
+azimuth, carries the improvement there.
+
+The rectangular UO$_2$ matrices contain one non-monotone step that was
+investigated separately. On the assembly mesh of the sweep row $S{=}2$, moving
+from $M{=}2$ to $M{=}4$ makes the eigenvalue worse by $57.33\pcm$
+($-91.65$ to $-148.98\pcm$). A change that does not touch the angular rule
+reduces it: redistributing each pin's fixed cell budget among its three
+material intervals (benchmark flag \texttt{--balance-pin}, which keeps the
+three material boundaries and the total pin width and chooses the allocation
+that minimises the widest subcell) brings the same paired step down to
+$40.69\pcm$ ($-94.94$ to $-135.63\pcm$), and on the paired points it also
+improves $M{=}4$, $8$ and $16$ for both materials: by $37.60$ and
+$13.35\pcm$ at $M{=}4$, $36.63$ and $15.75\pcm$ at $M{=}8$, and $32.01$ and
+$13.66\pcm$ at $M{=}16$, for MOX and UO$_2$ respectively, while the $M{=}2$
+UO$_2$ point moves $3.29\pcm$ the other way. On the uniform
+layout, raising the azimuth degree to $A{=}4$ with the higher spatial basis
+gives $-71.17\pcm$ at $M{=}2$ and $-33.21\pcm$ at $M{=}4$, so the reversal
+disappears there as well. The step is therefore an interaction between the
+coarse sector and the coarse intra-pin spatial resolution, not a property of
+the $M{=}4$ partition, and it is reduced by refining either side rather than
+by an angular-rule change. Both controls are tabulated in
+\texttt{paper/data/study4\_rectangular\_controls.csv} and
+\texttt{paper/data/study4\_\allowbreak balance\_\allowbreak pin.jsonl}.
+
+\paragraph{C5G7 rectangular quarter core.}
+The $5\times6$ grid of runs on the explicit quarter core
+(\texttt{c5g7\_rect\_quarter\_core.yaml}, 7 groups, original interfaces,
+$(153S)^2$ nodes, TY3 polar rule, $A{=}1$, 60-thread cap) is given in
+Tables~\ref{tab:study4-core-pcm} and~\ref{tab:study4-core-time}. The
+reference is the same-geometry OpenMC batch mean
+$1.187217554586068$ with a $3.41\pcm$ standard error over
+20{,}000 active batches; the statepoint \texttt{k\_combined} estimator is
+$1.187220349151050$ with $1.75\pcm$. Each measured cell was solved independently and
+re-verified by a separate transport sweep with a source residual of at most
+$5\times10^{-9}$ and an eigenvalue residual of at most $10^{-9}$. Timings are
+end to end for the recorded run and include assembly, factor construction,
+outer iterations and the verification sweep; an asterisk marks a cell that
+reused stored factors, and points sharing a time window were run concurrently,
+so the two matrices describe workload as much as throughput.
+
+\input{tables/study4-core-pcm.tex}
+\input{tables/study4-core-time.tex}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{sector_diffusion_sm.pdf}
+\caption{The measured quarter-core matrices. Left: signed eigenvalue
+difference in pcm (symlog scale), the framed cell marking the smallest
+absolute difference. Right: end-to-end wall time in seconds (log scale).}
+\label{fig:study4-core}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{study4_core_fission.pdf}
+\caption{Normalised fuel fission rate at the best measured quarter-core
+point, beside the same-geometry OpenMC reference and the pin-wise relative
+difference over the 1056 fuel pins.}
+\label{fig:study4-core-fission}
+\end{figure}
+
+\input{tables/study4-core-best.tex}
+
+For comparison on the identical geometry, grid and thread budget, starting
+cold, the legacy PSN closure at $S{=}1$, $M{=}24$ gives $-10.12\pcm$ in
+128.08~s and the sector closure $-54.09\pcm$ in 340.68~s. The sector closure
+is therefore not uniformly better at the coarsest settings, where the legacy
+node model has the smaller error at equal angular resolution; the tables above
+show the sector error decreasing as either axis is refined, which is the
+regime where the two paths cross.
+
+One input-level effect is of the same size as these differences. OpenPSN
+reads the C5G7 fission spectrum as supplied, with
+$\sum_g\chi_g=1.00000917761$, whereas OpenMC renormalises it on read; the two
+eigenvalues are related by $k_\text{raw}=(\sum_g\chi_g)\,k_\text{normalised}$,
+which shifts the present reference by $1.0896\pcm$ --- the same order as the
+stated target accuracy. Group-wise constant corrections of this kind are the
+reason the comparison is reported cell by cell rather than as a single
+number.
+
+How far the remaining bias is azimuthal was estimated on the same base grid at
+$I{=}8$ polar nodes and $A{=}1$: the successive increments
+$M{=}4,8,16$ and $M{=}8,16,32$ give local azimuthal orders of $1.32$ and
+$1.47$, and the two windows extrapolate to $-54.64\pcm$ and $-58.90\pcm$ as
+$M\rightarrow\infty$ at fixed spatial and polar resolution. Space is not the
+dominant partner either --- at fixed $M{=}16$, refining the $172\times172$
+graded mesh to $244\times244$ moves $\keff$ by $3.24\pcm$. On this family of
+meshes the residual difference is therefore limited by the intra-cell material
+and polar resolution rather than by the number of azimuth sectors, and the
+reference itself carries $3.39$--$3.91\pcm$ of statistical uncertainty (block
+sizes of 10 to 500 batches, $1.75\pcm$ for the \texttt{k\_combined}
+estimator), which is larger than the margin any single cell of
+Table~\ref{tab:study4-core-pcm} would have to prove.
+
+\paragraph{Symbolic and exact checks.}
+Because the closure is now defined by an exact reduction, several of its
+components were checked without discretisation. The two-layer vacuum slab with
+unit optical depths and equilibrium source terms $1$ and $2$ has interface
+scalar flux $3[1-E_2(1)]/2$, interface net current $-1/4+E_3(1)/2$, and
+absorption plus leakage equal to the total source $3$; the reference
+implementation reproduces these in rational arithmetic with exponential
+integrals, and inserting a virtual interface or splitting the angular band
+leaves every directional response and every per-cell balance unchanged. Substituting the analytic
+flux into both the first-order transport equation and the even-parity second
+order equation leaves a identically zero symbolic residual for a mirrored
+rectangle with isotropic scattering, and the response coefficients of an
+oblique characteristic crossing two interfaces and reflecting are unchanged
+when extra spatial subdivisions are introduced. With the C5G7 cross sections
+read as exact rationals, the four-reflection homogeneous seven-group
+eigenvalues are $0.738214699120$ (UO$_2$) and $0.839334157439$,
+$1.038903851962$, $1.147587627285$ (MOX 4.3\%, 7\%, 8.7\%). For the heterogeneous
+quarter core, per-group weighted conservation verified with exact rational
+linear programming certifies $k_\mathrm{eff}<1.894$; a bracket of the same width
+as the target accuracy has not been obtained. These 14 exact checks (10 from
+this round plus the 4 slab balances above) ship as
+\texttt{examples/psn\_strict\_checks/} and run under \texttt{unittest
+discover} in about 2~s with \texttt{sympy} and \texttt{PyYAML}; the
+discretised operator, the node-response identity and the interface and symmetry
+properties of the geometry controls are covered by the 22 regressions in
+\texttt{tests/test\_sector\_diffusion.py}, which run in about 13~s. The exact
+checks constrain the operator, not the truncation error of a production mesh.
+
+\paragraph{Scope.}
+The quarter-core matrix is a measured grid, not a convergence proof: its best
+cell still differs from the Monte Carlo reference by more than that
+reference's own $3.41\pcm$ standard error, the rectangular MOX assembly keeps
+an order-of-tens-of-pcm bias at its best sampled setting, and the sector
+closure is more expensive than the legacy path at equal $M$. What the
+section establishes is narrower and checkable: with the face closure taken
+from the same weak form as the body term, the sign-changing valley of the
+square checkerboard does not appear anywhere in the 130 tested points, the
+error is one-signed and decreases under refinement of either axis on every
+tested row, and the nodal-response rewriting is an exact algebraic identity on
+the same discrete system.

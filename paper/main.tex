@@ -109,14 +109,20 @@ diffusion-type equations, and their proposed SP3-based development
 concerns higher streaming-operator powers rather than a higher polynomial
 degree in azimuth.
 
-The contributions of this work are fourfold. First, we implement the
+The contributions of this work are fivefold. First, we implement the
 published PSN formulation in a multigroup framework with rectangular
 nodes, sparse assembly and vectorised local operators. Second, we
 verify the original branch through the reported implementation checks
 and the reproduction of the published checkerboard and BWR-bundle
 results. Third, we document a separate segmentwise even-parity
 angular-moment branch, including its matrix-valued nodal response and
-its relation to the original PSN closure. Fourth, we assess the
+its relation to the original PSN closure. Fourth, we document a
+finite-sector closure of the same even-parity hierarchy, in which the
+diffusion tensor of each finite angular cell is the exact second moment
+of the retained directions and the interface and vacuum terms come from
+the same weak form as the body term; on the square checkerboard that
+closure removes the sign-changing diagonal valley of the published
+error survey over every tested point. Fifth, we assess the
 available checkerboard and C5G7-based calculations using references
 appropriate to each material and geometry model. The assessment
 preserves the distinction between eigenvalue trends and spatial-field
@@ -127,15 +133,17 @@ efficiency ranking against the cited methods.
 
 The remainder is organised as follows. Section~2 describes the
 formulations and their implementation: the legacy PSN formulation, the
-rectangular-node implementation, and the separate segmentwise
-angular-moment formulation. Section~3 presents the implementation
+rectangular-node implementation, the separate segmentwise
+angular-moment formulation, and the finite-sector closure of the
+even-parity equation. Section~3 presents the implementation
 verification and the reproduction of the published PSN results.
 Section~4 assesses the checkerboard and C5G7-based
 calculations, distinguishing the pin-homogenised and explicit-material
 models and the two formulations: the legacy PSN branch on the
-$3\times3$ pin tiling (homogenised and explicit rectangular nodes)
-and the segmentwise angular-moment variant at $A{=}3$ on the $4\times4$
-fuel-split tiling, with fission-field comparisons against OpenMC. Section~5 discusses the scope
+$3\times3$ pin tiling (homogenised and explicit rectangular nodes),
+the segmentwise angular-moment variant at $A{=}3$ on the $4\times4$
+fuel-split tiling, and the finite-sector closure on the same four
+families of benchmarks, with fission-field comparisons against OpenMC. Section~5 discusses the scope
 of the comparisons and the relation to prior methods; Section~6 gives
 the conclusions. Appendix~A tabulates the full point-by-point
 reproduction of the published results.
@@ -150,8 +158,12 @@ segmentwise even-parity angular-moment variant with a PSN-inspired
 nodal response, assessed at angular order $A{=}3$. The two share the
 rectangular geometry, the multi-group assembly and the outer
 fission-source iteration; they differ in the angular closure and, in the
-C5G7 campaigns, in the pin tiling. The software name OpenPSN does not
-imply that all of its results are instances of the original PSN method.
+C5G7 campaigns, in the pin tiling. The second branch also carries a
+finite-sector closure of its own, selected by
+\texttt{angular.closure: sector\_average} or
+\texttt{sector\_diffusion} and assessed in Section~4. The software name
+OpenPSN does not imply that all of its results are instances of the
+original PSN method.
 
 \subsection{Legacy PSN}
 
@@ -1218,6 +1230,7 @@ and the verification difference. The example directory includes the
 timed sweep series and the configuration used for this comparison.
 
 \input{studyIII.tex}
+\input{studyIV.tex}
 \clearpage
 \subsection{Comparison with the published diffusion / SN / nodal landscape}
 The original NEA report~\cite{nea2003} tabulates 20 deterministic codes on
@@ -1374,6 +1387,11 @@ calculations, they establish the behaviour of the implemented
 configurations over the reported parameter ranges. Matched
 computational-cost comparisons and an isolated attribution of the
 changes to angular order are outside the evidence provided here.
+The finite-sector study of Section~4 is reported on the same footing:
+its quarter-core matrix is a grid of measured points rather than a
+convergence proof, its best cell stays outside the Monte Carlo
+reference's own standard error, and the sector closure is the more
+expensive of the two paths at equal $M$.
 
 \section{Conclusions}
 
@@ -1402,7 +1420,12 @@ field-comparison point is $-9.8$~pcm. The completed quarter-core study
 of the local angular-moment branch reports the $S{=}1$ angular sweep,
 with the existing $S{=}1,M{=}8$ field comparison giving
 $\Delta k=-1.7$~pcm and a fission-rate RMS difference of
-$0.286\%$.
+$0.286\%$. The finite-sector closure of the even-parity equation gives
+one-signed checkerboard errors that decrease under refinement of either
+axis at every tested row, and on the explicit rectangular quarter core
+its $S\times M$ matrix keeps its smallest measured difference
+above the $3.41$~pcm standard error of the same-geometry Monte Carlo
+reference.
 
 The checkerboard results show accurate finite-parameter
 configurations and remaining sensitivity to polar resolution at the
