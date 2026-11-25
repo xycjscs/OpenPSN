@@ -549,8 +549,8 @@ The $5\times6$ grid of runs on the explicit quarter core, with the direction-wis
 | 1 | -271.73 | -149.28 | -68.90 | -60.26 | -57.21 | -54.09 |
 | 2 | -263.55 | -137.20 | -49.66 | -40.31 | -37.10 | -33.95 |
 | 3 | -260.06 | -133.29 | -39.46 | -28.91 | -25.68 | -23.05 |
-| 4 | -257.30 | -131.26 | -33.57 | -22.58 | -19.44 | --- |
-| 5 | -254.69 | -130.03 | --- | --- | **-15.85** | --- |
+| 4 | -257.30 | -131.26 | -33.57 | -22.58 | -19.44 | -16.77 |
+| 5 | -254.69 | -130.03 | -29.34 | -18.52 | -15.85 | **-12.98** |
 
 : Signed eigenvalue difference $10^{5}(\kappa_{\mathrm{eff}}-k_\mathrm{ref})$ in pcm on the explicit quarter core, against the same-geometry OpenMC reference $1.187217554586068$ ($3.41$ pcm standard error). Bold marks the smallest measured absolute difference. {#tab:study4-core-pcm}
 
@@ -559,8 +559,8 @@ The $5\times6$ grid of runs on the explicit quarter core, with the direction-wis
 | 1 | 77.8 | 113.4 | 166.4 | 176.1 | 237.8 | 340.7 |
 | 2 | 625.3 | 790.3 | 548.5 | 1299.0 | 996.6 | 1810.2 |
 | 3 | 1199.5 | 1757.3 | 1559.8 | 1787.4 | 2790.4 | 2518.8 |
-| 4 | 3263.4 | 1647.5 | 3486.0 | 2665.9 | 2163.1 | --- |
-| 5 | 5787.4 | 3161.0 | --- | --- | 4841.3 | --- |
+| 4 | 3263.4 | 1647.5 | 3486.0 | 2665.9 | 2163.1 | 4360.9 |
+| 5 | 5787.4 | 3161.0 | 3440.0 | 5084.0 | 4841.3 | 10930.6 |
 
 : End-to-end wall time in seconds for the same points, including assembly, factor construction, outer iterations and the verification sweep. An asterisk marks a point that reused stored factors; points sharing a time window ran concurrently. {#tab:study4-core-time}
 
@@ -578,12 +578,12 @@ The $5\times6$ grid of runs on the explicit quarter core, with the direction-wis
 | quantity | best measured cell |
 |:-----------------------|:---------------------|
 | spatial subdivision $S$ | 5 |
-| azimuth sectors $M$ | 16 |
+| azimuth sectors $M$ | 24 |
 | nodes | 585225 |
-| $\kappa_{\mathrm{eff}}$ | 1.187059063827 |
-| $\Delta k$ | $-15.85$ pcm |
-| wall time | 4841.3 s |
-| pin fission RMS / max | 0.084 % / 0.322 % |
+| $\kappa_{\mathrm{eff}}$ | 1.187087778706 |
+| $\Delta k$ | $-12.98$ pcm |
+| wall time | 10930.6 s |
+| pin fission RMS / max | 0.084 % / 0.321 % |
 
 : The cell of Table [7](#tab:study4-core-pcm){reference-type="ref" reference="tab:study4-core-pcm"} with the smallest absolute eigenvalue difference, with the relative pin-wise fission-rate difference over the 1056 fuel pins. The node count is $(153S)^2$. {#tab:study4-core-best}
 @

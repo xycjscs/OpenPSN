@@ -347,7 +347,7 @@ cases:                   # 批量：per-case 覆盖 M / subdivide / A / closure 
 | Study IV：棋盘弱/强吸收（**记录口径 `sector_diffusion`**） | `psn_repro/checkerboard_1g.yaml`、`psn_repro/checkerboard_1g_strong.yaml` | 发表网格（S=2–12 × M=4–96）逐点重测 + A=1 宽矩阵 S=1–20 × M=2–24，共 187 点（A=0/1/2） | 1.12974 / 0.51673 | 论文表 tab:study4-checker-sector；对角谷线消失：M>4 固定时随 S 加密无一例 \|Δk\| 上升，172/187 点同号（负），15 个正偏差全在 A=1、M=4（每扇区两个方向）一列 |
 | Study IV：棋盘弱/强吸收（等自由度对照 `sector_average`） | 同上 | S=2–12 × M=4–96，共 130 点（A=0 44、A=1 二次 40、A=1 双线性 40、A=2 6） | 1.12974 / 0.51673 | 论文表 tab:study4-checker-average；130 点全部同号（负）、任一轴加密单调趋零，逐点比值见 tab:study4-closure-ratio |
 | Study IV：4 组件 + 2 棋盘（对照 `sector_average`，384 点已发表） | `c5g7/study1_homogenised/c5g7_{uo2,mox}_assembly_*.yaml`、`c5g7/study2_rectangular/c5g7_rect_{uo2,mox}_assembly.yaml` | 组件 S=1–6、棋盘 S=1–20 × M=2–24（384 点），A=1 双线性 | 同 Study I / II | 论文表 tab:study4-assembly；矩形 MOX 最佳 −118.55 pcm（材料/平铺受限）。同网格的 `sector_diffusion` 补测在跑（方形组件 24/72、矩形组件 2/72），`study4_assembly_report.py --closure` 两侧都能出表 |
-| Study IV：矩形 1/4 芯 SM 矩阵（**记录口径 `sector_diffusion`**） | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–5 × M=2,4,8,12,16,24（TY3，A=1，逐点独立复扫） | 1.1872176 | 矩阵与最佳点见 `examples/c5g7/study4_sector_core/`（`sm_matrix.md` 由 `scripts/study4_core_report.py` 从逐点日志重建；写表时 26/30 格，4 格在跑，用 `--allow-missing` 留 `---`） |
+| Study IV：矩形 1/4 芯 SM 矩阵（**记录口径 `sector_diffusion`**） | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–5 × M=2,4,8,12,16,24（TY3，A=1，逐点独立复扫） | 1.1872176 | 矩阵与最佳点见 `examples/c5g7/study4_sector_core/`（`sm_matrix.md` 由 `scripts/study4_core_report.py` 从逐点日志重建；30/30 格全部收敛，误差同号且随两轴单调下降，最佳格 `S=5, M=24` 为 `−12.98 pcm`） |
 | 严格代数校验（14 项，符号/有理精确） | `examples/psn_strict_checks/` | 两层真空板、镜像矩形、四反射均质 7 群、堆芯守恒 LP | 精确解析值 | k∞ 四位精确小数、`k_eff<1.894` 上界，`unittest` 约 2 s |
 
 （棋盘 A3 的 `subdivide` 约定：case 名中的 S = 论文 S，2×2 基网格再细分
@@ -398,9 +398,11 @@ python -m scripts.study4_assembly_report --closure sector_average
                                        # 新闭合要等 paper/data/study4_assembly_summary.csv 补上
                                        # closure=sector_diffusion 的汇总行后才出得了表）
 python -m scripts.study4_core_report --logs examples/c5g7/study4_sector_core/logs \
-    --output examples/c5g7/study4_sector_core --latex paper/tables --allow-missing \
+    --output examples/c5g7/study4_sector_core --latex paper/tables \
+    --fission-summary examples/c5g7/study4_sector_core/best_fission_summary.json \
     --mirror-md docs/psn4-sector-diffusion.md \
     --mirror-md examples/c5g7/study4_sector_core/README.md
+                                       # 30 格齐了，不再传 --allow-missing：缺日志直接报错
                                        # 1/4 芯两张矩阵（未收敛格留 '---'）
 python -m scripts.study4_closure_cost                 # 两种闭合等自由度的配对计时（会跑求解器，
                                        # 默认 10 组、8 线程、10 GiB 上限，空闲内存不足则跳过该组）

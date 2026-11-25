@@ -1,0 +1,69 @@
+Traceback (most recent call last):
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/sector-diffusion-sm/run_point.py", line 22, in <module>
+    from fastpacked import FastPacked, SharedPolarSolve, load_kernel
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/rect_m16_sweep/fastpacked.py", line 13, in <module>
+    chol = c.CDLL(str(next((root / "solver_deps/cvxopt.libs").glob("libcholmod-*"))))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/round_pin/runtime/omc/lib/python3.12/ctypes/__init__.py", line 379, in __init__
+    self._handle = _dlopen(self._name, mode)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: libsatlas-6c1f674f.so.3.10: cannot open shared object file: No such file or directory
+{"name": "rect_sector_S5_M24", "model": "ty3", "closure": "sector_diffusion", "M": 24, "A": 1, "I": 8, "subdivide": 5, "kref": 1.187217554586068, "warm_from_S": 5, "warm_checkpoint": "warm_S5.npz", "backend": "shared-polar-cholmod-packed-fp64-pcg", "coarse_angular_guide": true}
+  factored 1/7 energy groups with 12 factors each, pool 5.517 GiB, 12 restored
+  factored 2/7 energy groups with 12 factors each, pool 10.932 GiB, 24 restored
+  factored 3/7 energy groups with 12 factors each, pool 16.282 GiB, 36 restored
+  factored 4/7 energy groups with 12 factors each, pool 21.623 GiB, 48 restored
+  factored 5/7 energy groups with 12 factors each, pool 26.956 GiB, 60 restored
+  factored 6/7 energy groups with 12 factors each, pool 32.160 GiB, 72 restored
+  factored 7/7 energy groups with 12 factors each, pool 37.161 GiB, 84 restored
+Traceback (most recent call last):
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/sector-diffusion-sm/run_point.py", line 310, in <module>
+    main()
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/sector-diffusion-sm/run_point.py", line 287, in main
+    k, flux, source = solver.keff(max_outer=240, outer_tol=1e-9, verbose=True, initial_source=source)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/openpsn/psn2d/sector_diffusion.py", line 490, in keff
+    return keff_ritz(self, max_outer, outer_tol, verbose,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/openpsn/psn2d/ritz.py", line 225, in keff_ritz
+    phi, moments = psn._sweep_all(q.reshape(shape))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/sector-diffusion-sm/run_point.py", line 261, in <lambda>
+    solver._sweep_all = lambda q: sweep_interleaved(solver, q, paired=True)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/rect_m16_sweep/run_sharedpolar.py", line 162, in sweep_interleaved
+    for g, field in self._pool.map(solve, jobs):
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/round_pin/runtime/omc/lib/python3.12/concurrent/futures/_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/round_pin/runtime/omc/lib/python3.12/concurrent/futures/_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/round_pin/runtime/omc/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/round_pin/runtime/omc/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/round_pin/runtime/omc/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/rect_m16_sweep/run_sharedpolar.py", line 150, in solve
+    f0, f2 = solve_pair(a.__self__, c.__self__, rhs[g])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/agent/multica_workspaces_fold-facf37c052d65f9e054a/openpsn-d7fdd969fb3e/psn-4-d3de3896707b/workdir/validation/rect_m16_sweep/fastpacked.py", line 237, in solve_pair
+    raise RuntimeError(f"paired PCG failed: residuals {residuals}, steps {steps}")
+RuntimeError: paired PCG failed: residuals [3.16602500e-12 5.08742006e-12], steps [  41 -400]
+{"name": "rect_sector_S5_M24", "model": "ty3", "closure": "sector_diffusion", "M": 24, "A": 1, "I": 8, "subdivide": 5, "kref": 1.187217554586068, "warm_from_S": 5, "warm_checkpoint": "warm_S5.npz", "backend": "shared-polar-cholmod-packed-fp64-pcg", "coarse_angular_guide": true}
+  factored 1/7 energy groups with 12 factors each, pool 5.517 GiB, 12 restored
+  factored 2/7 energy groups with 12 factors each, pool 10.932 GiB, 24 restored
+  factored 3/7 energy groups with 12 factors each, pool 16.282 GiB, 36 restored
+  factored 4/7 energy groups with 12 factors each, pool 21.623 GiB, 48 restored
+  factored 5/7 energy groups with 12 factors each, pool 26.956 GiB, 60 restored
+  factored 6/7 energy groups with 12 factors each, pool 32.160 GiB, 72 restored
+  factored 7/7 energy groups with 12 factors each, pool 37.161 GiB, 84 restored
+  ritz sweep 1: keff=1.1903188948, source=1.86e-04
+  ritz sweep 5: keff=1.1871221944, source=1.54e-06
+  ritz sweep 10: keff=1.1870869258, source=5.51e-08
+  ritz sweep 15: keff=1.1870878074, source=1.99e-09
+  ritz sweep 20: keff=1.1870877795, source=8.35e-11
+{"name": "rect_sector_S5_M24", "model": "ty3", "closure": "sector_diffusion", "M": 24, "A": 1, "I": 8, "subdivide": 5, "kref": 1.187217554586068, "warm_from_S": 5, "warm_checkpoint": "warm_S5.npz", "threads": 60, "nodes": 585225, "keff": 1.1870877787059202, "pcm": -12.977588014773112, "time_s": 10930.612646411988, "factor_time_s": 153.9787908999715, "factor_bytes": 39900955310, "sweeps_executed": 22, "source_residual": 2.9058947037385256e-11, "keff_residual": 6.881223984056002e-10, "median_sweep_s": 479.1416827760404, "converged": true, "backend": "shared-polar-cholmod-packed-fp64-pcg", "factor_cache_used": true, "restored_factors": 84, "restart_files": true, "anchor_m": null, "anchor_revision": null, "sweep_worker_cap": 9, "ritz_depth": 8, "coarse_block": 8, "warm_coarse": true, "pcg_rtol": 3e-11, "pcg_maxiter": 400, "preconditioner_bits": 16, "preconditioner_scale_bits": 32, "coarse_angular_guide": true}

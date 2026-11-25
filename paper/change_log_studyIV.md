@@ -116,27 +116,12 @@
 
 ## 8. 已知未做
 
-- 四分之一堆芯矩阵当前 26/30 格：`S=4,M=24` 与 `S=5,M=8,12,24` 在写表时仍在运行，
-  两张表里留空并在 caption 里标注；其余 26 格已入仓。补齐后重跑（去掉
-  `--allow-missing`）即填上并去掉标注，完整命令见 README §6：
-
-  ```bash
-  python -m scripts.study4_core_report --logs examples/c5g7/study4_sector_core/logs \
-      --output examples/c5g7/study4_sector_core --latex paper/tables \
-      --mirror-md docs/psn4-sector-diffusion.md \
-      --mirror-md examples/c5g7/study4_sector_core/README.md
-  python -m scripts.finalize_markdown --force
-  make -C paper
-  ```
-
-  若新的最佳格改变，需同时重跑 `validation/sector-diffusion-sm/fission_map.py`
-  更新逐棒裂变对照图。
-
 - 记录口径的补测未跑完：`scripts/study4_uniform_grid` 计划 458 点（镜像已发表的
-  棋盘与组件网格），本轮写表时收敛 213 点 —— 棋盘发表网格 114/114、`A=1` 宽矩阵
-  73/200、方形组件 24/72、矩形组件 2/72。已收敛点已并入 `paper/data/` 两个逐点
-  CSV，跑完后重跑 `merge` 与 `study4_closure_report`（去掉 `--allow-missing`）
-  即刷新配对统计与比值表，配对数会变、caption 自动同步。
+  棋盘与组件网格），本轮写表时收敛 213 点；2026-11-25 补到 388/458 —— 棋盘发表
+  网格 114/114、`A=1` 宽矩阵 200/200、方形组件 48/72、矩形组件 26/72，剩 70 点
+  全在组件族。已并入 `paper/data/` 两个逐点 CSV 的仍是先前那 213 点；跑完后重跑
+  `merge` 与 `study4_closure_report`（去掉 `--allow-missing`）即刷新配对统计与比值表，
+  配对数会变、caption 自动同步，两篇论文的点数也要按合并后的实际行数重算。
 - 新闭合的六组件表还出不了：`study4_assembly_report.py --closure` 已能按闭合切换，
   但它读的 `paper/data/study4_assembly_summary.csv` 只有对照闭合的汇总行、且没有
   `closure` 列（该文件的历史生成者不在仓内）。补测跑满后需先按同一口径生成

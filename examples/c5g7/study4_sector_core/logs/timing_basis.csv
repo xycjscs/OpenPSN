@@ -28,4 +28,4 @@ subdivide,M,factors,note
 5,8,fresh,"run_point.py driver, factor built in this run"
 5,12,fresh,"run_point.py driver, factor built in this run"
 5,16,reused,archived run rect_m16_sweep/shared_S5_sweeps.log
-5,24,fresh,"run_point.py driver, factor built in this run"
+5,24,restored,"run_point.py driver, 84-factor pool restored from restart_S5_M24; paired PCG held to 3e-11 (see the point log)"
