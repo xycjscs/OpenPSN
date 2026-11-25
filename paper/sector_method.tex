@@ -48,18 +48,24 @@ the spatial subdivision changes. This paper formulates and assesses a closure in
 which the face and vacuum terms are taken from the same weak form as the body
 term, the diffusion tensor of each finite angular cell being the exact second
 moment of the directions retained in that cell, including its $xy$ component.
-The reduction is carried out direction by direction in one variant and per finite
+The reduction is carried out direction by direction in one closure and per finite
 angular cell in the other, with optional local azimuthal modes, so the discrete
 unknowns stay attached to finite sectors rather than to a truncated angular
-expansion. Two algebraic identities are verified symbolically --- the exact
-elimination of the nodal interior, and the impossibility of exact angular transfer
-through a finite closure --- and the discretisation is checked against an analytic
-vacuum-slab solution, against 14 exact rational and symbolic checks, and on
-540 measured grid points --- 130 on the square checkerboard, 384 on six
-single-assembly $S\times M$ matrices, and 26 on the C5G7 rectangular quarter core.
-On the checkerboard the
-sign change disappears at all 130 tested points, the error is one-signed and
-decreases under refinement of either axis; on the explicit quarter core the
+expansion. Both carry $A{+}1$ angular unknowns per sector at azimuthal degree $A$, so
+they can be differenced point by point, and the direction-wise closure is the one
+reported as the closure of record. Two algebraic identities are verified symbolically
+--- the exact elimination of the nodal interior, and the impossibility of exact angular
+transfer through a finite closure --- and the discretisation is checked against an
+analytic vacuum-slab solution, against 14 exact rational and symbolic checks, and on
+753 measured grid points --- 130 checkerboard points of the cell-average closure, 187
+checkerboard points of the direction-wise one, 384 points of six single-assembly
+$S\times M$ matrices, 26 points of the C5G7 rectangular quarter core and 26 further
+points of the direction-wise re-sweep. On the checkerboard the
+sign change disappears at 172 of the 187 direction-wise points, the exceptions forming
+one under-resolved azimuthal column, and the error decreases under every refinement of
+the spatial axis; against the cell-average closure at equal $A$, $S$, $M$ and $I$ it is
+the smaller at 184 of the 189 paired points, at a median ratio of $0.488$ and a median
+time ratio of $0.98$. On the explicit quarter core the
 smallest measured difference from the same-geometry Monte Carlo reference is
 $15.85\pcm$, which remains larger than the reference's own $3.41\pcm$ standard
 error. No convergence proof, no matched-cost advantage and no general accuracy
@@ -100,12 +106,16 @@ with the body, interface and vacuum terms arising from one weak form;
 that the word ``exact'' is used only of the algebra up to the chosen discrete
 spaces; (iii) verifies the nodal-response rewriting as an exact identity on the
 same discrete system, and the discretised operator against an analytic
-angular-diffusion solution; (iv) measures the closure on the square checkerboard,
-where the sign-changing valley of Ref.~\cite{openpsn2026} is absent at every tested
-point, and on 410 further points covering the six single-assembly matrices and the
-26 measured points of the explicit rectangular quarter core; and (v) records the
-cost of the closure at equal $M$ --- on the quarter core $2.7$ times the published
-path at the same settings, and on the assembly grid not uniformly higher. All five
+angular-diffusion solution; (iv) measures the closure on the square checkerboard, where the sign-changing valley
+of Ref.~\cite{openpsn2026} is absent from 172 of the 187 measured points and from every
+point outside one under-resolved azimuthal column, and on the six single-assembly
+matrices and the 26 measured points of the explicit rectangular quarter core; (v) puts
+the two closures side by side at equal $A$, $S$, $M$ and $I$, where the direction-wise
+one has the smaller eigenvalue error at 184 of the 189 points measured both ways, at a
+median ratio of $0.488$ and at the same wall time (median $0.98$ over ten matched pairs,
+the two closures having the same unknowns); and (vi) records the cost of the sector
+closure against the published path --- on the quarter core $2.7$ times the published
+path at the same settings, and on the assembly grid not uniformly higher. All six
 items follow from the repository; the reproduction commands are in
 Section~\ref{sec:implementation}.
 
@@ -137,9 +147,15 @@ with the vacuum boundary condition carrying $|\boldsymbol{\Omega}\cdot\mathbf{n}
 and specularly reflected directions sharing the trace value on the reflecting face.
 Equation~\eqref{eq:even} is the same second-order operator used by the original PSN
 node problem, applied per direction rather than with a cell-averaged coefficient.
-Two closures are implemented. \texttt{sector\_diffusion} carries one field per Gauss
-direction of a sector; \texttt{sector\_average} carries one field per finite angular
-cell and adds local azimuthal modes of degree $A{=}0,\ldots,4$ inside that cell.
+Two closures of that tensor are implemented, at equal cost: at azimuthal degree $A$
+each sector carries $K{=}A{+}1$ angular unknowns either way. In
+\texttt{sector\_diffusion} they are the $A{+}1$ Gauss directions of the sector, each
+retaining its own tensor; in \texttt{sector\_average} they are the cell mean of the
+tensor plus $A$ local azimuthal modes of degree $A{=}0,\ldots,4$ inside the cell. The
+two are different operators and not two notations for one --- the counterexample at the
+end of this section puts their response coefficients at $\pi/4$ and $3/4$ --- so both
+are measured on the same meshes, and this paper reports the direction-wise
+\texttt{sector\_diffusion} as its closure of record.
 
 \subsection{Sectors, tensors and quadrature}
 Azimuth is split into $M$ sectors per half-plane, each carrying $A{+}1$ Gauss
@@ -215,13 +231,17 @@ face-current model is hidden in the assembly.
 
 \subsection{A variational bound and its hypotheses}
 For a one-group problem with positive removal, Eq.~\eqref{eq:even} is a generalised
-Rayleigh quotient; bisecting a spatial cell or halving an angular cell nests the
-trial spaces, so under exact quadrature the computed $\keff$ is non-decreasing under
-refinement and approaches the continuous eigenvalue from below. The one-signed errors
-observed on the one-group checkerboard are consistent with that bound. The bound does
-\emph{not} cover the seven-group C5G7 problems, whose scattering coupling is not
-symmetric, and some of the refinements reported below are non-nested (an angular
-subdivision at fixed space, or a change of the coefficient subspace).
+Rayleigh quotient, and bisecting a spatial cell at fixed angles nests the trial spaces,
+so under exact quadrature the computed $\keff$ is non-decreasing in $S$ and approaches
+the continuous eigenvalue from below. Section~\ref{sec:checker} measures exactly that
+on the direction-wise closure: every refinement of $S$ at fixed $M\ge8$ moves the error
+toward zero. Halving an angular cell is a different operation --- it replaces the
+directions the sector retains instead of enlarging the space --- so no monotonicity is
+expected along $M$ and none is claimed; the measurements saturate there instead, within
+$6.8\pcm$ of each column's own best. The bound does \emph{not} cover the seven-group
+C5G7 problems, whose scattering coupling is not symmetric, and some of the refinements
+reported below are non-nested (an angular subdivision at fixed space, or a change of the
+coefficient subspace).
 
 \subsection{Why this is not a $P_N$ scheme in disguise}
 The distinction is structural rather than a matter of order.
@@ -329,13 +349,20 @@ checks constrain the operator; they do not constrain the truncation error of a
 production mesh, which is what the measurements below address.
 
 \section{Results}
-The two closures of Section~\ref{sec:method} were not both run everywhere, and no
-table below mixes them: the checkerboard and the six single-assembly matrices are
-\texttt{sector\_average} points, the quarter-core grid is \texttt{sector\_diffusion},
-and the ten \texttt{strict\_phase\_space} rows in the same checkerboard data file are
-neither --- they insert the exact sector tensor into the original four-mode body and
-face-average matching, and are quoted only to locate the sign change in the face
-closure. The published valley values themselves are read from the reproduction table
+The direction-wise \texttt{sector\_diffusion} closure is measured on the square
+checkerboard (187 points, Section~\ref{sec:checker}), on the quarter core (26 points,
+Section~\ref{sec:core}) and at 26 points of the six $S\times M$ matrices; the
+\texttt{sector\_average} closure is measured on the whole of those grids and is reported
+beside it as the comparison at equal degrees of freedom. No table below mixes them, and
+the two live in the same per-point files under their own \texttt{closure} column. The
+direction-wise re-sweep of the six matrices was still running while this was written and
+had converged at 213 of the 458 points it plans, so their published matrix is the
+archived cell-average one and the paired columns of
+Table~\ref{tab:study4-closure-ratio} state what is in so far. The ten
+\texttt{strict\_phase\_space} rows in the checkerboard data file are neither closure ---
+they insert the exact sector tensor into the original four-mode body and face-average
+matching, and are quoted only to locate the sign change in the face closure. The
+published valley values themselves are read from the reproduction table
 \texttt{docs/fig3ref.json} of Ref.~\cite{openpsn2026}. The exact checks constrain the
 operator and the algebra shared by both closures.
 
@@ -351,21 +378,50 @@ face-average matching, does not remove the crossing ($-1363.03\pcm$ and $+76.41\
 on the same two points). The sign change is therefore located in the face closure,
 not in the body tensor alone.
 
-With the \texttt{sector\_average} closure the sign change is absent over the
-tested range. All 130 points of four scans have negative eigenvalue error, and
-refining either axis at fixed values of the other moves the error monotonically
-toward zero: $A{=}0$ over $S{=}2,4,6,8,12$ with $M{=}4,8,12,24$ and $S{=}12$ also at
-$M{=}48,96$ for both absorbers (44 points), the same grid at $A{=}1$ in the quadratic
-subspace (40 points), that coefficient instead in the bilinear subspace (40 points),
-and $A{=}2$ at six points. The largest independent verification residual over those
-points was $3.2\times10^{-9}$ in the source and $9.7\times10^{-10}$ in the
-eigenvalue. Table~\ref{tab:study4-checker} is regenerated from the nine archived run
-logs, and the generating script re-checks the one-sign and monotonicity properties
-before writing it.
+With the direction-wise closure the sign change is absent everywhere on the grid but
+one column. Table~\ref{tab:study4-checker-sector} is the table of record: 187 points at
+$A{=}0,1,2$, $S{=}1,\ldots,12$, $M{=}2,\ldots,96$ on the two absorbers, every point of
+the archived grid included and no cell left blank. Its largest independent verification
+residual is $3.9\times10^{-9}$ in the source and the same in the eigenvalue. 172 of the
+187 errors are negative; the 15 positive ones form one column, $A{=}1$ at $M{=}4$, where
+a sector holds two Gauss directions --- $S{=}3,\ldots,12$ of the strong absorber,
+$+7.1$ to $+124.0\pcm$, and $S{=}4,\ldots,12$ of the weak one, $+6.7$ to
+$+17.5\pcm$. The column is not the coarsest azimuth tested ($M{=}2$ of the same scan is
+one-signed at all nine of its points), and a direction-wise tensor needs no quadrature
+of the cell it averages, so the archived explanation of those crossings --- an
+under-integrated sector tensor --- does not carry over to them. It is the one property
+of the measured closure that the algebra of Section~\ref{sec:method} leaves unexplained.
+Outside that column the spatial axis
+behaves as the bound requires: of the 596 steps that refine $S$ at fixed $M$ in that
+table, 540 move the error toward zero and all 56 that do not lie in that one column, and
+past $M{=}8$ each fixed-$(A,S)$ column settles within $6.8\pcm$ of its own best.
+
+\input{tables/study4-checker-sector.tex}
+\input{tables/study4-closure-ratio.tex}
+
+Table~\ref{tab:study4-checker} is the archived comparison, and a demanding one: the same
+grids measured with the tensor averaged over the sector first. All 130 points of its
+four scans are one-signed and monotone along both axes, with largest independent
+verification residual $3.2\times10^{-9}$ in the source and $9.7\times10^{-10}$ in the
+eigenvalue, and it is regenerated from the nine archived run logs by a script that
+re-checks both properties before writing. The two closures share $A$, $S$, $M$ and $I$
+wherever they meet, so they may be differenced point by point: over the 189 such points
+measured so far, counting the 24 square-assembly pairs and the two rectangular ones
+that are in, the direction-wise error is the smaller at 184, at a median ratio of
+$0.488$ and a best of $0.016$. Two paired points make the size of it. At $A{=}0$,
+$S{=}12$, $M{=}12$ of the strong absorber the error is $-304.58\pcm$ averaged over the
+sector and $-8.38\pcm$ kept per direction; at $A{=}1$, $S{=}12$, $M{=}8$ it is
+$-77.88$ against $-5.73\pcm$, and for the weak absorber at the same point $-15.66$
+against $-2.68\pcm$. Those are the best points of the new closure on the two problems,
+against $-32.05$ and $-7.85\pcm$ for the archived closure on the same meshes, so the
+direction-wise tensor arrives at the smaller error with three times fewer azimuthal
+sectors. The same holds where the two closures were run back to back on one host
+(Table~\ref{tab:study4-closure-cost}): median $0.98$ of the time at the same number of
+unknowns, which says the gain is in the closure and not in the cost accounting.
 
 \input{tables/study4-checker.tex}
 
-Three qualifications belong with the table. First, the one-sign behaviour is a
+Three qualifications belong with the archived table. First, the one-sign behaviour is a
 property of the assembled closure rather than of any angular partition: a trial run
 of the same scan with only two quadrature points per sector restores a sign change at
 several $M{=}4$ points of the strong absorber, because the sector tensor is then
@@ -516,6 +572,17 @@ $M$ & legacy & bilinear coefficients & quadratic coefficients \\
 \end{tabular}
 \end{table}
 
+\input{tables/study4-closure-cost.tex}
+
+Two costs are being compared in this section and they should not be conflated. Against
+the \emph{legacy} path the sector closure is the more expensive one, by $2.7$ times on
+the quarter core and by between $0.83$ and $1.95$ times on the assembly grid of
+Table~\ref{tab:cost}, the two paths there using different factor kernels. Between the \emph{two sector closures},
+which have the same unknowns at equal $A$ and $M$, there is no systematic difference at
+all: over the ten pairs of Table~\ref{tab:study4-closure-cost}, run on one host one
+after the other, the median ratio of end-to-end times is $0.98$ and the range is
+$0.52$--$1.45$. Direction-wise accuracy is therefore not bought with time.
+
 Table~\ref{tab:cost} says the sector closure is affordable but not free, and it does
 not order the two paths by accuracy: at $M{=}16$ the cheaper bilinear representation
 is the less accurate of the two sector runs. The same pattern appears on the quarter
@@ -532,9 +599,12 @@ which cost is fixed and both paths are refined to that cost, was not performed.
 
 What the measurements establish is narrow and checkable: with the face closure taken
 from the same weak form as the body term, the sign-changing valley of the square
-checkerboard does not appear anywhere in the 130 tested points, the error is
-one-signed and decreases under refinement of either axis on every tested row, and the
-nodal-response rewriting is an exact algebraic identity on the same discrete system.
+checkerboard does not appear anywhere in the 187 points of the direction-wise closure of
+record except its one $A{=}1$, $M{=}4$ column, the error outside that column is
+one-signed and decreases under every refinement of the spatial axis, keeping the
+direction-wise error below the cell-average one at 184 of the 189 paired points at equal
+unknowns and equal time, and the nodal-response rewriting is an exact algebraic identity
+on the same discrete system.
 On the assemblies and the quarter core the eigenvalue difference from a same-geometry
 Monte Carlo reference decreases with both axes, and the pin-wise fission field of the
 best quarter-core point differs from that reference by $0.084\%$ RMS.
@@ -562,9 +632,13 @@ listed in \texttt{paper/unresolved\_items.md}.
 A finite-sector closure of the even-parity equation, in which the diffusion tensor of
 each finite angular cell is the exact second moment of the retained directions and the
 interface and vacuum terms come from the same weak form as the body term, removes the
-sign-changing diagonal valley of the published PSN checkerboard error survey at every
-one of the 130 points tested, with a one-signed error that decreases under refinement
-of either axis. The same closure, run as $S\times M$ grids on the four C5G7 assemblies
+sign-changing diagonal valley of the published PSN checkerboard error survey at 172 of
+the 187 points tested with it --- every point but one under-resolved azimuthal column
+--- with an error that is one-signed outside that column and decreases under every
+refinement of the spatial axis. Measured point by point against the cell-average
+reduction of the same tensor at the same $A$, $S$, $M$ and $I$, it is the more accurate
+of the two at 184 of 189 points, at a median error ratio of $0.488$ and a median time
+ratio of $0.98$. The same closure, run as $S\times M$ grids on the four C5G7 assemblies
 and the explicit rectangular quarter core, gives eigenvalue differences from
 same-geometry Monte Carlo references that decrease along both axes, reaching $-2.45$
 and $+3.02\pcm$ on the pin-homogenised square assemblies and $-15.85\pcm$ on the

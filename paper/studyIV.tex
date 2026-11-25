@@ -8,21 +8,40 @@ PSN idea in its literal form: the transport equation is reduced, per finite
 angular cell, to a diffusion-type equation whose coefficients are the exact
 second-moment tensor of the directions in that cell, and the resulting
 systems are assembled over space exactly as a diffusion calculation would
-be. The branch is implemented as the closures \texttt{sector\_diffusion}
-(one field per Gauss direction of a sector) and \texttt{sector\_average}
-(one field per finite angular cell, plus local azimuthal modes
-$A{=}0,\ldots,4$). The measurements below run the second of the two on the square
-checkerboard and on the six assembly matrices, and the first on the quarter-core grid;
-no table mixes the two. The ten \texttt{strict\_phase\_space} rows kept in the same
+be. The branch reduces that tensor two ways, at equal cost. At azimuthal degree
+$A$ each sector carries $K{=}A{+}1$ angular unknowns either way: in the closure
+\texttt{sector\_diffusion} they are the $A{+}1$ Gauss directions of the sector,
+each retaining its own tensor, and in \texttt{sector\_average} they are the cell
+mean plus $A$ local azimuthal modes ($A{=}0,\ldots,4$). The direction-wise
+\texttt{sector\_diffusion} is the closure of record in this section and the
+default of the driver named below, at $A{=}3$ unless the input asks otherwise;
+\texttt{sector\_average} is kept as the comparison at equal degrees of freedom.
+The quarter-core matrices, the fission maps and Table~\ref{tab:study4-checker-sector}
+were measured with the direction-wise closure;
+Table~\ref{tab:study4-checker-average} repeats the same checkerboard grid with the
+cell-average one, point for point, and Table~\ref{tab:study4-closure-ratio} reports
+the ratio of the two eigenvalue errors at each of the 189 points measured both ways.
+The one exception among the measurement tables is the set of six wide $S\times M$
+matrices of Table~\ref{tab:study4-assembly}, which is still the archived
+cell-average sweep; its direction-wise re-sweep was running while this was written
+and had converged at 213 of the 458 points it plans --- every point of the published
+checkerboard grid, 73 of the 200 wide checkerboard points and 26 of the 144 assembly
+points, all merged into the same two data files as \texttt{closure=sector\_diffusion}
+rows beside the archived ones, so no table mixes the two closures. The ten \texttt{strict\_phase\_space} rows kept in the same
 checkerboard data file are neither closure: they insert the exact sector tensor into
 the original four-mode body and face-average matching, and are quoted only where the
-published valley is located. Both are selected from the input file
-(\texttt{angular.model: generic}, \texttt{angular.closure: sector\_average},
-\texttt{angular.azimuth\_degree}, \texttt{angular.polar\_degree},
-\texttt{angular.slope\_space}); the driver
+published valley is located. Both closures are selected from the input file
+(\texttt{angular.model: generic}, \texttt{angular.closure: sector\_diffusion} or
+\texttt{sector\_average}, \texttt{angular.azimuth\_degree},
+\texttt{angular.polar\_degree}, \texttt{angular.slope\_space}); the driver
 \texttt{scripts/sector\_diffusion\_benchmark.py} reproduces every point
-below, and \texttt{scripts/study4\_core\_report.py} rebuilds the core tables
-from the recorded run logs. The same closure is written up on its own terms in
+below, \texttt{scripts/study4\_closure\_report.py} rebuilds the two checkerboard
+matrices, their point-by-point ratio table and the paired data file
+\texttt{paper/data/study4\_closure\_pairs.csv} from the same records,
+\texttt{scripts/study4\_closure\_cost.py} measures the matched cost pairs of
+Table~\ref{tab:study4-closure-cost}, \texttt{scripts/study4\_uniform\_grid.py} runs
+and merges the re-sweep, and \texttt{scripts/study4\_core\_report.py} rebuilds the
+core tables from the recorded run logs. The same closure is written up on its own terms in
 \texttt{paper/sector\_method.tex} --- even-parity reduction, sector tensors, the
 counterexamples that bound the word ``exact'', the test-problem inventory and the
 cost records --- which compiles and reads independently of this paper and shares its
@@ -101,42 +120,77 @@ matching, does not remove the crossing ($-1363.03\pcm$ and $+76.41\pcm$ on
 the same two points), which locates the sign change in the face closure rather
 than in the body tensor alone.
 
-With the sector closure the sign change is absent over the tested range. All
-130 points of the four sector scans have negative eigenvalue error, and
-refining either axis at fixed values of the other moves the error
-monotonically toward zero: $A{=}0$ over $S{=}2,4,6,8,12$ with
-$M{=}4,8,12,24$ and $S{=}12$ also at $M{=}48,96$ for both absorbers (44
-points), the same grid at $A{=}1$ in the quadratic subspace (40 points), that
-coefficient instead in the bilinear subspace (40 points), and $A{=}2$ at six
-points. The largest independent verification residual over those points was
-$3.2\times10^{-9}$ in the source and $9.7\times10^{-10}$ in the eigenvalue.
-\texttt{scripts/study4\_checkerboard\_report.py} reads the run logs of these
-scans, which ship in \texttt{examples/psn\_repro/logs/}, re-checks the
-one-sign and monotonicity properties, and regenerates
-Table~\ref{tab:study4-checker}.
-The one-sign behaviour is a property of the assembled closure rather than of
-any angular partition: a trial run of the same scan with only two quadrature
-points per sector restores a sign change at several $M{=}4$ points of the
-strong absorber, because the sector tensor is then under-integrated.
-For a one-group problem with positive removal, Eq.~\eqref{eq:study4-even} is
-a generalised Rayleigh quotient, and bisecting a cell or halving an angular
-cell nests the trial spaces, so under exact quadrature the computed $\keff$ is
-non-decreasing under refinement and approaches the continuous eigenvalue from
-below. The observed one-sign errors are consistent with that bound; the
-seven-group problems are not covered by it, their scattering coupling is not
-symmetric, and some of the refinements below are non-nested.
+With the direction-wise closure the crossing is absent from every part of the
+checkerboard grid but one column. Table~\ref{tab:study4-checker-sector} is the table
+of record: 187 points of the \texttt{sector\_diffusion} closure on the two one-group
+checkerboards at $A{=}0,1,2$, $S{=}1,\ldots,12$, $M{=}2,\ldots,96$, including every
+point of the archived grid and leaving none of its cells blank; 172 of the 187 errors
+are negative. The 15 positive ones are a single column, $A{=}1$ at $M{=}4$ ---
+$S{=}3,\ldots,12$ of the strong absorber, $+7.1$ to $+124.0\pcm$, and
+$S{=}4,\ldots,12$ of the weak one, $+6.7$ to $+17.5\pcm$ --- the points at which a
+sector holds exactly two Gauss directions. That is the corner the archived scan had
+already isolated: a trial run of the same scan with only two quadrature points per
+sector restores a sign change at several $M{=}4$ points of the strong absorber,
+because the sector tensor is then under-integrated. Everywhere else the closure is
+one-signed, and the spatial axis then behaves as the variational bound says it should:
+of the 596 refinement steps along $S$ at fixed $M$ in that table, 540 move the error
+toward zero, and all 56 that do not lie in that one column.
 
-\input{tables/study4-checker.tex}
+The azimuthal axis saturates instead of converging, because halving a sector replaces
+the directions it retains rather than nesting them. Past $M{=}8$ the error settles at
+whatever the spatial resolution leaves: over the 36 columns of fixed $A$ and $S$
+measured at two or more $M\ge8$, the largest error in the column exceeds that column's
+own best by at most $6.8\pcm$, and at $A{=}0$, $S{=}12$ of the strong absorber the
+error runs $-8.38\pcm$ ($M{=}12$), $-9.97$ ($M{=}24$), $-11.68$ ($M{=}48$),
+$-11.99\pcm$ ($M{=}96$). That is inside the bound rather than against it. For a
+one-group problem with positive removal, Eq.~\eqref{eq:study4-even} is a generalised
+Rayleigh quotient, and bisecting a spatial cell at fixed angles nests the trial spaces,
+so under exact quadrature the computed $\keff$ is non-decreasing in $S$ and approaches
+the continuous eigenvalue from below; azimuthal refinement changes which directions are
+retained and is not covered by that argument. The seven-group problems are not covered
+by it either, their scattering coupling is not symmetric, and some of the refinements
+below are non-nested.
 
-Table~\ref{tab:study4-checker} shows the effect of the added sector modes:
-at $S{=}12$, $M{=}24$ the strong-absorber error falls from $-107.43\pcm$ with
-the angular average to $-34.13\pcm$ with one azimuthal mode and $-32.05\pcm$
-with two; representing the same mode in the bilinear subspace gives
-$-40.24\pcm$ with fewer spatial degrees of freedom, and on this grid the
-bilinear point is also the cheaper of the two settings ($12.81$~s against
-$37.44$~s for the legacy node model at the same $S{=}12$, $M{=}24$; the two
-logs record neither thread count nor host load, so this pair is not a
-controlled timing comparison). The same closure is checked against an
+\input{tables/study4-checker-sector.tex}
+\input{tables/study4-checker-average.tex}
+
+Table~\ref{tab:study4-checker-average} is the archived comparison: the same grids
+measured with the tensor averaged over the sector before use, 130 points of four scans
+($A{=}0$ over $S{=}2,4,6,8,12$ with $M{=}4,8,12,24$ and $S{=}12$ also at $M{=}48,96$
+for both absorbers, 44 points; the same grid at $A{=}1$ in the quadratic subspace, 40
+points; that coefficient in the bilinear subspace, 40 points; $A{=}2$ at six points).
+All 130 are one-signed and monotone along both axes, with largest independent
+verification residual $3.2\times10^{-9}$ in the source and $9.7\times10^{-10}$ in the
+eigenvalue; \texttt{scripts/study4\_checkerboard\_report.py} reads their run logs from
+\texttt{examples/psn\_repro/logs/}, re-checks those two properties and regenerates the
+wider archived matrix \texttt{tables/study4-checker.tex}, which carries in addition the
+bilinear variant of the $A{=}1$ coefficient, measured on the cell-average closure only
+($-40.24\pcm$ at $S{=}12$, $M{=}24$, with fewer spatial degrees of freedom than its
+quadratic counterpart). On that closure the azimuthal modes are what carry the error
+down: at $S{=}12$, $M{=}24$ the strong-absorber error falls from $-107.43\pcm$ with the
+angular average to $-34.13\pcm$ with one mode and $-32.05\pcm$ with two.
+
+\input{tables/study4-closure-ratio.tex}
+\input{tables/study4-closure-cost.tex}
+
+On the direction-wise closure the modes are far less needed, because the tensor itself
+is no longer smeared over the sector. At $A{=}0$, $S{=}12$, $M{=}12$ the strong-absorber
+error falls from $-304.58\pcm$ to $-8.38\pcm$ when only the closure is changed; at
+$A{=}1$, $S{=}12$, $M{=}8$ it falls from $-77.88$ to $-5.73\pcm$, and the weak absorber
+at the same point from $-15.66$ to $-2.68\pcm$. Those two are the best points of the new
+closure on the two problems, against $-32.05\pcm$ and $-7.85\pcm$ for the archived one on
+the same meshes, so the direction-wise tensor reaches the smaller error with three times
+fewer azimuthal sectors. Over all 189 checkerboard and assembly points measured both ways
+Table~\ref{tab:study4-closure-ratio} puts the direction-wise error below the cell-average
+one at 184 of them, at a median ratio of $0.488$; the only column where the two change
+places is again $A{=}1$, $M{=}4$. The four square-assembly pairs that are in so far leave
+that family open, and its rectangular points are not measured yet. Equal accuracy is not
+bought with time either: at equal $A$, $M$, $I$, thread budget and factor kernel the two
+closures are the same job, median ratio $0.98$ over the ten matched pairs of
+Table~\ref{tab:study4-closure-cost}. The archived $12.81$~s bilinear point against the
+$37.44$~s legacy node model at the same $S{=}12$, $M{=}24$ remains a workload pair rather
+than a controlled comparison, the two logs recording neither thread count nor host load.
+The same closure is checked against an
 analytic solution rather than against itself: on the one-group slab with
 vacuum on both faces and no scattering, the angular-diffusion solution
 gives the cell-mean flux in closed form, and the discretised sweep is
@@ -145,7 +199,7 @@ required to reproduce it (\texttt{tests/test\_sector\_diffusion.py},
 $A{=}1$, 32 cells, $I{=}4$, $M{=}4$, six digits).
 
 \paragraph{Assemblies: six $S\times M$ matrices.}
-The \texttt{sector\_average} closure was then run as a full sweep on the four C5G7
+The cell-average comparison was then run as a full sweep on the four C5G7
 assemblies and
 both checkerboards: $M{=}2,4,8,12,16,24$ against
 $S{=}1,\ldots,20$ for the checkerboards ($I{=}30$) and
@@ -326,7 +380,11 @@ an order-of-tens-of-pcm bias at its best sampled setting, and the sector
 closure is more expensive than the legacy path at equal $M$. What the
 section establishes is narrower and checkable: with the face closure taken
 from the same weak form as the body term, the sign-changing valley of the
-square checkerboard does not appear anywhere in the 130 tested points, the
-error is one-signed and decreases under refinement of either axis on every
-tested row, and the nodal-response rewriting is an exact algebraic identity on
-the same discrete system.
+square checkerboard does not appear anywhere in the 187 points of the
+direction-wise closure of record except the single under-integrated
+$A{=}1$, $M{=}4$ column, the error is one-signed outside it and decreases
+under every refinement of the spatial axis, and on the paired points that
+share $A$, $S$, $M$ and $I$ it is the smaller of the two closures at all but
+five of them, at equal cost. The nodal-response rewriting is an exact
+algebraic identity on the same discrete system, and the archived
+cell-average scan of 130 points stays one-signed and monotone on both axes.
