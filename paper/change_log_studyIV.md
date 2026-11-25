@@ -103,8 +103,8 @@
 
 ## 7. 仓库其余同步
 
-- `README.md`：§3 增加 Study IV 命令块；§5 对照表增加 4 行（棋盘 84 点、384 点组件
-  矩阵、四分之一芯 30 点矩阵、严格校验包）；§6 增加扇区/严格测试命令；§8 目录树补
+- `README.md`：§3 增加 Study IV 命令块；§5 对照表增加 4 行（棋盘 130 点、384 点组件
+  矩阵、四分之一芯 SM 矩阵、严格校验包）；§6 增加扇区/严格测试命令；§8 目录树补
   实现、example、paper、tests、scripts、docs 条目。
 - `docs/psn4-sector-diffusion.md`：新增"完整 5 × 6 SM 矩阵"小节（TY3 与 $I{=}8$
   的区别、30 点网格、example 目录与生成脚本）。
@@ -115,6 +115,12 @@
   唯一生成入口。
 
 ## 8. 已知未做
+
+- 四分之一堆芯矩阵当前 26/30 格：`S=4,M=24` 与 `S=5,M=8,12,24` 在写表时仍在运行，
+  两张表里留空并在 caption 里标注；其余 26 格已入仓。补齐后重跑
+  `scripts/study4_core_report.py`（去掉 `--allow-missing`）即填上并去掉标注；
+  若新的最佳格改变，需同时重跑 `validation/sector-diffusion-sm/fission_map.py`
+  更新逐棒裂变对照图。
 
 - `paper/main.docx` 未重生成：本机无 pandoc（只有 tectonic），无法从改后的
   LaTeX/Markdown 复原 docx。`main.pdf` 与两份 markdown 已更新。
