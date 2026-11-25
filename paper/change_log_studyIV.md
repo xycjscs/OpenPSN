@@ -178,3 +178,23 @@
   `scripts/finalize_markdown.py` + `paper/studyIV.md`（原先是两个带绝对路径的本地脚本，
   读者无法重建 `main.md` / `revised_main.md`）。入仓后 `python -m scripts.finalize_markdown
   --force` 与本地版输出逐字节相同（两份 markdown 各改 2 行）。
+
+## 10. 明确每张表用的是哪个扇区闭合（应审阅提问追加）
+
+- 两篇论文此前只说"the same closure"，读者无法判断哪张表是 `sector_diffusion`、哪张是
+  `sector_average`。现按归档记录逐处写明（`points.csv` / `study4-checkerboard.csv` 的
+  `closure` 字段）：棋盘 130 点与六组件 384 点是 `sector_average`（$A{=}0,1,2$，双二次或
+  双线性角系数子空间，组件 $I{=}8$ 有限极角带）；四分之一芯 $5	imes6$ 是 `sector_diffusion`
+  （TY3，$A{=}1$）。
+- 同时更正一处容易被误读的口径：`study4-checkerboard.csv` 里那 10 行 `strict_phase_space`
+  既不是新闭合也不是发表版复现，而是"把精确扇区张量插回原四模体匹配 + 面平均"的反例
+  （$S{=}2$ 的 $-1363.03$ / $+76.41\,\mathrm{pcm}$，出处
+  `examples/psn_repro/logs/strong_strict_sector_valley.log`）；发表版谷线值出自
+  `docs/fig3ref.json`（$-790.2$ / $+807.9$）。
+- `paper/studyIV.tex` 开头与两段测量描述、`paper/sector_method.tex` §5 开头各写明这一点；
+  companion 论文的测试算例表 `tab:tests` 增加 "Ran with" 列，逐行标 `sector_average` /
+  `sector_diffusion` / "algebra only"（14 项符号与有理检查只约束两闭合共用的算子与精确关系）。
+  镜像正文 `paper/studyIV.md` 同步，`main.md` / `revised_main.md` 由
+  `python -m scripts.finalize_markdown --force` 重建。
+- 重编译结果：`main.pdf` 39 页、仍只有 189 / 543 / 1163 三处既有 overfull；
+  `sector_method.pdf` 14 页、0 overfull、无未定义引用。

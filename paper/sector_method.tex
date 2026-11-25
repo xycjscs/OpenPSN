@@ -292,23 +292,26 @@ models carry different reference eigenvalues.
 \begin{table}[htbp]
 \centering
 \caption{Test problems, references and purpose. ``Exact'' means the reference is
-analytic or rational-arithmetic, not a Monte Carlo value.}
+analytic or rational-arithmetic, not a Monte Carlo value. ``Ran with'' names the
+closure whose runs produced the row; ``algebra only'' are the continuous-direction and
+rational checks of Section~\ref{sec:tests}, which exercise the operator and the exact
+relations shared by the two closures and produce no eigenvalue of their own.}
 \label{tab:tests}
 \centering\small
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.3cm} >{\raggedright\arraybackslash}p{4.2cm} >{\raggedright\arraybackslash}p{3.3cm} >{\raggedright\arraybackslash}p{3.4cm}@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{3.4cm} >{\raggedright\arraybackslash}p{2.9cm} >{\raggedright\arraybackslash}p{2.8cm} >{\raggedright\arraybackslash}p{2.3cm}@{}}
 \hline
-Problem & Input & Reference & Constrains \\
+Problem & Input & Reference & Constrains & Ran with \\
 \hline
-Vacuum slab, no scattering & 32 cells, 1.6 mean free paths, vacuum ends, $M{=}4$, $A{=}1$ & closed-form cell-mean flux of the same quadrature, exact & discretised sweep \\
-Two-layer vacuum slab & interface flux $3[1-E_2(1)]/2$, net current $-1/4+E_3(1)/2$ & exact & response and balance \\
-Mirrored rectangle, isotropic scattering & analytic flux & exact & first- and second-order residuals \\
-Homogeneous seven-group, four reflections & C5G7 sections as rationals & exact & multigroup assembly \\
-Square checkerboard, one group & published $0.51673$ / $1.12974$ \cite{psn2027} & published & sign structure, refinement \\
-C5G7 square assemblies & $1.3336285$ (UO$_2$), $1.1853993$ (MOX) & same-geometry OpenMC & pin-homogeneous model \\
-C5G7 rectangular assemblies & $1.3347260$ (UO$_2$), $1.1851053$ (MOX) & same-geometry OpenMC & explicit fuel, water gaps \\
-C5G7 rectangular quarter core & $1.187217554586068\pm3.41\pcm$ & same-geometry OpenMC & mixed boundaries, pin field \\
-Quarter core, conservation & certified $k_\mathrm{eff}<1.894$ & exact rational LP & operator positivity \\
+Vacuum slab, no scattering & 32 cells, 1.6 mean free paths, vacuum ends, $M{=}4$, $A{=}1$ & closed-form cell-mean flux of the same quadrature, exact & discretised sweep & \texttt{sector\_\allowbreak diffusion} \\
+Two-layer vacuum slab & interface flux $3[1-E_2(1)]/2$, net current $-1/4+E_3(1)/2$ & exact & response and balance & algebra only \\
+Mirrored rectangle, isotropic scattering & analytic flux & exact & first- and second-order residuals & algebra only \\
+Homogeneous seven-group, four reflections & C5G7 sections as rationals & exact & multigroup assembly & algebra only \\
+Square checkerboard, one group & published $0.51673$ / $1.12974$ \cite{psn2027} & published & sign structure, refinement & \texttt{sector\_\allowbreak average} \\
+C5G7 square assemblies & $1.3336285$ (UO$_2$), $1.1853993$ (MOX) & same-geometry OpenMC & pin-homogeneous model & \texttt{sector\_\allowbreak average} \\
+C5G7 rectangular assemblies & $1.3347260$ (UO$_2$), $1.1851053$ (MOX) & same-geometry OpenMC & explicit fuel, water gaps & \texttt{sector\_\allowbreak average} \\
+C5G7 rectangular quarter core & $1.187217554586068\pm3.41\pcm$ & same-geometry OpenMC & mixed boundaries, pin field & \texttt{sector\_\allowbreak diffusion} \\
+Quarter core, conservation & certified $k_\mathrm{eff}<1.894$ & exact rational LP & operator positivity & algebra only \\
 \hline
 \end{tabular}
 \end{table}
@@ -326,6 +329,15 @@ checks constrain the operator; they do not constrain the truncation error of a
 production mesh, which is what the measurements below address.
 
 \section{Results}
+The two closures of Section~\ref{sec:method} were not both run everywhere, and no
+table below mixes them: the checkerboard and the six single-assembly matrices are
+\texttt{sector\_average} points, the quarter-core grid is \texttt{sector\_diffusion},
+and the ten \texttt{strict\_phase\_space} rows in the same checkerboard data file are
+neither --- they insert the exact sector tensor into the original four-mode body and
+face-average matching, and are quoted only to locate the sign change in the face
+closure. The published valley values themselves are read from the reproduction table
+\texttt{docs/fig3ref.json} of Ref.~\cite{openpsn2026}. The exact checks constrain the
+operator and the algebra shared by both closures.
 
 \subsection{The square checkerboard: the valley is gone}
 \label{sec:checker}
@@ -339,7 +351,7 @@ face-average matching, does not remove the crossing ($-1363.03\pcm$ and $+76.41\
 on the same two points). The sign change is therefore located in the face closure,
 not in the body tensor alone.
 
-With the closure of Section~\ref{sec:method} the sign change is absent over the
+With the \texttt{sector\_average} closure the sign change is absent over the
 tested range. All 130 points of four scans have negative eigenvalue error, and
 refining either axis at fixed values of the other moves the error monotonically
 toward zero: $A{=}0$ over $S{=}2,4,6,8,12$ with $M{=}4,8,12,24$ and $S{=}12$ also at
@@ -368,7 +380,7 @@ load, and is not presented as a controlled timing comparison.
 
 \subsection{Assemblies: six $S\times M$ matrices}
 \label{sec:assemblies}
-The same closure was run as a full sweep on the four C5G7
+The \texttt{sector\_average} closure was run as a full sweep on the four C5G7
 assemblies~\cite{nea2003,c5g7td} and both checkerboards:
 $M{=}2,4,8,12,16,24$ against $S{=}1,\ldots,20$ for the checkerboards
 ($I{=}30$) and $S{=}1,\ldots,6$ for the assemblies ($I{=}8$ finite polar
@@ -425,7 +437,8 @@ sum.}
 
 \subsection{The explicit rectangular quarter core}
 \label{sec:core}
-The $5\times6$ grid of runs on the explicit quarter core
+The $5\times6$ grid of runs on the explicit quarter core, with the direction-wise
+\texttt{sector\_diffusion} closure
 (\texttt{c5g7\_rect\_quarter\_core.yaml}, seven groups, original material interfaces,
 $(153S)^2$ nodes, TY3 polar rule, $A{=}1$, 60-thread cap) is given in
 Tables~\ref{tab:study4-core-pcm} and \ref{tab:study4-core-time}. The reference is the

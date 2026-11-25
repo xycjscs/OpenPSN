@@ -11,7 +11,12 @@ systems are assembled over space exactly as a diffusion calculation would
 be. The branch is implemented as the closures \texttt{sector\_diffusion}
 (one field per Gauss direction of a sector) and \texttt{sector\_average}
 (one field per finite angular cell, plus local azimuthal modes
-$A{=}0,\ldots,4$). Both are selected from the input file
+$A{=}0,\ldots,4$). The measurements below run the second of the two on the square
+checkerboard and on the six assembly matrices, and the first on the quarter-core grid;
+no table mixes the two. The ten \texttt{strict\_phase\_space} rows kept in the same
+checkerboard data file are neither closure: they insert the exact sector tensor into
+the original four-mode body and face-average matching, and are quoted only where the
+published valley is located. Both are selected from the input file
 (\texttt{angular.model: generic}, \texttt{angular.closure: sector\_average},
 \texttt{angular.azimuth\_degree}, \texttt{angular.polar\_degree},
 \texttt{angular.slope\_space}); the driver
@@ -140,7 +145,8 @@ required to reproduce it (\texttt{tests/test\_sector\_diffusion.py},
 $A{=}1$, 32 cells, $I{=}4$, $M{=}4$, six digits).
 
 \paragraph{Assemblies: six $S\times M$ matrices.}
-The same closure was then run as a full sweep on the four C5G7 assemblies and
+The \texttt{sector\_average} closure was then run as a full sweep on the four C5G7
+assemblies and
 both checkerboards: $M{=}2,4,8,12,16,24$ against
 $S{=}1,\ldots,20$ for the checkerboards ($I{=}30$) and
 $S{=}1,\ldots,6$ for the assemblies ($I{=}8$ finite polar subdivisions),
@@ -214,7 +220,8 @@ by an angular-rule change. Both controls are tabulated in
 \texttt{paper/data/study4\_\allowbreak balance\_\allowbreak pin.jsonl}.
 
 \paragraph{C5G7 rectangular quarter core.}
-The $5\times6$ grid of runs on the explicit quarter core
+The $5\times6$ grid of runs on the explicit quarter core, with the direction-wise
+\texttt{sector\_diffusion} closure
 (\texttt{c5g7\_rect\_quarter\_core.yaml}, 7 groups, original interfaces,
 $(153S)^2$ nodes, TY3 polar rule, $A{=}1$, 60-thread cap) is given in
 Tables~\ref{tab:study4-core-pcm} and~\ref{tab:study4-core-time}. The
