@@ -76,11 +76,14 @@ def load(logs, expected_nodes, allow_missing=False, basis=None):
             reused = bool(data.get("factor_cache_used")) or basis.get((s, m)) == "reused"
             records[s, m] = dict(data, factors_reused=reused)
     for (s, m), record in records.items():
-        if record["factors_reused"]:
-            fresh = [r["factor_time_s"] for (s2, _), r in records.items()
-                     if s2 == s and not r["factors_reused"] and r.get("factor_time_s")]
-            assert record.get("factor_time_s") and (not fresh
-                       or record["factor_time_s"] < max(fresh)), (s, m, record.get("factor_time_s"))
+        if not record["factors_reused"]:
+            continue
+        # Factor cost grows with both axes, so a reused factorisation has to undercut
+        # every fresh one measured at the same S with no more sectors.
+        fresh = [r["factor_time_s"] for (s2, m2), r in records.items()
+                 if s2 == s and m2 <= m and not r["factors_reused"] and r.get("factor_time_s")]
+        assert record.get("factor_time_s") and (not fresh
+                   or record["factor_time_s"] < min(fresh)), (s, m, record.get("factor_time_s"))
     if missing:
         print(f"INCOMPLETE: no converged run yet for {missing}")
     return records, missing
