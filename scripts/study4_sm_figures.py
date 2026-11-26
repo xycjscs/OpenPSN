@@ -11,10 +11,8 @@ Section 4, ``assembly-2x2`` and ``assembly-wall`` the four C5G7 assemblies (squa
 rectangular below; UO$_2$ left, MOX right), and ``overview`` stacks all of them next to the
 published quarter-core matrix.
 
-Two rules the captions have to repeat: each panel is scaled on its own, so colour never
-compares across panels, only the printed pcm values do; and a blank cell is a point the
-host could not measure --- the rectangular assemblies need up to 183 GiB of factorisation on
-a 58 GiB machine --- while a hatched cell was never scheduled at all.
+Each panel has its own scale. Use the printed pcm values to compare panels. Blank cells
+represent scheduled points without a measurement, and hatching represents unscheduled cells.
 """
 import argparse
 import csv
@@ -110,7 +108,7 @@ def label_of(panel):
     if panel in ASSEMBLIES:
         return f"{ASSEMBLIES[panel]} ($A{{=}}1$, $I{{=}}8$)"
     if panel == CORE_PANEL:
-        return "C5G7 quarter core ($A{=}1$, $I{=}8$)"
+        return "C5G7 quarter core ($A{=}1$, TY3)"
     kind, case = panel.split(":")[:2]
     figure = ABSORBERS[case]
     if kind == "wide":
@@ -123,7 +121,7 @@ def short_label(panel):
     if panel in ASSEMBLIES:
         return ASSEMBLIES[panel]
     if panel == CORE_PANEL:
-        return "Quarter core ($I{=}8$)"
+        return "Quarter core (TY3)"
     kind, case = panel.split(":")[:2]
     if kind == "wide":
         return f"{ABSORBERS[case]}, $S{{=}}1{{-}}20$"
@@ -273,8 +271,7 @@ def main():
                                 (6.25, 5.75))}
     written = []
     for name, panels, columns, field, size in (sheets[k] for k in sheets if k in chosen):
-        # The two four-assembly figures hold one panel each, so they print large and mark
-        # the cells this host could not measure.
+        # The four-assembly sheets have room for larger values and explicit missing cells.
         roomy = name.startswith("study4_assembly")
         written.append(sheet(panels, planned, (seconds.get if field == "seconds" else groups.get),
                              args.out, name, columns=columns, panel_size=size,

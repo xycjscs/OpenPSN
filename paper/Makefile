@@ -4,10 +4,11 @@
 #   tectonic sector_method.tex (companion paper on the finite-sector closure)
 # or with a full TeX install:
 #   pdflatex main.tex && bibtex not needed (inline thebibliography) && pdflatex main.tex
-.PHONY: all pdf companion clean
+.PHONY: all pdf companion docx clean
 
 PDFLATEX ?= pdflatex
 TECTONIC ?= tectonic
+PANDOC ?= pandoc
 
 all: pdf companion
 
@@ -24,6 +25,11 @@ companion: sector_method.tex tables/study4-checker.tex tables/study4-assembly.te
 	@command -v $(TECTONIC) >/dev/null 2>&1 && $(TECTONIC) sector_method.tex \
 	  || $(PDFLATEX) -interaction=nonstopmode sector_method.tex
 	@echo " -> sector_method.pdf"
+
+docx: main.tex word-math.lua
+	$(PANDOC) --from latex --resource-path .:figures --reference-doc main.docx \
+	  --lua-filter word-math.lua main.tex -o main.generated.docx
+	mv main.generated.docx main.docx
 
 clean:
 	rm -f main.pdf main.aux main.log main.out main.synctex.gz *.lof *.lot

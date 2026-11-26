@@ -1,18 +1,18 @@
 \begin{table}[htbp]
 \centering
-\caption{Coverage, best measured point, fuel-pin error and wall time of the six $S\times M$ matrices, measured with the \texttt{sector\_diffusion} closure at $A=1$. The sum column adds the individual point times; several cases ran concurrently on the same host.}
+\caption{Coverage, best measured point, fuel-pin error and wall time of the six $S\times M$ matrices, measured with the \texttt{sector\_diffusion} closure at $A=1$. The sum column adds the individual point times; several cases ran concurrently on the same host. Packed PCG was used at 18 points. Run-level backend and thread settings are in the per-point file.}
 \label{tab:study4-assembly-sector}
 \centering\small
-\begin{tabular}{l r r r r r}
+\begin{tabular}{l r r r r r r}
 \hline
-Case & Best $(S,M)$ & $\Delta k$ (pcm) & Pin RMS & Pin max & Sum, 27--166 points\\
+Case & Coverage & Best $(S,M)$ & $\Delta k$ (pcm) & Pin RMS & Pin max & Total time\\
 \hline
-Strong absorber & $(20,8)$ & -0.90 & --- & --- & 339.9~s\\
-Weak absorber & $(20,8)$ & -1.79 & --- & --- & 402.9~s\\
-Square UO$_2$ & $(3,2)$ & -0.16 & --- & --- & 1453.4~s\\
-Square MOX & $(6,8)$ & -1.20 & --- & --- & 1413.0~s\\
-Rectangular UO$_2$ & $(3,24)$ & -7.75 & --- & --- & 6704.9~s\\
-Rectangular MOX & $(4,12)$ & -113.85 & --- & --- & 6392.6~s\\
+Strong absorber & 148/148 & $(20,8)$ & -0.90 & --- & --- & 339.9~s\\
+Weak absorber & 166/166 & $(20,8)$ & -1.79 & --- & --- & 402.9~s\\
+Square UO$_2$ & 36/36 & $(3,2)$ & -0.16 & 0.170\% & 0.314\% & 1453.4~s\\
+Square MOX & 36/36 & $(6,8)$ & -1.20 & 0.035\% & 0.104\% & 1413.0~s\\
+Rectangular UO$_2$ & 36/36 & $(6,24)$ & -0.19 & 0.050\% & 0.175\% & 27099.8~s\\
+Rectangular MOX & 36/36 & $(6,24)$ & -92.55 & 0.069\% & 0.212\% & 24156.1~s\\
 \hline
 \end{tabular}
 \end{table}

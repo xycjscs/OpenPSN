@@ -18,6 +18,11 @@ import re
 import sys
 from pathlib import Path
 
+if __package__:
+    from .study4_closure_report import ratio_table
+else:
+    from study4_closure_report import ratio_table
+
 REPO = Path(__file__).resolve().parents[1]
 PAPER = REPO / "paper"
 EXAMPLE = REPO / "examples/c5g7/study4_sector_core"
@@ -291,13 +296,38 @@ def renumber(text):
     return text
 
 
-def build_section():
-    """The Study IV markdown, with both generated tables read back from their data files."""
+def assembly_table():
+    labels = {"strong": "Strong absorber", "weak": "Weak absorber",
+              "square_uo2": "Square UO$_2$", "square_mox": "Square MOX",
+              "rect_uo2": "Rectangular UO$_2$", "rect_mox": "Rectangular MOX"}
+    with (PAPER / "data/study4_assembly_summary.csv").open() as stream:
+        rows = [row for row in csv.DictReader(stream) if row["closure"] == "sector_diffusion"]
+    lines = [r"| Case | Coverage | Best $(S,M)$ | $\Delta k$ (pcm) | Pin RMS | Pin max | Sum (s) |",
+             "|:---|---:|---:|---:|---:|---:|---:|"]
+    for row in rows:
+        errors = [f"{float(row[key]):.3f}%" if row[key] else "---"
+                  for key in ("fuel_rms_percent", "fuel_max_percent")]
+        lines.append(f"| {labels[row['case']]} | {row['complete']}/{row['planned']} | "
+                     f"$({row['S']},{row['M']})$ | {float(row['pcm']):+.2f} | "
+                     f"{' | '.join(errors)} | {float(row['sum_s']):.1f} |")
+    lines.extend(["", ": Direction-wise Study IV coverage, selected points and wall times. "
+                  "The run times include multiple backend and thread configurations. "
+                  "{#tab:study4-assembly-sector}"])
+    return "\n".join(lines)
+
+
+def build_section(pairs):
+    """The Study IV markdown, with generated tables read back from their data files."""
     section = (HERE / "studyIV.md").read_text()
     for token, text in (("@@CORE_TABLES@@", core_tables()[0]),
                         ("@@BEST_TABLE@", core_tables()[1]),
                         ("@@CHECKER_TABLE@@", checker_table()),
-                        ("@@SECTOR_TABLE@@", sector_table())):
+                        ("@@SECTOR_TABLE@@", sector_table()),
+                        ("@@ASSEMBLY_SECTOR_TABLE@@", assembly_table()),
+                        ("@@PAIR_COUNT@@", str(pairs["n"])),
+                        ("@@PAIR_SMALLER@@", str(pairs["smaller"])),
+                        ("@@PAIR_MEDIAN@@", f"{pairs['median']:.3f}"),
+                        ("@@PAIR_SIGN_CHANGES@@", str(pairs["flips"]))):
         if token not in section:
             raise SystemExit(f"{HERE / 'studyIV.md'} has no {token}")
         section = section.replace(token, text)
@@ -313,14 +343,22 @@ def main():
     print(f"prose edits applied: {done}")
 
     have = all((EXAMPLE / name).exists() for name in
-               ("sm_error_pcm.csv", "sm_wall_seconds.csv", "best_fission_summary.json")) and \
-         (PAPER / "data/study4-checkerboard.csv").exists()
+               ("sm_error_pcm.csv", "sm_wall_seconds.csv", "best_fission_summary.json")) and all(
+        (PAPER / "data" / name).exists() for name in
+        ("study4-checkerboard.csv", "study4_closure_pairs.csv", "study4_assembly_summary.csv"))
     if not have:
         print("Study IV section NOT refreshed (missing the generated CSVs)")
         if args.force:
             return 1
     else:
-        section = build_section()
+        with (PAPER / "data/study4_closure_pairs.csv").open() as stream:
+            pairs = ratio_table(list(csv.DictReader(stream)))
+        section = build_section(pairs)
+        text = re.sub(r"at \d+ of the \d+ paired points, at a median error ratio of \$[\d.]+\$",
+                      f"at {pairs['smaller']} of the {pairs['n']} paired points, "
+                      f"at a median error ratio of ${pairs['median']:.3f}$", text, count=1)
+        text = re.sub(r"at \d+ of the \d+ points measured both ways",
+                      f"at {pairs['smaller']} of the {pairs['n']} points measured both ways", text)
         wrapped = "<!--STUDY4_BEGIN-->\n\n" + section + "\n\n<!--STUDY4_END-->"
         if "<!--STUDY4_END-->" in text:
             start = text.index("<!--STUDY4_BEGIN-->")

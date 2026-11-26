@@ -30,3 +30,8 @@ paper_strict/pg*.png
 paper_strict/main_r8*.pdf
 paper_strict/xycjscs@*
 tools/hpc_watch_state.json
+
+# Local credentials for publishing and compute tools
+/.env
+/.env.local
+/tools/keys/

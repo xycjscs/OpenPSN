@@ -137,14 +137,22 @@ def heatmaps(groups, best, output, name, field="pcm"):
     save(fig, output, name)
 
 
-def pin_maps(case, row, points, refs):
+def pin_maps(case, row, points, refs, *, closure="sector_average"):
     relpath, _ = CASES[case]
     spec = load_spec(EXAMPLES / relpath)
     geometry = spec["geometry"]
     rect = case.startswith("rect")
     material = np.asarray(geometry["mat_grid"])[1::3, 1::3] if rect else np.asarray(geometry["grid"])
     names = np.array([mat["name"].lower() for mat in spec["materials"]])[material]
-    with np.load(point(points / case, row["S"], row["M"]), allow_pickle=False) as saved:
+    directory = case if closure == "sector_average" else f"{case}_{closure}"
+    path = point(points / directory, int(row["S"]), int(row["M"]))
+    with np.load(path, allow_pickle=False) as saved:
+        if closure != "sector_average":
+            info = json.loads(saved["info"].item())
+            if ((info["case"], info["closure"], info["S"], info["M"])
+                    != (case, closure, int(row["S"]), int(row["M"]))
+                    or abs(info["keff"] - float(row["keff"])) > 1e-12):
+                raise ValueError(f"checkpoint is not the selected point: {path}")
         if "pin_source" in saved:
             model = saved["pin_source"]
         elif not rect:
@@ -163,8 +171,19 @@ def pin_maps(case, row, points, refs):
         reference = np.load(refs / REFERENCES[case], allow_pickle=False)
     else:
         fuel = np.isin(material, (0, 1, 2, 3))
-        with np.load(refs / REFERENCES[case], allow_pickle=False) as saved:
-            reference = saved["fission"]
+        tally = refs / REFERENCES[case]
+        if tally.exists():
+            with np.load(tally, allow_pickle=False) as saved:
+                reference = saved["fission"]
+        else:
+            with (refs / f"{case}_openmc_fission.csv").open() as stream:
+                pairs = [((int(row["Y"]), int(row["X"])), float(row["OpenMC"]))
+                         for row in csv.DictReader(stream)]
+            data = dict(pairs)
+            coordinates = [(y, x) for y in range(1, 18) for x in range(1, 18)]
+            if len(pairs) != len(coordinates) or set(data) != set(coordinates):
+                raise ValueError(f"incomplete 17×17 OpenMC reference for {case}")
+            reference = np.array([data[xy] for xy in coordinates]).reshape(17, 17)
     if (model.shape != (17, 17) or reference.shape != model.shape or fuel.sum() != 264
             or not np.isfinite(model).all() or not np.isfinite(reference).all()):
         raise ValueError(f"invalid pin map or 17×17 material mask for {case}")
@@ -177,13 +196,13 @@ def pin_maps(case, row, points, refs):
     return model, reference, error, fuel
 
 
-def field_report(best, points, refs, output):
+def field_report(best, points, refs, output, *, closure="sector_average", figure="studyIII_best_fission"):
     records = []
     selected = [(case, best[case]) for case in CASES if case in best]
     fig, axes = plt.subplots(len(selected), 3, figsize=(10, 3.0*len(selected)),
                              constrained_layout=True, squeeze=False)
     for (case, row), panels in zip(selected, axes):
-        model, ref, err, fuel = pin_maps(case, row, points, refs)
+        model, ref, err, fuel = pin_maps(case, row, points, refs, closure=closure)
         rms, maximum = np.sqrt(np.mean(err[fuel]**2)), np.abs(err[fuel]).max()
         records.append((case, row["S"], row["M"], row["pcm"], rms, maximum))
         write_csv(output / (case + "_best_pin_fission.csv"),
@@ -201,7 +220,7 @@ def field_report(best, points, refs, output):
             image = ax.imshow(values, origin="lower", vmin=limits[0], vmax=limits[1], cmap=cmap)
             ax.set(xticks=[], yticks=[], title=title)
             fig.colorbar(image, ax=ax, fraction=.05)
-    save(fig, output, "studyIII_best_fission")
+    save(fig, output, figure)
     return {r[0]: r[4:] for r in records}
 
 

@@ -8,7 +8,7 @@ PSN idea in its literal form: the transport equation is reduced, per finite
 angular cell, to a diffusion-type equation whose coefficients are the exact
 second-moment tensor of the directions in that cell, and the resulting
 systems are assembled over space exactly as a diffusion calculation would
-be. The branch reduces that tensor two ways, at equal cost. At azimuthal degree
+be. The branch reduces that tensor two ways with equal angular unknown counts. At azimuthal degree
 $A$ each sector carries $K{=}A{+}1$ angular unknowns either way: in the closure
 \texttt{sector\_diffusion} they are the $A{+}1$ Gauss directions of the sector,
 each retaining its own tensor, and in \texttt{sector\_average} they are the cell
@@ -20,19 +20,14 @@ The quarter-core matrices, the fission maps and Table~\ref{tab:study4-checker-se
 were measured with the direction-wise closure;
 Table~\ref{tab:study4-checker-average} repeats the same checkerboard grid with the
 cell-average one, point for point, and Table~\ref{tab:study4-closure-ratio} reports
-the ratio of the two eigenvalue errors at each of the 416 points measured both ways.
-The one exception among the measurement tables is the set of six wide $S\times M$
-matrices of Table~\ref{tab:study4-assembly}, which is still the archived
-cell-average sweep; its direction-wise re-sweep has converged at 440 of the 458
-points it plans --- every one of the 314 checkerboard points and 126 of the 144
-assembly points, merged into the same two data files as
-\texttt{closure=sector\_diffusion} rows beside the archived ones, so no table mixes
-the two closures. Figures~\ref{fig:study4-checker} to~\ref{fig:study4-assembly-grid}
-are those direction-wise matrices. The 18 unmeasured points are one set of nine cells
-in each rectangular assembly --- $S{=}4$ at $M{=}16,24$, $S{=}5$ at $M{=}12,16,24$ and
-$S{=}6$ at $M{\ge}8$ --- whose sparse factors were measured at $49.8$ to
-$182.9\,\text{GiB}$ against the $58\,\text{GiB}$ of the host that ran the campaign,
-and which \texttt{paper/data/uniform/plan\_unreachable.json} records cell by cell.
+the ratio of the two eigenvalue errors at each of the \StudyFourPairs{} points measured both ways.
+Table~\ref{tab:study4-assembly} preserves the archived cell-average sweep.
+The direction-wise re-sweep covers all 458 planned points, comprising 314 checkerboard
+and 144 assembly points. The two closures occupy separate rows of the per-point files.
+Figures~\ref{fig:study4-checker} to~\ref{fig:study4-assembly-grid} show the direction-wise
+matrices. The last 18 rectangular cells use packed Cholesky preconditioners and
+FP64 residual-checked PCG on the same directional systems. The backfill grid and
+its memory budgets are in \texttt{paper/data/uniform/plan\_packed.json}.
 The direction-wise summary of that sweep,
 Table~\ref{tab:study4-assembly-sector}, is derived from the same per-point file as the
 archived table and quotes no point that was not measured. The ten \texttt{strict\_phase\_space} rows kept in the same
@@ -135,18 +130,27 @@ checkerboards at $A{=}0,1,2$, $S{=}1,\ldots,20$, $M{=}2,\ldots,96$, including ev
 point of the archived grid and leaving none of its cells blank; 279 of the 314 errors
 are negative. The 35 positive ones are a single column, $A{=}1$ at $M{=}4$ ---
 $S{=}3,\ldots,20$ of the strong absorber, $+7.1$ to $+127.4\pcm$, and
-$S{=}4,\ldots,20$ of the weak one, $+6.7$ to $+18.2\pcm$ --- the points at which a
-sector holds exactly two Gauss directions. That is the corner the archived scan had
-already isolated: a trial run of the same scan with only two quadrature points per
-sector restores a sign change at several $M{=}4$ points of the strong absorber,
-because the sector tensor is then under-integrated. Everywhere else the closure is
-one-signed, and the spatial axis then behaves as the variational bound says it should:
-of the 280 refinement steps along $S$ at fixed $M$ in those 314 points, 246 move the
-error toward zero, and all 34 that do not lie in that one column.
+$S{=}4,\ldots,20$ of the weak one, $+6.7$ to $+18.2\pcm$ --- where each sector
+holds two Gauss directions. In a separate cell-average trial, using two quadrature
+nodes for the tensor integral also produced sign changes near $M{=}4$. Here each
+direction has its own tensor and the cause of the remaining positive column is open.
+All measured differences outside that column are negative. Of the 280 spatial
+refinement steps at fixed $M$, 246 move the error toward zero. The other 34 lie
+in the same column.
 
-The azimuthal axis saturates instead of converging, because halving a sector replaces
-the directions it retains rather than nesting them. Past the first azimuthal refinement
-the error settles at whatever the spatial resolution leaves: over the 55 columns of
+The default $A{=}3$ was tested on a further 240 checkerboard points, using both
+absorbers, $S{=}1,\ldots,20$, $M{=}2,4,8,12,16,24$ and $I{=}30$. All differences
+were negative and all 228 spatial refinement steps reduced their magnitude. Of
+the 200 azimuthal steps, 155 reduced it. The smallest magnitudes occurred at
+$(S,M)=(20,8)$, with signed differences of $-6.19\pcm$ (strong) and $-2.65\pcm$
+(weak). At $A{=}2$ all 40 points of the $M{=}4$ column were negative, while at
+$S{=}20,M{=}2$ the differences were positive for both absorbers. Increasing the
+number of Gauss directions removed the observed $M{=}4$ crossing on these grids.
+The controls and verification residuals are in
+\texttt{paper/data/study4\_checker\_azimuth\_controls.csv}.
+
+Azimuthal subdivision changes the retained directions. At a fixed spatial resolution,
+the errors cluster closely on finer angular grids. Over the 55 columns of
 fixed $A$ and $S$ measured at two or more $M\ge12$, the largest error in the column
 exceeds that column's own best by at most $6.8\pcm$, and at $A{=}0$, $S{=}12$ of the
 strong absorber the
@@ -156,8 +160,9 @@ $14.0\pcm$, because its $M{=}8$ point sits at $-22.40\pcm$. That is inside the b
 rather than against it. For a
 one-group problem with positive removal, Eq.~\eqref{eq:study4-even} is a generalised
 Rayleigh quotient, and bisecting a spatial cell at fixed angles nests the trial spaces,
-so under exact quadrature the computed $\keff$ is non-decreasing in $S$ and approaches
-the continuous eigenvalue from below; azimuthal refinement changes which directions are
+so under exact quadrature the computed $\keff$ is non-decreasing under bisection and
+approaches the spatially continuous eigenvalue of the fixed angular model from below;
+azimuthal refinement changes which directions are
 retained and is not covered by that argument. The seven-group problems are not covered
 by it either, their scattering coupling is not symmetric, and some of the refinements
 below are non-nested.
@@ -218,16 +223,14 @@ at the same point from $-15.66$ to $-2.68\pcm$. Those are the best points of the
 closure on the archived grid; the wide re-sweep carries the same problem to $-0.90\pcm$
 and $-1.79\pcm$ at $A{=}1$, $S{=}20$, $M{=}8$, against $-32.05\pcm$ and $-7.85\pcm$ as
 the best the archived closure reaches anywhere on its grid, at a third of the azimuthal
-sectors it needed. Over all 416 checkerboard and assembly points measured both ways
+sectors it needed. Over all \StudyFourPairs{} checkerboard and assembly points measured both ways
 Table~\ref{tab:study4-closure-ratio} puts the direction-wise error below the cell-average
-one at 398 of them, at a median ratio of $0.437$. The sign of the difference changes at
-39 pairs, all of them in the two under-integrated $A{=}1$, $M{=}4$ checkerboard columns
-or at the four $M{=}2$ points of the square UO$_2$ assembly with $S{\ge}3$. It is larger
-with the direction-wise closure at 18 pairs: twelve square UO$_2$ points at $M{=}4$ and
-$M{=}8$, where both errors stay under $12\pcm$, and the six rectangular UO$_2$ points at
-$M{=}2$, the worst of them $-24.3\pcm$ against $-204.0\pcm$ at $S{=}1$. Equal accuracy is not
-bought with time either: at equal $A$, $M$, $I$, thread budget and factor kernel the two
-closures are the same job, median ratio $0.98$ over the ten matched pairs of
+one at \StudyFourSmaller{} of them, at a median ratio of $\StudyFourMedianRatio$.
+The table identifies all \StudyFourSignChanges{} sign changes by case and grid point.
+The six rectangular UO$_2$ points with $M{=}2$ have larger absolute errors under the
+direction-wise closure, including $-204.0\pcm$ against $-24.3\pcm$ at $S{=}1$.
+At equal $A$, $M$, $I$, thread budget and factor kernel, the median wall-time ratio
+is $0.98$ over the ten matched pairs of
 Table~\ref{tab:study4-closure-cost}. The archived $12.81$~s bilinear point against the
 $37.44$~s legacy node model at the same $S{=}12$, $M{=}24$ remains a workload pair rather
 than a controlled comparison, the two logs recording neither thread count nor host load.
@@ -304,8 +307,8 @@ $40.69\pcm$ ($-94.94$ to $-135.63\pcm$), and on the paired points it also
 improves $M{=}4$, $8$ and $16$ for both materials: by $37.60$ and
 $13.35\pcm$ at $M{=}4$, $36.63$ and $15.75\pcm$ at $M{=}8$, and $32.01$ and
 $13.66\pcm$ at $M{=}16$, for MOX and UO$_2$ respectively, while the $M{=}2$
-UO$_2$ point moves $3.29\pcm$ the other way. On the uniform
-layout, raising the azimuth degree to $A{=}4$ with the higher spatial basis
+UO$_2$ point moves $3.29\pcm$ the other way. In a separate test at $S{=}1$ on the
+uniform layout, raising the azimuth degree to $A{=}4$ with the higher spatial basis
 gives $-71.17\pcm$ at $M{=}2$ and $-33.21\pcm$ at $M{=}4$, so the reversal
 disappears there as well. The step is therefore an interaction between the
 coarse sector and the coarse intra-pin spatial resolution, not a property of
@@ -316,33 +319,29 @@ by an angular-rule change. Both controls are tabulated in
 
 The same six matrices measured with the direction-wise closure are in
 Table~\ref{tab:study4-assembly-sector} and Figure~\ref{fig:study4-assembly-grid}:
-440 of the 458 planned points, complete for both checkerboards and for both square
-assemblies, and 27 of 36 for each rectangular one. The square UO$_2$ matrix is the only
-assembly family whose error is not one-signed --- 32 of its 36 points are positive, and
-the smallest error, $-0.16\pcm$ at $S{=}3$, $M{=}2$, sits in the four-point sign change
-of Table~\ref{tab:study4-closure-ratio} --- while the square MOX matrix improves on both
-axes to $-1.20\pcm$ at $S{=}6$, $M{=}8$. On the 27 rectangular points that both closures
-share the direction-wise tensor is the smaller at every one, for both fuels, yet its best
-measured point is $-7.75\pcm$ (UO$_2$, $S{=}3$, $M{=}24$) and $-113.85\pcm$ (MOX,
-$S{=}4$, $M{=}12$): the archived best of both rectangular cases, $-8.80\pcm$ and
-$-118.55\pcm$, sits at $S{=}6$, $M{=}24$, one of the nine cells per case that the
-$58\,\text{GiB}$ host could not factor. Wall time separates the
-shapes by an order of magnitude --- $1453\,\text{s}$ and $1413\,\text{s}$ over the 36
-points of each square assembly, median $21.8\,\text{s}$ and $21.1\,\text{s}$, against
-$6705\,\text{s}$ and $6393\,\text{s}$ over the 27 points of each rectangular one, median
-$187.0\,\text{s}$ and $200.5\,\text{s}$, largest single point $741.4\,\text{s}$ --- which
-is the same effect the unreachable cells above are, seen in cost rather than in memory.
+all 458 planned points, with 36 cells in each of the four assemblies. The square
+UO$_2$ matrix has 32 positive points, and its smallest absolute error is
+$-0.16\pcm$ at $(S,M)=(3,2)$. The square MOX best is $-1.20\pcm$ at $(6,8)$.
+The completed rectangular matrices include the archived optima at $(6,24)$ and
+show smaller best absolute errors with the direction-wise closure for both fuels.
+Table~\ref{tab:study4-assembly-sector} gives the coordinates, signed differences and
+pin errors of the four selected cells. The 18 packed-PCG cells used a 60-thread cap.
+The earlier points ran with sparse direct factors under different thread budgets.
+
+The UO$_2$ comparison separates the direction of the eigenvalue change from the
+absolute error. With cell averaging, increasing $M$ from 2 to 4 lowers $\keff$ in
+all six rows of each geometry. With direction-wise tensors it raises $\keff$ in all
+twelve rows. At $S{=}2$, the rectangular direction-wise differences are
+$-204.06$ and $-122.77\pcm$, so the error shrinks. The square differences at the
+same settings are $+1.46$ and $+6.25\pcm$, so the error grows.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=.92\linewidth]{study4_assembly_grid2x2.pdf}
 \caption{The four C5G7 assembly matrices of the direction-wise closure, rows by
 geometry and columns by fuel, $\Delta k$ in pcm against each same-geometry OpenMC
-reference and each panel on its own scale. A cell marked \texttt{n/a} was scheduled
-and could not be factored on this host, and the ring marks the smallest absolute
-difference of the panel: $-0.16\pcm$ at $(S,M){=}(3,2)$ for the square UO$_2$,
-$-1.20\pcm$ at $(6,8)$ for the square MOX, $-7.75\pcm$ at $(3,24)$ for the
-rectangular UO$_2$ and $-113.85\pcm$ at $(4,12)$ for the rectangular MOX.}
+reference and each panel on its own scale. The ring marks the smallest absolute
+difference in each panel.}
 \label{fig:study4-assembly-grid}
 \end{figure}
 
@@ -350,12 +349,22 @@ rectangular UO$_2$ and $-113.85\pcm$ at $(4,12)$ for the rectangular MOX.}
 
 \begin{figure}[htbp]
 \centering
+\includegraphics[width=.92\linewidth]{study4_best_fission.pdf}
+\caption{Selected Study IV assembly pin maps from the direction-wise closure. Each row
+shows the computed field, its same-geometry OpenMC reference and the relative error
+over 264 fuel pins. Square cases show neutron production. Rectangular plots apply the
+material-average neutron yield of the archived fission-rate convention. Each map is
+shifted by its minimum and normalised to unit pin sum.}
+\label{fig:study4-assembly-fields}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
 \includegraphics[width=.92\linewidth]{study4_assembly_wall.pdf}
-\caption{End-to-end wall time of the same 440 direction-wise points in seconds on a
+\caption{End-to-end wall time of the four direction-wise assembly matrices in seconds on a
 logarithmic scale, in the same layout as Figure~\ref{fig:study4-assembly-grid} and with
 the ring on the same accuracy-optimal cell, so the two figures can be read as what the
-best point costs. Points were run several at a time on one host, so the panels describe
-workload rather than measured throughput.}
+best point costs. Thread budgets and factor backends differ across the campaign.}
 \label{fig:study4-assembly-wall}
 \end{figure}
 
@@ -474,10 +483,8 @@ same \texttt{scripts/study4\_sm\_figures.py} as the section figures.}
 \paragraph{Scope.}
 The quarter-core matrix is a measured grid, not a convergence proof: its best
 cell still differs from the Monte Carlo reference by more than that
-reference's own $3.41\pcm$ standard error, the rectangular MOX assembly stays
-biased by about $10^2\pcm$ at the best of either closure ($113.85\pcm$
-direction-wise at $S{=}4$, $M{=}12$, $118.55\pcm$ cell-average at $S{=}6$,
-$M{=}24$) and by $52.81\pcm$ only in the $A{=}2$ control quoted above, and the sector
+reference's own $3.41\pcm$ standard error and misses the $1\pcm$ target. The rectangular MOX assembly stays
+biased by about $10^2\pcm$ at $A{=}1$ and reaches $52.81\pcm$ in the $A{=}2$ control quoted above. The sector
 closure is more expensive than the legacy path at equal $M$. What the
 section establishes is narrower and checkable: with the face closure taken
 from the same weak form as the body term, the sign-changing valley of the
@@ -485,9 +492,8 @@ square checkerboard does not appear anywhere in the 314 points of the
 direction-wise closure of record except the single under-integrated
 $A{=}1$, $M{=}4$ column, the error is one-signed outside it and moves toward
 zero at 246 of the 280 refinements of the spatial axis, the 34 exceptions all
-inside that column, and on the 416 paired points that
-share $A$, $S$, $M$ and $I$ it is the smaller of the two closures at 398 of
-them, at equal cost. Figure~\ref{fig:study4-overview} collects the matrices these
+inside that column. At equal $A$, $S$, $M$ and $I$ it yields a smaller absolute error at
+\StudyFourSmaller{} of the \StudyFourPairs{} pairs. Figure~\ref{fig:study4-overview} collects the matrices these
 statements are made on. The nodal-response rewriting is an exact
 algebraic identity on the same discrete system, and the archived
 cell-average scan of 130 points stays one-signed and monotone on both axes.

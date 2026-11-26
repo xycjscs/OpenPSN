@@ -370,12 +370,17 @@ class SectorDiffusion(PSN2D):
             if self.backend == "chol-packed-rs":
                 from .packedchol import _PackedFactor, load_kernel
                 kernel = load_kernel()
+                # The finest Q2 systems can reach the FP64 linear residual floor.
+                self.packed_rtol = float(os.environ.get("OPENPSN_PACKED_RTOL", "5e-12"))
+                self.packed_maxiter = int(os.environ.get("OPENPSN_PACKED_MAXITER", "80"))
+                if not 0 < self.packed_rtol < 1:
+                    raise ValueError("OPENPSN_PACKED_RTOL must be between 0 and 1")
+                if not 0 < self.packed_maxiter <= np.iinfo(np.int32).max:
+                    raise ValueError("OPENPSN_PACKED_MAXITER must be a positive 32-bit integer")
 
                 def factor(matrix):
-                    # Grazing Q2 systems can reach the FP64 residual floor
-                    # of the more tightly scaled legacy face-current matrices.
                     chol = _PackedFactor(matrix.tocsr(), kernel,
-                                         rtol=5e-12, maxiter=80)
+                                         rtol=self.packed_rtol, maxiter=self.packed_maxiter)
                     return chol.solve, chol.pool_bytes
             else:
                 def factor(matrix):

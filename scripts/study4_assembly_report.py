@@ -20,10 +20,9 @@ carries the same column.
     python -m scripts.study4_assembly_report --closure sector_diffusion \
         --table paper/tables/study4-assembly-sector.tex --label tab:study4-assembly-sector
 
-A closure the host could not finish leaves a case short of its planned grid --- the
-rectangular assemblies need up to 183 GiB of factor pool at ``S=6``, ``M=24`` on a machine
-with 58 GiB --- so ``--allow-partial`` tabulates it with the coverage printed, while the
-default keeps the all-or-nothing gate the published table was measured under.
+``--allow-partial`` permits coverage shorter than the plan. The default keeps the
+all-or-nothing gate. Coverage and the packed-factor count are stated in the
+direction-wise table.
 """
 import argparse
 import csv
@@ -61,6 +60,7 @@ def main():
                    for row in csv.DictReader(handle)}
 
     body, counts, partial = [], [], []
+    show_coverage = args.closure != "sector_average"
     for key, label in CASES:
         points = [row for row in rows if row["case"] == key]
         assert points, f"no points recorded for {key}"
@@ -77,19 +77,28 @@ def main():
         assert abs(float(info["sum_s"]) - sum(float(row["seconds"]) for row in points)) < 0.05, key
         pin = [(f"{float(info[column]):.3f}\\%" if info[column] else "---")
                for column in ("fuel_rms_percent", "fuel_max_percent")]
-        body.append(f"{label} & $({best['S']},{best['M']})$ & {float(best['pcm']):+.2f} & "
+        coverage = f"{len(points)}/{info['planned']} & " if show_coverage else ""
+        body.append(f"{label} & {coverage}$({best['S']},{best['M']})$ & {float(best['pcm']):+.2f} & "
                     + " & ".join(pin) + f" & {float(info['sum_s']):.1f}~s" + r"\\")
 
     args.table.parent.mkdir(parents=True, exist_ok=True)
     closure = args.closure.replace("_", "\\_")      # the caption is LaTeX text
+    columns = "l r r r r r r" if show_coverage else "l r r r r r"
+    header = "Coverage & " if show_coverage else ""
+    total = "Total time" if show_coverage else f"Sum, {min(counts)}--{max(counts)} points"
+    caption = CAPTION.format(closure=closure)
+    packed = sum(row["backend"] == "chol-packed-rs" for row in rows) if show_coverage else 0
+    if packed:
+        caption += (f" Packed PCG was used at {packed} points. "
+                    "Run-level backend and thread settings are in the per-point file.")
     args.table.write_text(rf"""\begin{{table}}[htbp]
 \centering
-\caption{{{CAPTION.format(closure=closure)}}}
+\caption{{{caption}}}
 \label{{{args.label}}}
 \centering\small
-\begin{{tabular}}{{l r r r r r}}
+\begin{{tabular}}{{{columns}}}
 \hline
-Case & Best $(S,M)$ & $\Delta k$ (pcm) & Pin RMS & Pin max & Sum, {min(counts)}--{max(counts)} points\\
+Case & {header}Best $(S,M)$ & $\Delta k$ (pcm) & Pin RMS & Pin max & {total}\\
 \hline
 {chr(10).join(body)}
 \hline

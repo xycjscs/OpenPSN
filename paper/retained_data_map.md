@@ -107,9 +107,8 @@ coefficients per segment）。
 
 ## §4.5 Study IV — 有限扇区扩散闭包（评估章，sec:study4）
 
-原则同上：只列位置与条件。本轮新算的只有四分之一堆芯的 5 × 6 矩阵；其余
-Study IV 数值来自此前的 campaign，逐点核对后写入，源数据一并入仓
-（`paper/data/`、`paper/tables/`、`examples/psn_repro/logs/`）。
+Study IV 保存了四分之一堆芯 5 × 6 网格、重扫记录和逐点对照。最新一轮补齐了矩形
+组件的 18 格。数据及验证记录见 `paper/data/`、`paper/tables/` 和 `examples/`。
 
 | 论文位置 | 数据 | 方法/配置 | 仓内出处 |
 |---|---|---|---|
@@ -118,8 +117,9 @@ Study IV 数值来自此前的 campaign，逐点核对后写入，源数据一�
 | §4.5 谷线定位 | `strict_phase_space` 对照 $-1363.03$ / $+76.41$ pcm | 只换体内张量、保留原面闭合 | `examples/psn_repro/logs/strong_strict_sector_valley.log` |
 | §4.5 计时句 | 双线性 12.81 s 对 legacy 37.44 s（$S{=}12,M{=}24$） | 同网格两点，日志未记线程数/负载 | `timing_bilinear_full_strong.log`、`timing_final_legacy_strong.log` |
 | 表 tab:study4-assembly 与三张 studyIII 图 | 384 点六矩阵与最佳点逐棒偏差 | $A{=}1$ 双线性角系数，组件 $S{=}1\ldots6$、棋盘 $S{=}1\ldots20$ | `paper/data/study4_assembly_points.csv`、`paper/data/study4_assembly_summary.csv`，图 `figures/studyIII_*.pdf` |
-| 表 tab:study4-checker-sector、tab:study4-closure-ratio | 记录口径棋盘 314 点（发表网格 114 + $A{=}1$ 宽矩阵 200）与 416 个同格配对 | `sector_diffusion`，$I{=}30$，逐点独立复扫（最大源残差 3.93e-9） | `paper/data/uniform/points.jsonl` → `paper/data/study4-checkerboard.csv`、`paper/data/study4_closure_pairs.csv`、`paper/tables/study4-checker-sector.tex`（`scripts/study4_uniform_grid.py merge` + `scripts/study4_closure_report.py`） |
-| 表 tab:study4-assembly-sector 与四张 $S\times M$ 矩阵图 | 记录口径六矩阵 440 点（棋盘 314、组件 126；两个矩形组件各缺同样 9 格） | $A{=}1$，$I{=}8$（组件）/ $I{=}30$（棋盘），逐点耗时与因子池入档 | `paper/data/study4_assembly_points.csv`、`paper/data/study4_assembly_summary.csv`、`paper/data/uniform/plan_unreachable.json`，图 `figures/study4_{checker_sm,sm6_sm,assembly_grid2x2,assembly_wall,sm_overview}.{png,pdf}` 由 `scripts/study4_sm_figures.py` 从上述文件重画 |
+| 表 tab:study4-checker-sector、tab:study4-closure-ratio | 记录口径棋盘 314 点（发表网格 114 + $A{=}1$ 宽矩阵 200）与 434 个同格配对 | `sector_diffusion`，$I{=}30$，逐点独立复扫（最大源残差 3.93e-9） | `paper/data/uniform/points.jsonl` → `paper/data/study4-checkerboard.csv`、`paper/data/study4_closure_pairs.csv`、`paper/tables/study4-checker-sector.tex`（`scripts/study4_uniform_grid.py merge` + `scripts/study4_closure_report.py`） |
+| §4.5 方位阶对照 | $A{=}3$ 的 240 点、$A{=}2$ 的 44 点 | 强、弱棋盘，$I{=}30$，逐点独立复扫（最大源残差 3.97e-9） | `paper/data/study4_checker_azimuth_controls.csv` |
+| 表 tab:study4-assembly-sector 与组件 $S\times M$ 图 | 458 点（棋盘 314、组件 144） | $A=1$，组件 $I=8$。矩形补测 18 格采用 60 线程上限和 packed PCG | `paper/data/study4_assembly_points.csv`、`paper/data/study4_assembly_summary.csv`、`paper/data/uniform/points.jsonl`。矩阵图由 `scripts.study4_sm_figures` 重建 |
 | §4.5 矩形 MOX 段 | $M{=}24,A{=}2$ 下 $-185.20\to-52.81$ pcm | 显式水隙空间加密 | `paper/data/study4_rectangular_controls.csv`（series=Control） |
 | §4.5 $M{=}2\to4$ 段 | 57.33 → 40.69 pcm、$A{=}4$ 对照 $-71.17\to-33.21$ pcm | `--balance-pin` 重排胞内胞数 / 提高 $A$ 与空间基 | `paper/data/study4_balance_pin.jsonl`、`paper/data/study4_rectangular_controls.csv` |
 | 表 tab:study4-core-pcm / -time / -best 与两张堆芯图 | 四分之一芯 30 点 | TY3、$A{=}1$、60 线程、$k_\text{ref}=1.187217554586068$ | `examples/c5g7/study4_sector_core/`（30 个日志 + 两张矩阵 CSV + `sm_matrix.md`），论文表由 `scripts/study4_core_report.py` 生成 |

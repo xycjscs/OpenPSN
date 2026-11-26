@@ -109,6 +109,8 @@ def run(args, *, backend_label=None):
                        source_residual=psn.source_residual, keff_residual=psn.keff_residual,
                        backend=backend_label or args.backend, threads=args.threads,
                        tolerance=args.tol, factor_bytes=psn.factor_bytes)
+            if hasattr(psn, "packed_rtol"):
+                row.update(pcg_rtol=psn.packed_rtol, pcg_maxiter=psn.packed_maxiter)
             if original is not None:
                 if abs(k - original["keff"]) > 1e-7:
                     raise RuntimeError("pin-map rerun did not reproduce the stored eigenvalue")

@@ -35,6 +35,7 @@ formulation, implementation and test problems}
   \small Preprint. Companion to the OpenPSN framework paper \cite{openpsn2026};
   code: \texttt{github.com/xycjscs/OpenPSN}, branch \texttt{psn-4}.}
 
+\input{tables/study4-pair-counts.tex}
 \begin{document}
 \maketitle
 
@@ -57,15 +58,17 @@ reported as the closure of record. Two algebraic identities are verified symboli
 --- the exact elimination of the nodal interior, and the impossibility of exact angular
 transfer through a finite closure --- and the discretisation is checked against an
 analytic vacuum-slab solution, against 14 exact rational and symbolic checks, and on
-984 measured grid points --- 130 checkerboard points of the cell-average closure, 314
+1002 measured grid points --- 130 checkerboard points of the cell-average closure, 314
 checkerboard points of the direction-wise one, 384 points of the archived
 single-assembly $S\times M$ sweep, 30 points of the C5G7 rectangular quarter core and
-126 further assembly points of the direction-wise re-sweep. On the checkerboard the
-sign change disappears at 279 of the 314 direction-wise points, the exceptions forming
-one under-resolved azimuthal column, and of the 280 refinements of the spatial axis
-246 move the error toward zero, the 34 that do not all lying in that column; against the
-cell-average closure at equal $A$, $S$, $M$ and $I$ it is
-the smaller at 398 of the 416 paired points, at a median ratio of $0.437$ and a median
+144 further assembly points of the direction-wise re-sweep. The direction-wise
+checkerboard sweep has 279 negative differences and 35 positive ones in a single
+azimuthal column. Of the 280 spatial refinements, 246 move the error toward zero and
+the other 34 belong to that column. An additional 240 measurements at the benchmark
+default $A{=}3$ yield negative differences throughout, with reductions in magnitude at
+228 of 228 spatial steps and 155 of 200 azimuthal steps. Against the
+cell-average closure at equal $A$, $S$, $M$ and $I$ the absolute difference is
+the smaller at \StudyFourSmaller{} of the \StudyFourPairs{} paired points, at a median ratio of $\StudyFourMedianRatio$ and a median
 time ratio of $0.98$. On the explicit quarter core the
 smallest measured difference from the same-geometry Monte Carlo reference is
 $12.98\pcm$, which remains larger than the reference's own $3.41\pcm$ standard
@@ -112,8 +115,8 @@ of Ref.~\cite{openpsn2026} is absent from 279 of the 314 measured points and fro
 point outside one under-resolved azimuthal column, and on the six single-assembly
 matrices and the 30 measured points of the explicit rectangular quarter core; (v) puts
 the two closures side by side at equal $A$, $S$, $M$ and $I$, where the direction-wise
-one has the smaller eigenvalue error at 398 of the 416 points measured both ways, at a
-median ratio of $0.437$ and at the same wall time (median $0.98$ over ten matched pairs,
+one has the smaller eigenvalue error at \StudyFourSmaller{} of the \StudyFourPairs{} points measured both ways, at a
+median ratio of $\StudyFourMedianRatio$ and at a median wall-time ratio of $0.98$ over ten matched pairs (
 the two closures having the same unknowns); and (vi) records the cost of the sector
 closure against the published path --- on the quarter core $2.7$ times the published
 path at the same settings, and on the assembly grid not uniformly higher. All six
@@ -148,7 +151,7 @@ with the vacuum boundary condition carrying $|\boldsymbol{\Omega}\cdot\mathbf{n}
 and specularly reflected directions sharing the trace value on the reflecting face.
 Equation~\eqref{eq:even} is the same second-order operator used by the original PSN
 node problem, applied per direction rather than with a cell-averaged coefficient.
-Two closures of that tensor are implemented, at equal cost: at azimuthal degree $A$
+Two closures of that tensor are implemented with equal angular unknown counts: at azimuthal degree $A$
 each sector carries $K{=}A{+}1$ angular unknowns either way. In
 \texttt{sector\_diffusion} they are the $A{+}1$ Gauss directions of the sector, each
 retaining its own tensor; in \texttt{sector\_average} they are the cell mean of the
@@ -361,20 +364,17 @@ production mesh, which is what the measurements below address.
 \section{Results}
 The direction-wise \texttt{sector\_diffusion} closure is measured on the square
 checkerboard (314 points, Section~\ref{sec:checker}), on the quarter core (30 points,
-Section~\ref{sec:core}) and at 126 points of the four C5G7 assembly matrices; the
+Section~\ref{sec:core}) and at all 144 points of the four C5G7 assembly matrices; the
 \texttt{sector\_average} closure is measured on the whole of those grids and is reported
 beside it as the comparison at equal degrees of freedom. No table below mixes them, and
 the two live in the same per-point files under their own \texttt{closure} column. The
-direction-wise re-sweep of the six matrices converged at 440 of the 458 points it plans;
-their published matrix remains the archived cell-average one, re-measured direction-wise
-in Table~\ref{tab:study4-assembly-sector}, and the paired columns of
-Table~\ref{tab:study4-closure-ratio} give the point-by-point comparison over the 416
-points measured both ways. What is missing is the same nine cells of each rectangular
-case --- $S{=}4$ at $M{=}16,24$, $S{=}5$ at $M{=}12,16,24$ and $S{=}6$
-at $M{\ge}8$ --- which need sparse factors of $49.8$ to $182.9\,\text{GiB}$ against the
-$58\,\text{GiB}$ of the host that ran the campaign and are listed with their measured
-pool in
-\texttt{paper/data/uniform/plan\_unreachable.json}. The ten
+direction-wise re-sweep converged at all 458 points in its plan. The archived cell-average
+matrix and its direction-wise counterpart appear in Tables~\ref{tab:study4-assembly}
+and~\ref{tab:study4-assembly-sector}, respectively. Table~\ref{tab:study4-closure-ratio}
+compares all \StudyFourPairs{} matched points. The 18 remaining rectangular cells were
+recovered with packed Cholesky preconditioning and FP64 residual-checked PCG.
+\texttt{paper/data/uniform/plan\_packed.json} specifies their grid and memory budgets.
+The ten
 \texttt{strict\_phase\_space} rows in the checkerboard data file are neither closure ---
 they insert the exact sector tensor into the original four-mode body and face-average
 matching, and are quoted only to locate the sign change in the face closure. The
@@ -409,12 +409,21 @@ one-signed at all twenty of its points on each absorber), and a direction-wise t
 of the cell it averages, so the archived explanation of those crossings --- an
 under-integrated sector tensor --- does not carry over to them. It is the one property
 of the measured closure that the algebra of Section~\ref{sec:method} leaves unexplained.
-Outside that column the spatial axis
-behaves as the bound requires: of the 280 steps that refine $S$ at fixed $M$, 246 move
-the error toward zero and all 34 that do not lie in that one column, and
-past $M{=}12$ each fixed-$(A,S)$ column settles within $6.8\pcm$ of its own best --- the
+Of the 280 steps that refine $S$ at fixed $M$, 246 move the error toward zero. The
+other 34 lie in the positive-column region. Past $M{=}12$ each fixed-$(A,S)$ column
+settles within $6.8\pcm$ of its own best --- the
 one wider first step being $M{=}8$ of the $A{=}0$, $S{=}12$ strong-absorber scan, which
 lands at $-22.40\pcm$ before that scan's $-8.38\pcm$ at $M{=}12$.
+
+An additional 240-point sweep uses the benchmark default $A{=}3$ on both absorbers,
+with $S{=}1,\ldots,20$ and $M{=}2,4,8,12,16,24$ at $I{=}30$. All differences are
+negative. All 228 spatial refinement steps and 155 of 200 azimuthal refinement
+steps reduce the absolute difference. At $(S,M)=(20,8)$ the strong and weak
+absorbers reach $-6.19$ and $-2.65\pcm$, respectively. With $A{=}2$, all 40
+$M{=}4$ points are negative, and both $S{=}20,M{=}2$ cases overshoot. The data
+show that the $M{=}4$ crossing responds to finer sampling within the same sectors.
+The per-point errors, residuals and times are in
+\texttt{paper/data/study4\_checker\_azimuth\_controls.csv}.
 
 \input{tables/study4-checker-sector.tex}
 \input{tables/study4-closure-ratio.tex}
@@ -425,16 +434,12 @@ four scans are one-signed and monotone along both axes, with largest independent
 verification residual $3.2\times10^{-9}$ in the source and $9.7\times10^{-10}$ in the
 eigenvalue, and it is regenerated from the nine archived run logs by a script that
 re-checks both properties before writing. The two closures share $A$, $S$, $M$ and $I$
-wherever they meet, so they may be differenced point by point: over the 416 such points
-now measured --- the two checkerboards, both square assemblies at their full
-$36$ points, and $27$ of the $36$ planned points of each rectangular one --- the
-direction-wise error is the smaller at 398, at a median ratio of
-$0.437$ and a best of $0.011$. The 18 exceptions are all coarse-azimuth cells: twelve
-square UO$_2$ points at $M{\le}8$ and the six $M{=}2$ points of the rectangular UO$_2$
-case, the worst of them at $-24.3\pcm$ averaged against $-204.0\pcm$ kept per direction.
-Of the pairs, 39 change sign between the two closures, and all of them lie in the
-$M{=}4$ column of one of the checkerboards or the $M{=}2$ column of the square UO$_2$
-assembly. Two paired points make the size of it. At $A{=}0$,
+wherever they meet. The direction-wise error is smaller at \StudyFourSmaller{} of the
+\StudyFourPairs{} paired points, with a median ratio of $\StudyFourMedianRatio$.
+Table~\ref{tab:study4-closure-ratio} locates the \StudyFourSignChanges{} sign changes.
+The six $M{=}2$ points of the rectangular UO$_2$ case have larger errors with the
+direction-wise closure, including $-204.0\pcm$ at $S{=}1$ against $-24.3\pcm$ with cell averaging.
+Two paired points make the size of it. At $A{=}0$,
 $S{=}12$, $M{=}12$ of the strong absorber the error is $-304.58\pcm$ averaged over the
 sector and $-8.38\pcm$ kept per direction; at $A{=}1$, $S{=}12$, $M{=}8$ it is
 $-77.88$ against $-5.73\pcm$, and for the weak absorber at the same point $-15.66$
@@ -478,23 +483,13 @@ Table~\ref{tab:tests}.
 \input{tables/study4-assembly.tex}
 \input{tables/study4-assembly-sector.tex}
 
-The same six matrices have now been re-measured with the direction-wise closure, and it
-converged at 440 of the 458 points its plan lists: both checkerboards and both square
-assemblies are complete, and each rectangular case is short of the same nine
-coarse-mesh cells, listed with their measured factor pools in
-\texttt{paper/data/uniform/plan\_unreachable.json}. On the measured points the
-direction-wise best is the
-smaller of the two closures on all six cases --- $-0.90$ and $-1.79\pcm$ on the
-checkerboards against $-33.67$ and $-7.76\pcm$, and $-0.16$ and $-1.20\pcm$ on the square
-assemblies against $+3.02$ and $-2.45\pcm$ --- but the rectangular comparison is
-coverage-limited, because the archived best of each of those two cases sits at
-$(S,M){=}(6,24)$, one of the nine cells this host could not factor: what is measured
-there stops at $-7.75$ and $-113.85\pcm$, against the archived $-8.80$ and
-$-118.55\pcm$. No pin-wise fission field was produced for the re-swept points, so the pin
-columns of Table~\ref{tab:study4-assembly} have no counterpart in
-Table~\ref{tab:study4-assembly-sector}, and the wall times of the two tables are not a
-controlled timing pair --- the rectangular points cost a median $187$ and $201$~s each
-and shared the host with the rest of the campaign.
+The direction-wise re-sweep covers all 458 planned points and all 36 cells of each
+assembly. Its best absolute difference is smaller on each of the six cases.
+Table~\ref{tab:study4-assembly-sector} gives the selected coordinates, signed eigenvalue
+differences, and pin-wise statistics. The rectangular sweeps combine sparse direct
+factors and packed-PCG solves with different thread budgets. The backfill used a
+60-thread cap. The tables report the wall time of each run, and the controlled
+timings appear in Table~\ref{tab:study4-closure-cost}.
 
 \begin{figure}[htbp]
 \centering
@@ -511,15 +506,22 @@ marker indicates the smallest measured absolute difference in each panel.}
 \caption{The same four matrices re-measured with the direction-wise closure: square
 assemblies above, rectangular below, UO$_2$ left and MOX right, each panel drawn on its
 own colour scale, so only the printed pcm values compare across panels. The ring marks
-the smallest measured absolute difference of the panel, and \texttt{n/a} marks one of the
-nine cells per rectangular case whose sparse factor was too large for the host.}
+the smallest measured absolute difference of the panel.}
 \label{fig:assembly-grid}
 \end{figure}
 
-Two features of these matrices are worth separating. The rectangular MOX case keeps a
-bias of $-118.55\pcm$ at the best point of the archived sweep, and $-113.85\pcm$ at the
-best the direction-wise closure reached on the same case, so the bias survives the change
-of closure; the trend explains it as a
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.87\linewidth]{study4_best_fission.pdf}
+\caption{Selected direction-wise assembly fields with their OpenMC references and
+relative errors over 264 fuel pins per case. Square maps show neutron production.
+Rectangular maps use material-average neutron yields for the fission-rate conversion.
+Each map is shifted by its minimum and normalised to unit pin sum.}
+\label{fig:assembly-fields}
+\end{figure}
+
+The rectangular MOX bias remains of order $10^2\pcm$ at $A{=}1$ for both closures.
+The trend suggests a
 material-and-tiling effect rather than an angular one: at fixed $M{=}24$, $A{=}2$ and
 one polar mode the difference falls from $-185.20\pcm$ at $S{=}1$ through $-115.02$
 ($S{=}2$) and $-68.35$ ($S{=}4$) to $-52.81\pcm$ at $S{=}6$, so spatial resolution of
@@ -541,6 +543,12 @@ model, where the pin is homogenised and the cell carries no intra-cell material
 interface, the same $M{=}2\to4$ move at $S{=}1$, $A{=}1$ is only $-10.84\pcm$ in the
 bilinear subspace and $-0.06\pcm$ in the quadratic one --- an order of magnitude
 smaller, and gone once the spatial basis can represent the cell.
+
+With the direction-wise closure at $A{=}1$, the change from $M{=}2$ to $M{=}4$
+raises $\keff$ in all six rows of both UO$_2$ geometries. At $S{=}2$ this brings
+the rectangular difference from $-204.06$ to $-122.77\pcm$. The square difference
+moves from $+1.46$ to $+6.25\pcm$. The absolute error shrinks in the rectangular
+rows and grows in the square rows.
 
 \begin{figure}[htbp]
 \centering
@@ -605,12 +613,10 @@ How far the remaining bias is azimuthal was estimated on the same base grid at $
 polar nodes and $A{=}1$: the successive increments $M{=}4,8,16$ and $M{=}8,16,32$ give
 local azimuthal orders of $1.32$ and $1.47$, and the two windows extrapolate to
 $-54.64\pcm$ and $-58.90\pcm$ as $M\rightarrow\infty$ at fixed spatial and polar
-resolution. Space is not the dominant partner either --- at fixed $M{=}16$, refining
-the $172\times172$ graded mesh to $244\times244$ moves $\keff$ by $3.24\pcm$. On this
-family of meshes the residual difference is limited by the intra-cell material and
-polar resolution rather than by the number of azimuth sectors, which is also why the
-best cell of Table~\ref{tab:study4-core-pcm} sits where it does rather than at the
-largest $(S,M)$.
+resolution. In a separate test at $M{=}16$, refining the $172\times172$ graded mesh
+to $244\times244$ moves $\keff$ by $3.24\pcm$. Those tests leave a substantial residual
+at fixed polar order. The TY3 uniform refinement in Table~\ref{tab:study4-core-pcm}
+continues to improve through its finest measured point, $S{=}5$, $M{=}24$.
 
 \subsection{Cost at equal angular resolution}
 \label{sec:cost}
@@ -636,14 +642,12 @@ $M$ & legacy & bilinear coefficients & quadratic coefficients \\
 
 \input{tables/study4-closure-cost.tex}
 
-Two costs are being compared in this section and they should not be conflated. Against
-the \emph{legacy} path the sector closure is the more expensive one, by $2.7$ times on
-the quarter core and by between $0.83$ and $1.95$ times on the assembly grid of
-Table~\ref{tab:cost}, the two paths there using different factor kernels. Between the \emph{two sector closures},
-which have the same unknowns at equal $A$ and $M$, there is no systematic difference at
-all: over the ten pairs of Table~\ref{tab:study4-closure-cost}, run on one host one
-after the other, the median ratio of end-to-end times is $0.98$ and the range is
-$0.52$--$1.45$. Direction-wise accuracy is therefore not bought with time.
+Against the \emph{legacy} path, the measured sector-to-legacy time ratio is $2.7$ on
+the quarter core and $0.83$--$1.95$ on the assembly grid of Table~\ref{tab:cost}, where
+the paths use different factor kernels. The \emph{two sector closures} use the same
+number of angular unknowns at equal $A$ and $M$. Over the ten pairs of
+Table~\ref{tab:study4-closure-cost}, run sequentially on one host, the median
+direction-wise to cell-average time ratio is $0.98$, with a range of $0.52$--$1.45$.
 
 Table~\ref{tab:cost} says the sector closure is affordable but not free, and it does
 not order the two paths by accuracy: at $M{=}16$ the cheaper bilinear representation
@@ -665,19 +669,19 @@ checkerboard does not appear anywhere in the 314 points of the direction-wise cl
 record except its one $A{=}1$, $M{=}4$ column, the error outside that column is
 one-signed and moves toward zero at 246 of the 280 refinements of the spatial axis ---
 the 34 that do not all lie in that column --- keeping the
-direction-wise error below the cell-average one at 398 of the 416 paired points at equal
-unknowns and equal time, and the nodal-response rewriting is an exact algebraic identity
+direction-wise error below the cell-average one at \StudyFourSmaller{} of the \StudyFourPairs{} paired points at equal
+angular unknowns. The nodal-response rewriting is an exact algebraic identity
 on the same discrete system.
-On the assemblies and the quarter core the eigenvalue difference from a same-geometry
-Monte Carlo reference decreases with both axes, and the pin-wise fission field of the
-best quarter-core point differs from that reference by $0.084\%$ RMS.
+On the quarter core the absolute eigenvalue difference decreases along both axes at
+all 49 adjacent refinements. Its best pin-wise fission field differs from the reference
+by $0.084\%$ RMS.
 
 What they do not establish should be read off the same tables. The quarter-core matrix
 is a measured grid, not a convergence proof: its best cell still differs from the
 Monte Carlo reference by more than that reference's own standard error, and the
 azimuthal extrapolation of Section~\ref{sec:core} suggests that angular refinement
 alone will not close the remaining bias. The rectangular MOX assembly keeps a bias of
-more than $100\pcm$ at the best setting either closure reached. The direction-wise
+order $100\pcm$ at the best $A{=}1$ setting. The direction-wise
 matrices of the two rectangular cases are also the least complete part of the archive:
 each is short of nine cells, one of which --- $(S,M){=}(6,24)$ --- is the archived
 closure's own best point of that case, so their measured bests are lower bounds on what
@@ -705,11 +709,10 @@ the 314 points tested with it --- every point but one under-resolved azimuthal c
 the 280 refinements of the spatial axis, all 34 exceptions again inside that column.
 Measured point by point against the cell-average
 reduction of the same tensor at the same $A$, $S$, $M$ and $I$, it is the more accurate
-of the two at 398 of 416 points, at a median error ratio of $0.437$ and a median time
+of the two at \StudyFourSmaller{} of \StudyFourPairs{} points, at a median error ratio of $\StudyFourMedianRatio$ and a median time
 ratio of $0.98$. The same closure, run as $S\times M$ grids on the four C5G7 assemblies
 and the explicit rectangular quarter core, gives eigenvalue differences from
-same-geometry Monte Carlo references that decrease along both axes --- 96 of the 102
-refinements of the spatial axis on the four assemblies --- reaching $-0.16$ and
+same-geometry Monte Carlo references, reaching $-0.16$ and
 $-1.20\pcm$ on the pin-homogenised square assemblies ($+3.02$ and $-2.45\pcm$ for the
 archived closure there) and $-12.98\pcm$ on the
 quarter core, where the pin-wise fission field differs by $0.084\%$ RMS. The residual

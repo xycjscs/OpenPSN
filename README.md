@@ -226,10 +226,10 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 - [`--opt sector-cholmod` 构建与计时说明](docs/psn4-sector-diffusion.md#扇区扩散性能)
   适用于这两种扇区扩散闭合。
 - **记录口径是 `sector_diffusion`**：棋盘、组件与四分之一堆芯的论文主表都跑这个
-  闭合，`sector_average` 只作为等自由度对照保留。416 个同 `A,S,M,I` 配对点中
-  398 点上它的 `|Δk|` 更小，中位比 0.437；39 个符号分歧全部落在两个棋盘的 `A=1`、`M=4`
-  （每扇区两个 Gauss 方向）列与方形 UO₂ 组件的四个 `M=2` 点上。等角向自由度数下它不是一律更贵——10 组同机
-  背靠背配对计时比值 0.52–1.45、中位 0.98。逐点配对与比值由
+  闭合，`sector_average` 用于等自由度对照。434 个同 `A,S,M,I` 配对点中
+  416 格的 `|Δk|` 较小，中位比 0.437，有 39 格变号。
+  10 组同机背靠背计时比值为 0.52–1.45，中位数 0.98。
+  逐点配对与比值由
   `python -m scripts.study4_closure_report` 生成
   （`paper/tables/study4-checker-{sector,average}.tex`、
   `study4-closure-ratio.tex`、`paper/data/study4_closure_pairs.csv`），配对计时由
@@ -345,8 +345,9 @@ cases:                   # 批量：per-case 覆盖 M / subdivide / A / closure 
 | Study III：A=3 棋盘弱吸收（TY3 / I30 / I60） | `psn_repro/checkerboard_1g_rect.yaml` | TY3 S=1–12；I30 S=1–20；I60 单点（194 case） | 1.12974 | I30 最佳 S=12：−0.1 pcm；I60 S=20 M=24：−0.9（vs I30 同点 −3.8，+2.9 pcm） |
 | Study III：A=3 棋盘强吸收 | `psn_repro/checkerboard_1g_rect_strong.yaml` | 同上（194 case） | 0.51673 | 同上网格 |
 | Study IV：棋盘弱/强吸收（**记录口径 `sector_diffusion`**） | `psn_repro/checkerboard_1g.yaml`、`psn_repro/checkerboard_1g_strong.yaml` | 发表网格（S=2–12 × M=4–96）逐点重测 + A=1 宽矩阵 S=1–20 × M=2–24，共 314 点（A=0/1/2） | 1.12974 / 0.51673 | 论文表 tab:study4-checker-sector（矩阵图见 fig:study4-checker / fig:study4-checker-wide）；对角谷线消失：314 点里 279 点同号（负），35 个正偏差全在 A=1、M=4（每扇区两个方向）一列；固定 M 加密 S 的 280 步里 246 步 \|Δk\| 趋零，34 个反例全在该列 |
+| Study IV：棋盘方位阶对照 | 同上 | 默认 A=3 的两张 20×6 矩阵，另测 A=2 的 M=4 列和 S=20 的 M=2、8 | 同上 | A=3 的 240 格全部为负，228/228 个空间步、155/200 个方位步缩小绝对偏差。[逐点数据](paper/data/study4_checker_azimuth_controls.csv) |
 | Study IV：棋盘弱/强吸收（等自由度对照 `sector_average`） | 同上 | S=2–12 × M=4–96，共 130 点（A=0 44、A=1 二次 40、A=1 双线性 40、A=2 6） | 1.12974 / 0.51673 | 论文表 tab:study4-checker-average；130 点全部同号（负）、任一轴加密单调趋零，逐点比值见 tab:study4-closure-ratio |
-| Study IV：4 组件 + 2 棋盘（对照 `sector_average`，384 点已发表） | `c5g7/study1_homogenised/c5g7_{uo2,mox}_assembly_*.yaml`、`c5g7/study2_rectangular/c5g7_rect_{uo2,mox}_assembly.yaml` | 组件 S=1–6、棋盘 S=1–20 × M=2–24（384 点），A=1 双线性 | 同 Study I / II | 论文表 tab:study4-assembly；矩形 MOX 最佳 −118.55 pcm（材料/平铺受限）。同网格的 `sector_diffusion` 补测收敛在 440/458（方形组件 72/72、矩形组件 54/72；缺的 18 格逐格记在 `paper/data/uniform/plan_unreachable.json`，实测因子池 49.8–182.9 GiB > 主机 58 GiB），新闭合那一侧是论文表 tab:study4-assembly-sector 与图 fig:study4-assembly-grid，`study4_assembly_report.py --closure` 两侧同码出表 |
+| Study IV：4 组件 + 2 棋盘 | `c5g7/study1_homogenised/c5g7_{uo2,mox}_assembly_*.yaml`、`c5g7/study2_rectangular/c5g7_rect_{uo2,mox}_assembly.yaml` | 组件 S=1–6、棋盘 S=1–20，方位网格 M=2、4、8、12、16、24 | 同 Study I / II | `sector_diffusion` 的 458 个计划点全部收敛，每个组件 36/36。矩形 18 个补点使用 60 线程上限、packed Cholesky 和 FP64 PCG。[组件示例与逐棒结果](examples/c5g7/study4_sector_assembly/README.md) |
 | Study IV：矩形 1/4 芯 SM 矩阵（**记录口径 `sector_diffusion`**） | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–5 × M=2,4,8,12,16,24（TY3，A=1，逐点独立复扫） | 1.1872176 | 矩阵与最佳点见 `examples/c5g7/study4_sector_core/`（`sm_matrix.md` 由 `scripts/study4_core_report.py` 从逐点日志重建；30/30 格全部收敛，误差同号且随两轴单调下降，最佳格 `S=5, M=24` 为 `−12.98 pcm`） |
 | 严格代数校验（14 项，符号/有理精确） | `examples/psn_strict_checks/` | 两层真空板、镜像矩形、四反射均质 7 群、堆芯守恒 LP | 精确解析值 | k∞ 四位精确小数、`k_eff<1.894` 上界，`unittest` 约 2 s |
 
@@ -394,13 +395,10 @@ python -m scripts.study4_closure_report               # 记录口径棋盘矩阵
                                        # （study4-checker-sector / -average / -closure-ratio + pairs.csv；
                                        # 补测未完时加 --allow-missing，会打印留空格数）
 python -m scripts.study4_assembly_summary --closure sector_diffusion
-                                       # 由逐点 CSV 派生新闭合的六组件汇总行：planned 取补测计划，
-                                       # 所以跑不满的格显示成 27/36 而不是"完整"；已发表那侧的行原样保留，
-                                       # fuel_* 只有 Study III 的逐棒裂变图能给，派生行留空、表里出 '---'
+                                       # 从逐点 CSV 派生汇总，保留同一最佳格已核验的逐棒统计
 python -m scripts.study4_assembly_report --closure sector_average
-                                       # 六组件汇总表（384 点，已发表的对照闭合表；--closure 两侧同码可切，
-                                       # 上一行派生出汇总行后新闭合那侧也出得了表；矩形组件两例在 58 GiB
-                                       # 主机上只测到 36 格里的 27 格，那一侧加 --allow-partial 并打印覆盖率）
+python -m scripts.study4_assembly_report --closure sector_diffusion \
+    --table paper/tables/study4-assembly-sector.tex --label tab:study4-assembly-sector
 python -m scripts.study4_core_report --logs examples/c5g7/study4_sector_core/logs \
     --output examples/c5g7/study4_sector_core --latex paper/tables \
     --fission-summary examples/c5g7/study4_sector_core/best_fission_summary.json \
@@ -416,6 +414,7 @@ python -m scripts.study4_sm_figures                 # 记录口径的全部 S×M
                                        # 输出 paper/figures/*.png + 同名 .pdf（每格独立色标）
 python -m scripts.finalize_markdown --force           # main.md / revised_main.md 与 LaTeX 同源
 make -C paper                          # main.pdf 与 sector_method.pdf（tectonic）
+make -C paper docx                     # 从 LaTeX 重建可编辑的 main.docx（Pandoc）
 ```
 
 C5G7 20 码 NEA 景观对照（高保真参考 1.18646，论文 §4.5）：

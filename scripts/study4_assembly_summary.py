@@ -12,10 +12,10 @@ the re-sweep merge that fills the per-point file::
 
 ``planned`` of a closure measured by ``scripts/study4_uniform_grid.py`` is read from that
 campaign's own plan rather than from the rows that happen to exist, which is what keeps a
-grid the host could not finish visible as ``26/36`` instead of quietly complete.  The
-pin-wise fuel errors stay empty for a derived row: those numbers come from the fission
-maps of Study III, not from an eigenvalue sweep, and the assembly table prints ``---``
-where they are missing.
+grid the host could not finish visible as ``26/36``. The optional ``--fields`` and
+``--pin-output`` arguments export pin maps from the selected assembly checkpoints.
+Without checkpoints the roll-up retains stored pin errors when the best point and
+its eigenvalue match.
 """
 import argparse
 import csv
@@ -53,7 +53,13 @@ def main():
                         help="point plan of the campaign, the source of `planned`")
     parser.add_argument("--closure", action="append", default=[],
                         help="closure whose rows are derived (repeatable)")
+    parser.add_argument("--fields", type=Path, help="assembly sweep checkpoints")
+    parser.add_argument("--pin-output", type=Path, help="output directory for the pin maps")
+    parser.add_argument("--references", type=Path, default=ROOT / "tools_ho/data")
     args = parser.parse_args()
+    closures = args.closure or ["sector_diffusion"]
+    if bool(args.fields) != bool(args.pin_output) or (args.fields and len(closures) != 1):
+        parser.error("pin-map export requires --fields, --pin-output and a single closure")
 
     with args.points.open() as handle:
         points = [row for row in csv.DictReader(handle) if row.get("case")]
@@ -69,7 +75,8 @@ def main():
     # A row measured by this script is replaced, anything else is kept as it stands: the
     # published campaign's own roll-up is the only record of what it planned.
     derived = {}
-    for closure in args.closure or ["sector_diffusion"]:
+    best_assemblies = {}
+    for closure in closures:
         for case in CASES:
             rows = [row for row in points if row["case"] == case
                     and row.get("closure", "sector_average") == closure]
@@ -78,8 +85,25 @@ def main():
                 continue
             planned = planned_by.get(case, len(rows))
             derived[(closure, case)] = summary_row(closure, case, rows, planned)
+            if args.fields and case.startswith(("square_", "rect_")):
+                best_assemblies[case] = min(rows, key=lambda row: abs(float(row["pcm"])))
 
     rows = [dict(row, closure=row.get("closure", "sector_average")) for row in stored]
+    pin_columns = ("fuel_rms_percent", "fuel_max_percent")
+    for row in rows:
+        new = derived.get((row["closure"], row["case"]))
+        if new and all(new[key] == row[key] for key in ("S", "M", "keff")):
+            new.update({key: row.get(key, "") for key in pin_columns})
+    if args.fields:
+        from .study3_bilinear_report import field_report
+
+        args.pin_output.mkdir(parents=True, exist_ok=True)
+        closure = closures[0]
+        pin_errors = field_report(best_assemblies, args.fields, args.references,
+                                  args.pin_output, closure=closure, figure="study4_best_fission")
+        for case, errors in pin_errors.items():
+            derived[(closure, case)].update(zip(pin_columns, errors))
+
     rows = [derived.pop((row["closure"], row["case"]), None) or row for row in rows]
     rows += [derived[key] for key in sorted(derived, key=lambda key: CASES.index(key[1]))]
 
