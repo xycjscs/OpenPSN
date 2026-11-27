@@ -14,6 +14,11 @@
 转换为裂变率。各图扣除最小值并归一化为单位棒元总和。方形 OpenMC 参考取自
 Study III 四组逐棒对照归档中的 `OpenMC` 列，矩形直接读取仓内原参考数组。
 
+方形 UO₂ 的 36 格逐棒 RMS 见 [S×M 矩阵 CSV](../../../paper/data/study4_square_uo2_pin_rms.csv)
+和[误差图](../../../paper/figures/study4_square_uo2_pin_rms.pdf)。
+RMS 在 264 根燃料棒上计算，每个棒元的相对偏差取百分数。
+最小 RMS 为 0.02678%，对应 `S=6, M=16`。
+
 在仓库根目录执行以下命令可由入仓数据重建组件表与 SM 图。
 
 ```sh
@@ -22,6 +27,8 @@ python -m scripts.study4_assembly_report --closure sector_diffusion \
     --table paper/tables/study4-assembly-sector.tex --label tab:study4-assembly-sector
 python -m scripts.study4_sm_figures
 python -m scripts.study4_pin_maps --output paper/figures
+python -m scripts.study4_pin_rms --output paper/figures \
+    --latex paper/tables/study4-square-uo2-pin-rms.tex
 ```
 
 最后 18 个矩形格用 packed Cholesky 预条件器和残差检验的 FP64 PCG 求解，线程上限为
@@ -46,3 +53,6 @@ python -m scripts.study4_uniform_grid run --threads 60 --backend chol-packed-rs 
 python -m scripts.study4_pin_maps --fields runs/study4-uniform/fields \
     --assembly-data runs/study4-assembly-maps --output runs/study4-assembly-maps
 ```
+
+把同一组检查点通过 `--fields` 传给 `scripts.study4_pin_rms`，可以从 36 个通过复扫的
+检查点重新计算矩阵。

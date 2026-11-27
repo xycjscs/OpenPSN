@@ -210,7 +210,7 @@ Before any new application we verify the implementation against the source paper
 
   : Reproduction of the published PSN paper (Ref. [@psn2027]). "err" is the absolute difference $(\kappa_{\mathrm{eff}}-\kappa_{\mathrm{eff}}^{\mathrm{ref}})\times10^5$ in pcm. The reference values are the OpenMC values used in the paper [@openmc2015]. {#tab:repro}
 
-All 248 data points are reproduced --- the 240 cells of Tables [12](#tab:appA){reference-type="ref" reference="tab:appA"}--[15](#tab:appD){reference-type="ref" reference="tab:appD"} plus the 8 restricted $M{=}24$ points listed in Appendix A. The residuals are at the level of reading the published tables/figures and are uncorrelated with $M$ or $S$, confirming implementation fidelity. The full point-by-point comparison is tabulated in Appendix A (Tables [12](#tab:appA){reference-type="ref" reference="tab:appA"}--[15](#tab:appD){reference-type="ref" reference="tab:appD"}); the complete per-point data are shipped with the code.
+All 248 data points are reproduced --- the 240 cells of Tables [13](#tab:appA){reference-type="ref" reference="tab:appA"}--[16](#tab:appD){reference-type="ref" reference="tab:appD"} plus the 8 restricted $M{=}24$ points listed in Appendix A. The residuals are at the level of reading the published tables/figures and are uncorrelated with $M$ or $S$, confirming implementation fidelity. The full point-by-point comparison is tabulated in Appendix A (Tables [13](#tab:appA){reference-type="ref" reference="tab:appA"}--[16](#tab:appD){reference-type="ref" reference="tab:appD"}); the complete per-point data are shipped with the code.
 
 # Numerical assessment
 
@@ -553,6 +553,20 @@ The direction-wise re-sweep covers all 458 planned points and all 36 cells of ea
 
 : Direction-wise Study IV coverage, selected points and wall times. The run times include multiple backend and thread configurations. {#tab:study4-assembly-sector}
 
+At $S=3$ in the square UO$_2$ assembly, increasing $M$ from 2 to 4 lowers the fuel-pin RMS from $0.16950\%$ to $0.03641\%$, while the signed eigenvalue difference changes from $-0.16$ pcm to $+4.92$ pcm. The smallest observed RMS is $0.02678\%$ at $(S,M)=(6,16)$, where the eigenvalue difference is $+5.99$ pcm. The eigenvalue and the normalized pin distribution measure different aspects of the solution.
+
+| $S$ \ $M$ | 2 | 4 | 8 | 12 | 16 | 24 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 0.23589 | 0.08446 | 0.07385 | 0.07311 | 0.07313 | 0.07329 |
+| 2 | 0.18772 | 0.04418 | 0.03652 | 0.03546 | 0.03533 | 0.03543 |
+| 3 | 0.16950 | 0.03641 | 0.03023 | 0.02916 | 0.02901 | 0.02913 |
+| 4 | 0.16321 | 0.03398 | 0.02849 | 0.02764 | 0.02751 | 0.02760 |
+| 5 | 0.16046 | 0.03302 | 0.02778 | 0.02710 | 0.02700 | 0.02706 |
+| 6 | 0.15908 | 0.03257 | 0.02743 | 0.02686 | **0.02678** | 0.02682 |
+
+: RMS relative error (%) in normalized neutron production over the 264 fuel pins of the square UO$_2$ assembly, against the same-geometry OpenMC reference. Direction-wise sector diffusion with $A=1$ and $I=8$. Bold marks the minimum of the unrounded values. {#tab:study4-square-uo2-pin-rms}
+
+
 <figure id="fig:study4-assembly-fields">
 <img src="figures/study4_assembly_fission.png" alt="Finest-grid direction-wise assembly maps, OpenMC references, and fuel-pin relative errors">
 <figcaption>Study IV assembly pin fields at S=6, M=24. Square maps show neutron production. Rectangular maps use the material-average neutron yield of the archived fission-rate convention. The four relative-error maps cover 264 fuel pins per assembly and use a shared −0.35% to +0.35% scale.</figcaption>
@@ -564,7 +578,7 @@ With direction-wise tensors at $A{=}1$, $k_{\mathrm{eff}}$ increases from $M{=}2
 
 #### C5G7 rectangular quarter core.
 
-The $5\times6$ grid of runs on the explicit quarter core, with the direction-wise `sector_diffusion` closure (`c5g7_rect_quarter_core.yaml`, 7 groups, original interfaces, $(153S)^2$ nodes, TY3 polar rule, $A{=}1$, 60-thread cap) is given in Table [8](#tab:study4-core-pcm){reference-type="ref" reference="tab:study4-core-pcm"} and Table [9](#tab:study4-core-time){reference-type="ref" reference="tab:study4-core-time"}. The reference is the same-geometry OpenMC batch mean $1.187217554586068$ with a $3.41$ pcm standard error over 20,000 active batches; the statepoint `k_combined` estimator is $1.187220349151050$ with $1.75$ pcm. Each measured cell was solved independently and re-verified by a separate transport sweep with a source residual of at most $5\times10^{-9}$ and an eigenvalue residual of at most $10^{-9}$. Timings are end to end for the recorded run and include assembly, factor construction, outer iterations and the verification sweep; an asterisk marks a cell that reused stored factors, and points sharing a time window were run concurrently, so the two matrices describe workload as much as throughput.
+The $5\times6$ grid of runs on the explicit quarter core, with the direction-wise `sector_diffusion` closure (`c5g7_rect_quarter_core.yaml`, 7 groups, original interfaces, $(153S)^2$ nodes, TY3 polar rule, $A{=}1$, 60-thread cap) is given in Table [9](#tab:study4-core-pcm){reference-type="ref" reference="tab:study4-core-pcm"} and Table [10](#tab:study4-core-time){reference-type="ref" reference="tab:study4-core-time"}. The reference is the same-geometry OpenMC batch mean $1.187217554586068$ with a $3.41$ pcm standard error over 20,000 active batches; the statepoint `k_combined` estimator is $1.187220349151050$ with $1.75$ pcm. Each measured cell was solved independently and re-verified by a separate transport sweep with a source residual of at most $5\times10^{-9}$ and an eigenvalue residual of at most $10^{-9}$. Timings are end to end for the recorded run and include assembly, factor construction, outer iterations and the verification sweep; an asterisk marks a cell that reused stored factors, and points sharing a time window were run concurrently, so the two matrices describe workload as much as throughput.
 
 | $S$ \ $M$ | 2 | 4 | 8 | 12 | 16 | 24 |
 |---:|---:|---:|---:|---:|---:|---:|
@@ -607,14 +621,14 @@ The $5\times6$ grid of runs on the explicit quarter core, with the direction-wis
 | wall time | 10930.6 s |
 | pin fission RMS / max | 0.084 % / 0.321 % |
 
-: The cell of Table [8](#tab:study4-core-pcm){reference-type="ref" reference="tab:study4-core-pcm"} with the smallest absolute eigenvalue difference, with the relative pin-wise fission-rate difference over the 1056 fuel pins. The node count is $(153S)^2$. {#tab:study4-core-best}
+: The cell of Table [9](#tab:study4-core-pcm){reference-type="ref" reference="tab:study4-core-pcm"} with the smallest absolute eigenvalue difference, with the relative pin-wise fission-rate difference over the 1056 fuel pins. The node count is $(153S)^2$. {#tab:study4-core-best}
 @
 
 For comparison on the identical geometry, grid and thread budget, starting cold, the legacy PSN closure at $S{=}1$, $M{=}24$ gives $-10.12$ pcm in 128.08 s and the sector closure $-54.09$ pcm in 340.68 s. The sector closure is therefore not uniformly better at the coarsest settings, where the legacy node model has the smaller error at equal angular resolution; the tables above show the sector error decreasing as either axis is refined, which is the regime where the two paths cross.
 
 One input-level effect is of the same size as these differences. OpenPSN reads the C5G7 fission spectrum as supplied, with $\sum_g\chi_g=1.00000917761$, whereas OpenMC renormalises it on read; the two eigenvalues are related by $k_\text{raw}=(\sum_g\chi_g)\,k_\text{normalised}$, which shifts the present reference by $1.0896$ pcm --- the same order as the stated target accuracy. Group-wise constant corrections of this kind are the reason the comparison is reported cell by cell rather than as a single number.
 
-How far the remaining bias is azimuthal was estimated on the same base grid at $I{=}8$ polar nodes and $A{=}1$: the successive increments $M{=}4,8,16$ and $M{=}8,16,32$ give local azimuthal orders of $1.32$ and $1.47$, and the two windows extrapolate to $-54.64$ pcm and $-58.90$ pcm as $M\rightarrow\infty$ at fixed spatial and polar resolution. Space is not the dominant partner either --- at fixed $M{=}16$, refining the $172\times172$ graded mesh to $244\times244$ moves $\kappa_{\mathrm{eff}}$ by $3.24$ pcm. On this family of meshes the residual difference is therefore limited by the intra-cell material and polar resolution rather than by the number of azimuth sectors, and the reference itself carries $3.39$--$3.91$ pcm of statistical uncertainty (block sizes of 10 to 500 batches, $1.75$ pcm for the `k_combined` estimator), which is larger than the margin any single cell of Table [8](#tab:study4-core-pcm){reference-type="ref" reference="tab:study4-core-pcm"} would have to prove.
+How far the remaining bias is azimuthal was estimated on the same base grid at $I{=}8$ polar nodes and $A{=}1$: the successive increments $M{=}4,8,16$ and $M{=}8,16,32$ give local azimuthal orders of $1.32$ and $1.47$, and the two windows extrapolate to $-54.64$ pcm and $-58.90$ pcm as $M\rightarrow\infty$ at fixed spatial and polar resolution. Space is not the dominant partner either --- at fixed $M{=}16$, refining the $172\times172$ graded mesh to $244\times244$ moves $\kappa_{\mathrm{eff}}$ by $3.24$ pcm. On this family of meshes the residual difference is therefore limited by the intra-cell material and polar resolution rather than by the number of azimuth sectors, and the reference itself carries $3.39$--$3.91$ pcm of statistical uncertainty (block sizes of 10 to 500 batches, $1.75$ pcm for the `k_combined` estimator), which is larger than the margin any single cell of Table [9](#tab:study4-core-pcm){reference-type="ref" reference="tab:study4-core-pcm"} would have to prove.
 
 #### Symbolic and exact checks.
 
@@ -628,7 +642,7 @@ The best quarter-core grid cell is $12.98$ pcm from the OpenMC reference and mis
 
 ## Comparison with the published diffusion / SN / nodal landscape
 
-The original NEA report [@nea2003] tabulates 20 deterministic codes on C5G7-2D. Table [11](#tab:lit){reference-type="ref" reference="tab:lit"} reproduces the diffusion- and nodal-family values we could extract from it, together with recent P1/SP3/SN/nodal literature results and our own OpenPSN result.
+The original NEA report [@nea2003] tabulates 20 deterministic codes on C5G7-2D. Table [12](#tab:lit){reference-type="ref" reference="tab:lit"} reproduces the diffusion- and nodal-family values we could extract from it, together with recent P1/SP3/SN/nodal literature results and our own OpenPSN result.
 
 +---------------------------------------------------------+-------------------------+-------------------------+-------------------+
 | method class                                            | code                    | $\kappa_{\mathrm{eff}}$ | $\Delta$ (pcm)    |
@@ -751,7 +765,7 @@ C. Tang and S. Zhang, "Development and verification of an MOC code employing a
 ::: landscape
 # Full point-by-point reproduction of the published PSN results
 
-Table [1](#tab:repro){reference-type="ref" reference="tab:repro"} summarised the maxima. Tables [12](#tab:appA){reference-type="ref" reference="tab:appA"}--[15](#tab:appD){reference-type="ref" reference="tab:appD"} give the complete 240-cell comparison for the three printed eigenvalue grids (checkerboard weak/strong, BWR without Gd) plus the with-Gd case, in the same "this work / paper ($\Delta$)" cell format. Row labels: $S$ = spatial subdivision of the checkerboard grid, $N$ = spatial grid of the BWR bundle. The remaining 8 points (restricted $M=24$, $S=1,2,4,8$, weak/strong) agree with the printed Figs. 4--5 within the plot-reading uncertainty; the full per-point data are shipped with the code.
+Table [1](#tab:repro){reference-type="ref" reference="tab:repro"} summarised the maxima. Tables [13](#tab:appA){reference-type="ref" reference="tab:appA"}--[16](#tab:appD){reference-type="ref" reference="tab:appD"} give the complete 240-cell comparison for the three printed eigenvalue grids (checkerboard weak/strong, BWR without Gd) plus the with-Gd case, in the same "this work / paper ($\Delta$)" cell format. Row labels: $S$ = spatial subdivision of the checkerboard grid, $N$ = spatial grid of the BWR bundle. The remaining 8 points (restricted $M=24$, $S=1,2,4,8$, weak/strong) agree with the printed Figs. 4--5 within the plot-reading uncertainty; the full per-point data are shipped with the code.
 
   **$S$**                                  $M$=2                   $M$=4                  $M$=8                  $M$=12                 $M$=16                 $M$=24
   ------------------------------- ----------------------- ----------------------- ---------------------- ---------------------- ---------------------- ----------------------

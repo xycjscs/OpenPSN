@@ -353,7 +353,8 @@ cases:                   # 批量：per-case 覆盖 M / subdivide / A / closure 
 
 Study IV 逐棒图使用已计算的最细网格。四组组件取 `S=6, M=24`，四分之一堆芯取
 `S=5, M=24`。五组相对误差共用 −0.35% 至 +0.35% 的色标。
-[组件图](paper/figures/study4_assembly_fission.pdf) · [四分之一堆芯图](paper/figures/study4_core_fission.pdf)
+[组件图](paper/figures/study4_assembly_fission.pdf) · [四分之一堆芯图](paper/figures/study4_core_fission.pdf) ·
+[方形 UO₂ 逐棒 RMS 矩阵](paper/data/study4_square_uo2_pin_rms.csv)
 
 （棋盘 A3 的 `subdivide` 约定：case 名中的 S = 论文 S，2×2 基网格再细分
 S×S → 2S×2S 节点，即 `subdivide: S`。）

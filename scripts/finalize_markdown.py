@@ -213,17 +213,17 @@ def checker_table():
     return "\n".join(lines) + f"\n\n: {CHECKER_CAPTION} {{#tab:study4-checker}}\n"
 
 
-def matrix_csv(name):
-    with (EXAMPLE / name).open() as handle:
+def matrix_csv(path):
+    with path.open() as handle:
         rows = list(csv.reader(handle))
     return [[None if not value else float(value) for value in row[1:]] for row in rows[1:]]
 
 
-def pipe(title, rows, digits, caption, plus=False):
+def pipe(title, rows, digits, caption, plus=False, mark_min=False):
     head = ["$S$ \\ $M$", *(str(m) for m in M_VALUES)]
     lines = ["| " + " | ".join(head) + " |", "|" + "---:|" * len(head)]
     best_row, best_col, best_abs = None, None, None
-    if digits == 2:  # the error matrix marks its own best cell
+    if mark_min:
         for i, row in enumerate(rows):
             for j, value in enumerate(row):
                 if value is not None and (best_abs is None or abs(value) < best_abs):
@@ -235,7 +235,7 @@ def pipe(title, rows, digits, caption, plus=False):
                 cells.append("---")
                 continue
             text = f"{value:+.{digits}f}" if plus else f"{value:.{digits}f}"
-            if digits == 2 and (i, j) == (best_row, best_col):
+            if (i, j) == (best_row, best_col):
                 text = f"**{text}**"
             cells.append(text)
         lines.append("| " + " | ".join([str(i + 1), *cells]) + " |")
@@ -243,15 +243,15 @@ def pipe(title, rows, digits, caption, plus=False):
 
 
 def core_tables():
-    pcm = matrix_csv("sm_error_pcm.csv")
-    seconds = matrix_csv("sm_wall_seconds.csv")
+    pcm = matrix_csv(EXAMPLE / "sm_error_pcm.csv")
+    seconds = matrix_csv(EXAMPLE / "sm_wall_seconds.csv")
     summary = (EXAMPLE / "best_fission_summary.json").read_text()
     import json
     info = json.loads(summary)
     flat = [abs(value) if value is not None else float("inf") for row in pcm for value in row]
     best = min(range(len(flat)), key=lambda i: flat[i])
     s, m = best // len(M_VALUES) + 1, M_VALUES[best % len(M_VALUES)]
-    err = pipe("tab:study4-core-pcm", pcm, 2, plus=True,
+    err = pipe("tab:study4-core-pcm", pcm, 2, plus=True, mark_min=True,
                caption=f"Signed eigenvalue difference $10^{{5}}(\\kappa_{{\\mathrm{{eff}}}}-"
                        f"k_\\mathrm{{ref}})$ in pcm on the explicit quarter core, against the "
                        f"same-geometry OpenMC reference ${KREF}$ ($3.41$ pcm standard error). Bold "
@@ -319,11 +319,18 @@ def assembly_table():
 def build_section(pairs):
     """The Study IV markdown, with generated tables read back from their data files."""
     section = (HERE / "studyIV.md").read_text()
+    pin_rms = pipe("tab:study4-square-uo2-pin-rms",
+                   matrix_csv(PAPER / "data/study4_square_uo2_pin_rms.csv"), 5, mark_min=True,
+                   caption="RMS relative error (%) in normalized neutron production over "
+                           "the 264 fuel pins of the square UO$_2$ assembly, against the "
+                           "same-geometry OpenMC reference. Direction-wise sector diffusion "
+                           "with $A=1$ and $I=8$. Bold marks the minimum of the unrounded values.")
     for token, text in (("@@CORE_TABLES@@", core_tables()[0]),
                         ("@@BEST_TABLE@", core_tables()[1]),
                         ("@@CHECKER_TABLE@@", checker_table()),
                         ("@@SECTOR_TABLE@@", sector_table()),
                         ("@@ASSEMBLY_SECTOR_TABLE@@", assembly_table()),
+                        ("@@SQUARE_UO2_PIN_RMS_TABLE@@", pin_rms),
                         ("@@PAIR_COUNT@@", str(pairs["n"])),
                         ("@@PAIR_SMALLER@@", str(pairs["smaller"])),
                         ("@@PAIR_MEDIAN@@", f"{pairs['median']:.3f}"),
@@ -345,7 +352,8 @@ def main():
     have = all((EXAMPLE / name).exists() for name in
                ("sm_error_pcm.csv", "sm_wall_seconds.csv", "best_fission_summary.json")) and all(
         (PAPER / "data" / name).exists() for name in
-        ("study4-checkerboard.csv", "study4_closure_pairs.csv", "study4_assembly_summary.csv"))
+        ("study4-checkerboard.csv", "study4_closure_pairs.csv", "study4_assembly_summary.csv",
+         "study4_square_uo2_pin_rms.csv"))
     if not have:
         print("Study IV section NOT refreshed (missing the generated CSVs)")
         if args.force:

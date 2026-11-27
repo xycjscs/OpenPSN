@@ -491,6 +491,15 @@ factors and packed-PCG solves with different thread budgets. The backfill used a
 60-thread cap. The tables report the wall time of each run, and the controlled
 timings appear in Table~\ref{tab:study4-closure-cost}.
 
+The square UO$_2$ pin RMS and eigenvalue difference reach their minima at
+different cells. At $S=3$, increasing $M$ from 2 to 4 lowers the pin RMS from
+$0.16950\%$ to $0.03641\%$, and the signed eigenvalue difference moves from
+$-0.16\pcm$ to $+4.92\pcm$. The full pin RMS grid in
+Table~\ref{tab:study4-square-uo2-pin-rms} has a minimum of $0.02678\%$ at
+$(S,M)=(6,16)$, where the eigenvalue difference is $+5.99\pcm$.
+
+\input{tables/study4-square-uo2-pin-rms.tex}
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=.86\linewidth]{studyIII_c5g7_sm.pdf}
