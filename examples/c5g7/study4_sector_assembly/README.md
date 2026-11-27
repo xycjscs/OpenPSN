@@ -6,8 +6,10 @@
 [误差矩阵](../../../paper/figures/study4_assembly_grid2x2.pdf)与
 [墙钟时间矩阵](../../../paper/figures/study4_assembly_wall.pdf)使用相同布局和最佳点标记。
 
-[四组最佳点图](../../../paper/figures/study4_best_fission.pdf)按最小 `|Δk|` 选点。
-四个 `*_best_pin_fission.csv` 给出完整的 17×17 棒元字段。相对误差只在每例的
+[四组组件逐棒图](../../../paper/figures/study4_assembly_fission.pdf)统一使用已计算的
+最细网格 `S=6, M=24`。四组组件和四分之一堆芯的相对误差共用 −0.35% 至 +0.35%
+的色标。四个 `*_finest_pin_fission.csv` 给出图中的完整 17×17 棒元字段。
+`*_best_pin_fission.csv` 记录按最小 `|Δk|` 选出的表格数据。相对误差只在每例的
 264 根燃料棒统计。方形使用逐棒中子产生率。矩形延续原图口径，用材料平均 `ν`
 转换为裂变率。各图扣除最小值并归一化为单位棒元总和。方形 OpenMC 参考取自
 Study III 四组逐棒对照归档中的 `OpenMC` 列，矩形直接读取仓内原参考数组。
@@ -19,6 +21,7 @@ python -m scripts.study4_assembly_summary --closure sector_diffusion
 python -m scripts.study4_assembly_report --closure sector_diffusion \
     --table paper/tables/study4-assembly-sector.tex --label tab:study4-assembly-sector
 python -m scripts.study4_sm_figures
+python -m scripts.study4_pin_maps --output paper/figures
 ```
 
 最后 18 个矩形格用 packed Cholesky 预条件器和残差检验的 FP64 PCG 求解，线程上限为
@@ -36,10 +39,10 @@ python -m scripts.study4_uniform_grid run --threads 60 --backend chol-packed-rs 
 部分实测点提高了同时分解的因子数。线程设置和已记录的分解并发度见
 [`points.jsonl`](../../../paper/data/uniform/points.jsonl)。
 
-用收敛检查点重建逐棒图时，将检查点目录传给 `--fields`。下列命令会验证每张图的
-`S`、`M`、闭合类型和 `k_eff`，再从对应检查点取棒元数据。
+用收敛检查点重建组件逐棒 CSV 时，将检查点目录传给 `--fields`。命令会验证对应
+检查点的 `S`、`M`、闭合类型和 `k_eff`。
 
 ```sh
-python -m scripts.study4_assembly_summary --closure sector_diffusion \
-    --fields runs/study4-uniform/fields --pin-output runs/study4-assembly-maps
+python -m scripts.study4_pin_maps --fields runs/study4-uniform/fields \
+    --assembly-data runs/study4-assembly-maps --output runs/study4-assembly-maps
 ```

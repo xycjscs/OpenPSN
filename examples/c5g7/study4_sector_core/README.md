@@ -42,7 +42,7 @@
 | `points.csv` | 30 个测点的完整运行记录字段 |
 | `sm_matrix.md` | 两张矩阵的 markdown 版本（论文与 README 引用同源） |
 | `sector_diffusion_sm.png/.pdf` | 误差（symlog）与用时（log）色板矩阵 |
-| `best_fission.png/.pdf/.csv` | 最小 `|Δk|` 格的裂变率图与 51×51 棒元数据 |
+| `best_fission.png/.pdf/.csv` | 最细格 `S=5, M=24` 的裂变率图与 51×51 棒元数据，图中误差色标为 −0.35% 至 +0.35% |
 | `best_fission_summary.json` | 该点的本征值、偏差、复扫残差与逐棒偏差 |
 | `logs/S{S}_M{M}.log` | 每个测点的原始运行日志（末行为收敛记录） |
 | `logs/`（其余） | `S=5` 因子模板准备与同设置原版闭包对照等辅助日志 |

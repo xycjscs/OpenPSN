@@ -512,11 +512,13 @@ the smallest measured absolute difference of the panel.}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.87\linewidth]{study4_best_fission.pdf}
-\caption{Selected direction-wise assembly fields with their OpenMC references and
+\includegraphics[width=.87\linewidth]{study4_assembly_fission.pdf}
+\caption{Direction-wise assembly fields at the finest calculated grid, $S=6$, $M=24$,
+with their OpenMC references and
 relative errors over 264 fuel pins per case. Square maps show neutron production.
 Rectangular maps use material-average neutron yields for the fission-rate conversion.
-Each map is shifted by its minimum and normalised to unit pin sum.}
+Each map is shifted by its minimum and normalised to unit pin sum. The relative-error
+scale is $-0.35\%$ to $+0.35\%$ for all four assemblies and the quarter core.}
 \label{fig:assembly-fields}
 \end{figure}
 
@@ -603,9 +605,9 @@ reported cell by cell rather than as a single number.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{study4_core_fission.pdf}
-\caption{Normalised fuel fission rate at the best measured quarter-core point, beside
-the same-geometry OpenMC reference and the pin-wise relative difference over the 1056
-fuel pins.}
+\caption{Normalised fuel fission rate at the finest calculated quarter-core grid,
+$S=5$, $M=24$, beside the same-geometry OpenMC reference and the relative difference over
+the 1056 fuel pins. The error scale is $-0.35\%$ to $+0.35\%$.}
 \label{fig:core-fission}
 \end{figure}
 

@@ -325,7 +325,7 @@ $-0.16\pcm$ at $(S,M)=(3,2)$. The square MOX best is $-1.20\pcm$ at $(6,8)$.
 The completed rectangular matrices include the archived optima at $(6,24)$ and
 show smaller best absolute errors with the direction-wise closure for both fuels.
 Table~\ref{tab:study4-assembly-sector} gives the coordinates, signed differences and
-pin errors of the four selected cells. The 18 packed-PCG cells used a 60-thread cap.
+pin errors at the minimum-$|\Delta k|$ cells. The 18 packed-PCG cells used a 60-thread cap.
 The earlier points ran with sparse direct factors under different thread budgets.
 
 The UO$_2$ comparison separates the direction of the eigenvalue change from the
@@ -349,12 +349,14 @@ difference in each panel.}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.92\linewidth]{study4_best_fission.pdf}
-\caption{Selected Study IV assembly pin maps from the direction-wise closure. Each row
+\includegraphics[width=.92\linewidth]{study4_assembly_fission.pdf}
+\caption{Study IV assembly pin maps at the finest calculated grid, $S=6$, $M=24$,
+with the direction-wise closure. Each row
 shows the computed field, its same-geometry OpenMC reference and the relative error
 over 264 fuel pins. Square cases show neutron production. Rectangular plots apply the
 material-average neutron yield of the archived fission-rate convention. Each map is
-shifted by its minimum and normalised to unit pin sum.}
+shifted by its minimum and normalised to unit pin sum. The relative-error scale is
+$-0.35\%$ to $+0.35\%$ for all four assemblies and the quarter core.}
 \label{fig:study4-assembly-fields}
 \end{figure}
 
@@ -400,9 +402,9 @@ absolute difference. Right: end-to-end wall time in seconds (log scale).}
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{study4_core_fission.pdf}
-\caption{Normalised fuel fission rate at the best measured quarter-core
-point, beside the same-geometry OpenMC reference and the pin-wise relative
-difference over the 1056 fuel pins.}
+\caption{Normalised fuel fission rate at the finest calculated quarter-core grid,
+$S=5$, $M=24$, beside the same-geometry OpenMC reference and the relative difference
+over the 1056 fuel pins. The error scale is $-0.35\%$ to $+0.35\%$.}
 \label{fig:study4-core-fission}
 \end{figure}
 

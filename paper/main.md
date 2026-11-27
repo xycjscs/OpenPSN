@@ -554,8 +554,8 @@ The direction-wise re-sweep covers all 458 planned points and all 36 cells of ea
 : Direction-wise Study IV coverage, selected points and wall times. The run times include multiple backend and thread configurations. {#tab:study4-assembly-sector}
 
 <figure id="fig:study4-assembly-fields">
-<img src="figures/study4_best_fission.png" alt="Direction-wise assembly maps, OpenMC references, and fuel-pin relative errors">
-<figcaption>Selected Study IV pin fields. Square maps show neutron production. Rectangular maps use the material-average neutron yield of the archived fission-rate convention. The residual panels cover 264 fuel pins per assembly.</figcaption>
+<img src="figures/study4_assembly_fission.png" alt="Finest-grid direction-wise assembly maps, OpenMC references, and fuel-pin relative errors">
+<figcaption>Study IV assembly pin fields at S=6, M=24. Square maps show neutron production. Rectangular maps use the material-average neutron yield of the archived fission-rate convention. The four relative-error maps cover 264 fuel pins per assembly and use a shared −0.35% to +0.35% scale.</figcaption>
 </figure>
 
 In the cell-average rectangular UO$_2$ study, the $S{=}2$ difference changes from $-91.65$ to $-148.98$ pcm from $M{=}2$ to $M{=}4$, a drop of $57.33$ pcm. Reassigning the six subintervals per pin axis from $2/2/2$ to $1/4/1$ with `--balance-pin` preserves every material interface and reduces the drop to $40.69$ pcm. In a separate test at $S{=}1$ on the uniform mesh, the higher spatial basis with $A{=}4$ gives $-71.17$ and $-33.21$ pcm. The controls are consistent with an interaction between coarse angular and intra-pin spatial resolution.
@@ -593,8 +593,8 @@ The $5\times6$ grid of runs on the explicit quarter core, with the direction-wis
 </figure>
 
 <figure id="fig:study4-core-fission" data-latex-placement="H">
-<img src="study4_core_fission.png" style="width:98.0%" />
-<figcaption>Normalised fuel fission rate at the best measured quarter-core point, beside the same-geometry OpenMC reference and the pin-wise relative difference over the 1056 fuel pins.</figcaption>
+<img src="figures/study4_core_fission.png" style="width:98.0%" />
+<figcaption>Normalised fuel fission rate at the finest calculated quarter-core grid, S=5, M=24, beside the same-geometry OpenMC reference and the relative difference over the 1056 fuel pins. The error scale is −0.35% to +0.35%.</figcaption>
 </figure>
 
 | quantity | best measured cell |

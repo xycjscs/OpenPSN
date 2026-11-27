@@ -351,6 +351,10 @@ cases:                   # 批量：per-case 覆盖 M / subdivide / A / closure 
 | Study IV：矩形 1/4 芯 SM 矩阵（**记录口径 `sector_diffusion`**） | `c5g7/study2_rectangular/c5g7_rect_quarter_core.yaml` | S=1–5 × M=2,4,8,12,16,24（TY3，A=1，逐点独立复扫） | 1.1872176 | 矩阵与最佳点见 `examples/c5g7/study4_sector_core/`（`sm_matrix.md` 由 `scripts/study4_core_report.py` 从逐点日志重建；30/30 格全部收敛，误差同号且随两轴单调下降，最佳格 `S=5, M=24` 为 `−12.98 pcm`） |
 | 严格代数校验（14 项，符号/有理精确） | `examples/psn_strict_checks/` | 两层真空板、镜像矩形、四反射均质 7 群、堆芯守恒 LP | 精确解析值 | k∞ 四位精确小数、`k_eff<1.894` 上界，`unittest` 约 2 s |
 
+Study IV 逐棒图使用已计算的最细网格。四组组件取 `S=6, M=24`，四分之一堆芯取
+`S=5, M=24`。五组相对误差共用 −0.35% 至 +0.35% 的色标。
+[组件图](paper/figures/study4_assembly_fission.pdf) · [四分之一堆芯图](paper/figures/study4_core_fission.pdf)
+
 （棋盘 A3 的 `subdivide` 约定：case 名中的 S = 论文 S，2×2 基网格再细分
 S×S → 2S×2S 节点，即 `subdivide: S`。）
 

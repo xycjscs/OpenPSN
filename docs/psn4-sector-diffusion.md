@@ -39,7 +39,9 @@
 新后端用压缩 Cholesky 预条件器求解同一 FP64 扇区算子。`OPENPSN_PACKED_RTOL`
 和 `OPENPSN_PACKED_MAXITER` 默认 `5e-12`、`80`。补测中出现 FP64 线性残差下限后，
 后续运行使用 `1e-11`、`160`，外层本征值与复扫源的阈值仍为 `1e-9`、`5e-9`。
-四组最佳格的逐棒图与重建命令见 [组件示例](../examples/c5g7/study4_sector_assembly/README.md)。
+四组组件逐棒图均取已计算的最细网格 `S=6, M=24`，与四分之一堆芯的
+`S=5, M=24` 逐棒图共用 −0.35% 至 +0.35% 的相对误差色标。
+[组件示例和重绘命令](../examples/c5g7/study4_sector_assembly/README.md)
 
 在 `A=1` 的 UO₂ 组件矩阵中，`sector_average` 从 `M=2` 加密到 `M=4` 时，
 方形、矩形的 12 行 `k_eff` 均下降。`sector_diffusion` 的 12 行均上升。以 `S=2`
