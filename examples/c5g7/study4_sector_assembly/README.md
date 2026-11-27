@@ -18,6 +18,7 @@ Study III 四组逐棒对照归档中的 `OpenMC` 列，矩形直接读取仓内
 和[误差图](../../../paper/figures/study4_square_uo2_pin_rms.pdf)。
 RMS 在 264 根燃料棒上计算，每个棒元的相对偏差取百分数。
 最小 RMS 为 0.02678%，对应 `S=6, M=16`。
+[Study IV 完整矩阵](../study4_c5g7_matrices/README.md)还包括其余三组组件和矩形四分之一堆芯。
 
 在仓库根目录执行以下命令可由入仓数据重建组件表与 SM 图。
 

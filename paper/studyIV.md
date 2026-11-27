@@ -68,6 +68,8 @@ At $S=3$ in the square UO$_2$ assembly, increasing $M$ from 2 to 4 lowers the fu
 
 @@SQUARE_UO2_PIN_RMS_TABLE@@
 
+The [Study IV matrix supplement](../examples/c5g7/study4_c5g7_matrices/README.md) gives computed eigenvalues, signed differences and fuel-pin RMS for all 174 points in the four C5G7 assembly grids and the rectangular quarter-core grid.
+
 <figure id="fig:study4-assembly-fields">
 <img src="figures/study4_assembly_fission.png" alt="Finest-grid direction-wise assembly maps, OpenMC references, and fuel-pin relative errors">
 <figcaption>Study IV assembly pin fields at S=6, M=24. Square maps show neutron production. Rectangular maps use the material-average neutron yield of the archived fission-rate convention. The four relative-error maps cover 264 fuel pins per assembly and use a shared −0.35% to +0.35% scale.</figcaption>

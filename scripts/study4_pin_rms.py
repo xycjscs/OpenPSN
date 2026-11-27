@@ -29,22 +29,27 @@ CAPTION = (r"RMS relative error (\%) in normalized neutron production over the 2
            r"Bold marks the minimum of the unrounded values.")
 
 
-def calculate(fields):
+def assembly_points(case):
     with (ROOT / "paper/data/study4_assembly_points.csv").open() as handle:
         rows = [row for row in csv.DictReader(handle)
-                if (row["case"], row["closure"], row["A"], row["I"]) == (CASE, CLOSURE, "1", "8")]
+                if (row["case"], row["closure"], row["A"], row["I"]) == (case, CLOSURE, "1", "8")]
     points = {(int(row["S"]), int(row["M"])): row for row in rows}
     expected = {(s, m) for s in S_VALUES for m in M_VALUES}
     if points.keys() != expected or len(rows) != len(expected):
-        raise ValueError(f"expected one {CASE} record for each S–M cell")
+        raise ValueError(f"expected one {case} record for each S–M cell")
+    return points
+
+
+def calculate(fields, case=CASE):
+    points = assembly_points(case)
     rms = np.empty((len(S_VALUES), len(M_VALUES)))
     for i, s in enumerate(S_VALUES):
         for j, m in enumerate(M_VALUES):
             row = points[s, m]
             if not (0 <= float(row["source_residual"]) <= SOURCE_RESIDUAL
                     and 0 <= float(row["keff_residual"]) <= EIGEN_RESIDUAL):
-                raise ValueError(f"{CASE} S={s}, M={m} failed the verification criteria")
-            _, _, error, fuel = pin_maps(CASE, row, fields, ROOT / "tools_ho/data", closure=CLOSURE)
+                raise ValueError(f"{case} S={s}, M={m} failed the verification criteria")
+            _, _, error, fuel = pin_maps(case, row, fields, ROOT / "tools_ho/data", closure=CLOSURE)
             rms[i, j] = np.sqrt(np.mean(error[fuel]**2))
     return rms
 

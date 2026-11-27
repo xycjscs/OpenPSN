@@ -356,6 +356,9 @@ Study IV 逐棒图使用已计算的最细网格。四组组件取 `S=6, M=24`�
 [组件图](paper/figures/study4_assembly_fission.pdf) · [四分之一堆芯图](paper/figures/study4_core_fission.pdf) ·
 [方形 UO₂ 逐棒 RMS 矩阵](paper/data/study4_square_uo2_pin_rms.csv)
 
+四组组件和四分之一堆芯的 174 格本征值、带符号偏差与逐棒 RMS 见
+[Study IV 完整 S×M 矩阵](examples/c5g7/study4_c5g7_matrices/README.md)。
+
 （棋盘 A3 的 `subdivide` 约定：case 名中的 S = 论文 S，2×2 基网格再细分
 S×S → 2S×2S 节点，即 `subdivide: S`。）
 
